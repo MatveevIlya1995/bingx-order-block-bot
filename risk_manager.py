@@ -1,22 +1,29 @@
 """
-Risk management: position sizing, leverage cap, and a daily-loss circuit
-breaker, plus a simple CSV trade journal.
+Risk management: position sizing, leverage cap, a daily-loss circuit
+breaker, and a CSV trade journal that tracks both trade entries and exits
+(so duration and realized P/L per trade can be reported later).
 
 The circuit breaker compares CURRENT account equity (fetched fresh from
 BingX every cycle) against the equity recorded at the start of the UTC
 day. This is deliberately simple and exchange-agnostic: it doesn't try to
-parse individual closed-trade fills (whose exact field names vary and
-couldn't be verified against live BingX data from this environment) --
-it just asks "is my balance down too much vs. this morning?" every time
-it runs, which also catches large *unrealized* drawdowns on an open
-position, not only realized losses. State persists to a small JSON file
-so it survives across separate scheduled-task invocations, which each
-run as a fresh process.
+parse individual closed-trade fills for the circuit breaker itself -- it
+just asks "is my balance down too much vs. this morning?" every time it
+runs, which also catches large *unrealized* drawdowns on an open
+position, not only realized losses. State (including which trades are
+still open) persists to a small JSON file so it survives across separate
+scheduled-task invocations, which each run as a fresh process.
 """
 import csv
 import json
 import os
+import uuid
 import datetime
+
+TRADE_JOURNAL_FIELDS = [
+    "event", "trade_id", "timestamp_utc", "mode", "symbol", "side",
+    "position_side", "qty", "price", "stop_loss", "take_profit",
+    "equity", "trigger", "pnl", "duration_minutes",
+]
 
 
 class RiskManager:
@@ -27,11 +34,14 @@ class RiskManager:
     def _load_state(self) -> dict:
         if os.path.exists(self.cfg.state_path):
             with open(self.cfg.state_path) as f:
-                return json.load(f)
-        return {
-            "date": None,
-            "day_start_equity": None,
-        }
+                data = json.load(f)
+        else:
+            data = {}
+        data.setdefault("date", None)
+        data.setdefault("day_start_equity", None)
+        data.setdefault("realized_pnl_today", 0.0)
+        data.setdefault("open_trades", [])
+        return data
 
     def _save_state(self):
         os.makedirs(os.path.dirname(self.cfg.state_path) or ".", exist_ok=True)
@@ -43,6 +53,7 @@ class RiskManager:
         if self.state.get("date") != today:
             self.state["date"] = today
             self.state["day_start_equity"] = equity
+            self.state["realized_pnl_today"] = 0.0
             self._save_state()
 
     def circuit_breaker_tripped(self, equity: float) -> bool:
@@ -56,20 +67,115 @@ class RiskManager:
         loss_pct = (start - equity) / start
         return loss_pct >= self.cfg.max_daily_loss_pct
 
-    def log_trade(self, row: dict):
-        """Appends one row to the CSV trade journal (data/trades.csv by
-        default), creating the header if the file is new. This is a
-        lightweight local record of what the bot *attempted* -- BingX's
-        own order/position history is always the authoritative source
-        for actual fills and realized P&L."""
+    def _write_journal_row(self, row: dict):
         path = self.cfg.trades_csv_path
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         file_exists = os.path.exists(path)
+        full_row = {field: row.get(field, "") for field in TRADE_JOURNAL_FIELDS}
         with open(path, "a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=list(row.keys()))
+            writer = csv.DictWriter(f, fieldnames=TRADE_JOURNAL_FIELDS)
             if not file_exists:
                 writer.writeheader()
-            writer.writerow(row)
+            writer.writerow(full_row)
+
+    def log_trade(self, row: dict):
+        """Appends one ENTRY row to the CSV trade journal (data/trades.csv
+        by default), creating the header if the file is new. This is a
+        lightweight local record of what the bot *attempted* -- BingX's
+        own order/position history is always the authoritative source
+        for actual fills and realized P&L."""
+        self._write_journal_row({**row, "event": "ENTRY"})
+
+    def track_open_trade(self, trade: dict):
+        """Remembers a just-submitted LIVE entry so a later cycle can
+        detect when it closes and log the exit. `trade` must include:
+        trade_id, symbol, position_side, side, qty, entry_price,
+        stop_loss, take_profit, trigger, entry_time_utc."""
+        self.state.setdefault("open_trades", []).append(trade)
+        self._save_state()
+
+    def reconcile_closed_trades(self, open_positions: list, exchange_client) -> list:
+        """Compares tracked open trades against the exchange's current
+        open positions. Any tracked trade no longer open is treated as
+        closed: looks up the closing fill via the exchange client, logs
+        an EXIT row (with duration and realized P/L when it can be
+        determined), and updates today's realized P/L running total.
+        Returns the list of trades that were closed this cycle.
+
+        NOTE: matching a tracked trade to a live position by
+        (symbol, position_side) assumes at most one open position per
+        side per symbol, which holds for this bot's default config
+        (MAX_CONCURRENT_POSITIONS=1) but is a simplification if that's
+        raised. Like the rest of this bot's BingX wiring, the exact field
+        names on a `fetch_positions()` result could not be verified
+        against live BingX data from this environment -- confirm once
+        you have a real trade go through.
+        """
+        still_open_keys = set()
+        for p in open_positions:
+            side = (p.get("side") or p.get("positionSide") or "").upper()
+            still_open_keys.add((p.get("symbol"), side))
+
+        remaining = []
+        closed = []
+        for trade in self.state.get("open_trades", []):
+            key = (trade["symbol"], trade["position_side"].upper())
+            if key in still_open_keys:
+                remaining.append(trade)
+            else:
+                closed.append(trade)
+
+        self.state["open_trades"] = remaining
+        self._save_state()
+
+        for trade in closed:
+            exit_info = exchange_client.fetch_trade_exit(
+                symbol=trade["symbol"],
+                position_side=trade["position_side"],
+                since_iso=trade["entry_time_utc"],
+            )
+            entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+
+            if exit_info and exit_info.get("timestamp"):
+                exit_time = exit_info["timestamp"]
+                exit_price = exit_info.get("price")
+                pnl = exit_info.get("realized_pnl")
+                if pnl is None and exit_price is not None:
+                    direction = 1 if trade["position_side"].upper() == "LONG" else -1
+                    pnl = (exit_price - trade["entry_price"]) * direction * trade["qty"]
+            else:
+                # Couldn't confirm the exact fill from BingX (e.g. an API
+                # gap) -- still record that the position closed, using
+                # "now" as an approximate exit time. Check BingX directly
+                # for the exact fill/P&L on this trade.
+                exit_time = datetime.datetime.now(datetime.timezone.utc)
+                exit_price = None
+                pnl = None
+
+            duration_minutes = round((exit_time - entry_time).total_seconds() / 60, 1)
+
+            if pnl is not None:
+                self.state["realized_pnl_today"] = self.state.get("realized_pnl_today", 0.0) + pnl
+                self._save_state()
+
+            self._write_journal_row({
+                "event": "EXIT",
+                "trade_id": trade["trade_id"],
+                "timestamp_utc": exit_time.isoformat(),
+                "mode": trade.get("mode", "LIVE"),
+                "symbol": trade["symbol"],
+                "side": trade["side"],
+                "position_side": trade["position_side"],
+                "qty": trade["qty"],
+                "price": exit_price if exit_price is not None else "",
+                "stop_loss": trade.get("stop_loss", ""),
+                "take_profit": trade.get("take_profit", ""),
+                "trigger": trade.get("trigger", ""),
+                "pnl": round(pnl, 4) if pnl is not None else "",
+                "duration_minutes": duration_minutes,
+            })
+
+        return closed
 
     def position_size(self, equity: float, entry: float, stop_loss: float) -> float:
         """Size the position so a stop-out loses roughly risk_pct_per_trade
@@ -83,3 +189,7 @@ class RiskManager:
 
     def safe_leverage(self) -> int:
         return min(self.cfg.leverage, self.cfg.max_leverage_hard_cap)
+
+    @staticmethod
+    def new_trade_id() -> str:
+        return uuid.uuid4().hex[:12]
