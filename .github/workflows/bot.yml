@@ -1,0 +1,52 @@
+name: BingX Order Block Bot
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: bingx-bot
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run one bot cycle
+        env:
+          BINGX_API_KEY: ${{ secrets.BINGX_API_KEY }}
+          BINGX_API_SECRET: ${{ secrets.BINGX_API_SECRET }}
+          SYMBOL: ${{ vars.SYMBOL }}
+          TIMEFRAME: ${{ vars.TIMEFRAME }}
+          RISK_PCT_PER_TRADE: ${{ vars.RISK_PCT_PER_TRADE }}
+          LEVERAGE: ${{ vars.LEVERAGE }}
+          MAX_DAILY_LOSS_PCT: ${{ vars.MAX_DAILY_LOSS_PCT }}
+          MAX_CONCURRENT_POSITIONS: ${{ vars.MAX_CONCURRENT_POSITIONS }}
+          REWARD_RISK_RATIO: ${{ vars.REWARD_RISK_RATIO }}
+          DRY_RUN: ${{ vars.DRY_RUN }}
+        run: python3 bot.py
+
+      - name: Persist bot state back to the repo
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain data/state.json 2>/dev/null)" ]; then
+            git config user.name "bingx-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add data/state.json
+            git commit -m "chore: update bot state"
+            git push
+          else
+            echo "No state changes to commit."
+          fi
