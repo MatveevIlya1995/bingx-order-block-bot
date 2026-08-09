@@ -1,0 +1,59 @@
+name: BingX Order Block Bot
+
+# Runs one bot cycle on a schedule -- no server for you to manage. GitHub's
+# runners are ephemeral, so this workflow commits data/state.json (the
+# daily-loss circuit breaker tracker) and data/trades.csv (a log of every
+# signal the bot acted on) back to the repo after each run, so both persist
+# across runs and you can open trades.csv on github.com to see a table of
+# what the bot has done.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # match this to TIMEFRAME below; GH Actions min granularity is 5 min
+  workflow_dispatch: {}       # lets you trigger a manual run from the Actions tab
+
+concurrency:
+  group: bingx-bot
+  cancel-in-progress: false   # never run two cycles at once
+
+permissions:
+  contents: write   # needed to commit the updated state.json back to the repo
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run one bot cycle
+        env:
+          BINGX_API_KEY: ${{ secrets.BINGX_API_KEY }}
+          BINGX_API_SECRET: ${{ secrets.BINGX_API_SECRET }}
+          SYMBOL: ${{ vars.SYMBOL }}
+          TIMEFRAME: ${{ vars.TIMEFRAME }}
+          RISK_PCT_PER_TRADE: ${{ vars.RISK_PCT_PER_TRADE }}
+          LEVERAGE: ${{ vars.LEVERAGE }}
+          MAX_DAILY_LOSS_PCT: ${{ vars.MAX_DAILY_LOSS_PCT }}
+          MAX_CONCURRENT_POSITIONS: ${{ vars.MAX_CONCURRENT_POSITIONS }}
+          REWARD_RISK_RATIO: ${{ vars.REWARD_RISK_RATIO }}
+          DRY_RUN: ${{ vars.DRY_RUN }}
+        run: python3 bot.py
+
+      - name: Persist bot state and trade journal back to the repo
+        if: always()
+        run: |
+          if [ -n "$(git status --porcelain data/ 2>/dev/null)" ]; then
+            git config user.name "bingx-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add data/state.json data/trades.csv 2>/dev/null || true
+            git commit -m "chore: update bot state and trade journal"
+            git push
+          else
+            echo "No state/journal changes to commit."
+          fi
