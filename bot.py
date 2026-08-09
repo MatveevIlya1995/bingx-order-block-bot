@@ -1,7 +1,7 @@
 """
 Entry point. Designed to be invoked ONCE PER CYCLE by a scheduler (cron,
-systemd timer, etc.) running on YOUR OWN machine or server -- not inside
-this chat's sandbox, which has no network access to BingX or PyPI.
+GitHub Actions, systemd timer, etc.) running somewhere with real internet
+access.
 
 Each run:
   1. reads account equity and open positions from BingX
@@ -63,8 +63,23 @@ def run_once():
         f"entry~{signal['entry']:.2f} SL={signal['stop_loss']:.2f} TP={signal['take_profit']:.2f}"
     )
 
+    import datetime as _dt
+
+    journal_row = {
+        "timestamp_utc": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+        "mode": "DRY_RUN" if cfg.dry_run else "LIVE",
+        "symbol": cfg.symbol,
+        "side": signal["side"].upper(),
+        "qty": round(qty, 6),
+        "entry": round(signal["entry"], 4),
+        "stop_loss": round(signal["stop_loss"], 4),
+        "take_profit": round(signal["take_profit"], 4),
+        "equity_at_signal": round(equity, 2),
+    }
+
     if cfg.dry_run:
-        print("[bot] DRY_RUN is on -- no order sent. Set DRY_RUN=false only once you've validated this.")
+        risk.log_trade(journal_row)
+        print("[bot] DRY_RUN is on -- no order sent (logged to trade journal). Set DRY_RUN=false only once you've validated this.")
         return
 
     client.set_leverage(risk.safe_leverage())
@@ -75,7 +90,8 @@ def run_once():
         take_profit_price=signal["take_profit"],
         position_side=signal["position_side"],
     )
-    print("[bot] Order submitted with attached stop-loss and take-profit.")
+    risk.log_trade(journal_row)
+    print("[bot] Order submitted with attached stop-loss and take-profit, logged to trade journal.")
 
 
 if __name__ == "__main__":
