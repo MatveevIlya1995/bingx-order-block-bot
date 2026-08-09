@@ -67,6 +67,8 @@ class Config:
     # --- paths ---
     state_path: str = field(default_factory=lambda: _env("STATE_PATH", "data/state.json"))
     log_path: str = field(default_factory=lambda: _env("LOG_PATH", "data/trades.log"))
+    # CSV trade journal -- open it on github.com and it renders as a table.
+    trades_csv_path: str = field(default_factory=lambda: _env("TRADES_CSV_PATH", "data/trades.csv"))
 
 
 def load_config() -> Config:
