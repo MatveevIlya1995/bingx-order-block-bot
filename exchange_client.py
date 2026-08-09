@@ -13,6 +13,7 @@ running this live, place one small test trade manually (or via a Python
 REPL) and confirm `create_order` behaves as expected for your account's
 position mode -- see the README for a step-by-step check.
 """
+import datetime
 import ccxt
 
 
@@ -73,3 +74,60 @@ class ExchangeClient:
         self.exchange.create_order(self.cfg.symbol, "STOP_MARKET", opposite, amount, None, sl_params)
         self.exchange.create_order(self.cfg.symbol, "TAKE_PROFIT_MARKET", opposite, amount, None, tp_params)
         return order
+
+    def fetch_trade_exit(self, symbol: str, position_side: str, since_iso: str):
+        """Looks up the fill(s) that closed a position opened at/after
+        since_iso, so the trade journal can record exit price/time and
+        realized P/L. Returns
+        {"price": float, "timestamp": datetime, "realized_pnl": float|None}
+        or None if no matching closing fill can be found (e.g. an API
+        gap) -- callers should treat that as "closed, but confirm the
+        exact fill on BingX directly."
+
+        NOTE: like the rest of this bot's BingX wiring, the exact shape of
+        a BingX fill via ccxt (whether `info` carries a realized-pnl
+        field, and under what key) could not be verified against live
+        BingX data from this environment -- confirm against a real closed
+        trade before trusting the `realized_pnl` field blindly. The P/L
+        fallback computed from entry vs. exit price is always returned as
+        a backup and does not depend on that field, though it won't
+        include exchange fees or funding.
+        """
+        since_ms = int(datetime.datetime.fromisoformat(since_iso).timestamp() * 1000)
+        try:
+            trades = self.exchange.fetch_my_trades(symbol, since=since_ms)
+        except Exception as e:
+            print(f"[exchange] could not fetch closing trades for {symbol}: {e}")
+            return None
+
+        if not trades:
+            return None
+
+        closing = [
+            t for t in trades
+            if t.get("reduceOnly") or (t.get("info", {}) or {}).get("reduceOnly")
+        ]
+        candidates = closing or trades
+        last = max(candidates, key=lambda t: t.get("timestamp") or 0)
+        info = last.get("info", {}) or {}
+
+        realized_pnl = None
+        for key in ("realizedPnl", "realisedPnl", "profit"):
+            if info.get(key) not in (None, ""):
+                try:
+                    realized_pnl = float(info[key])
+                except (TypeError, ValueError):
+                    pass
+                break
+
+        timestamp = None
+        if last.get("timestamp"):
+            timestamp = datetime.datetime.fromtimestamp(
+                last["timestamp"] / 1000, tz=datetime.timezone.utc
+            )
+
+        return {
+            "price": float(last["price"]) if last.get("price") is not None else None,
+            "timestamp": timestamp,
+            "realized_pnl": realized_pnl,
+        }
