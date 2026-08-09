@@ -38,15 +38,15 @@ jobs:
           DRY_RUN: ${{ vars.DRY_RUN }}
         run: python3 bot.py
 
-      - name: Persist bot state back to the repo
+      - name: Persist bot state and trade journal back to the repo
         if: always()
         run: |
-          if [ -n "$(git status --porcelain data/state.json 2>/dev/null)" ]; then
+          if [ -n "$(git status --porcelain data/ 2>/dev/null)" ]; then
             git config user.name "bingx-bot"
             git config user.email "actions@users.noreply.github.com"
-            git add data/state.json
-            git commit -m "chore: update bot state"
+            git add data/state.json data/trades.csv 2>/dev/null || true
+            git commit -m "chore: update bot state and trade journal"
             git push
           else
-            echo "No state changes to commit."
+            echo "No state/journal changes to commit."
           fi
