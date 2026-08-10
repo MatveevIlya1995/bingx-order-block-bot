@@ -29,6 +29,23 @@ def _bool(env_key: str, default: bool) -> bool:
     return val.strip().lower() in ("1", "true", "yes", "on")
 
 
+def _env_list(env_key: str, default_csv: str) -> list[str]:
+    """Comma-separated list env var -> list of stripped strings."""
+    val = _env(env_key, default_csv)
+    return [s.strip() for s in val.split(",") if s.strip()]
+
+
+# A curated set of ~15 of the most liquid BingX USDT-M perpetuals -- not
+# "every symbol BingX lists" on purpose, since thin/illiquid pairs carry
+# much higher slippage and manipulation risk. Override with the SYMBOLS
+# repo variable (comma-separated) to use a different list.
+DEFAULT_SYMBOLS = (
+    "BTC/USDT:USDT,ETH/USDT:USDT,SOL/USDT:USDT,BNB/USDT:USDT,XRP/USDT:USDT,"
+    "DOGE/USDT:USDT,ADA/USDT:USDT,AVAX/USDT:USDT,LINK/USDT:USDT,LTC/USDT:USDT,"
+    "DOT/USDT:USDT,TRX/USDT:USDT,NEAR/USDT:USDT,ATOM/USDT:USDT,APT/USDT:USDT"
+)
+
+
 @dataclass
 class Config:
     # --- credentials ---
@@ -36,8 +53,10 @@ class Config:
     api_secret: str = field(default_factory=lambda: _env("BINGX_API_SECRET", ""))
 
     # --- market ---
-    # ccxt unified symbol for a USDT-margined perpetual, e.g. "BTC/USDT:USDT"
-    symbol: str = field(default_factory=lambda: _env("SYMBOL", "BTC/USDT:USDT"))
+    # List of ccxt unified symbols for USDT-margined perpetuals, e.g.
+    # "BTC/USDT:USDT". The bot scans all of them each cycle, in order,
+    # until it either runs out of symbols or hits max_concurrent_positions.
+    symbols: list = field(default_factory=lambda: _env_list("SYMBOLS", DEFAULT_SYMBOLS))
     timeframe: str = field(default_factory=lambda: _env("TIMEFRAME", "15m"))
     candle_limit: int = field(default_factory=lambda: int(_env("CANDLE_LIMIT", "300")))
 
