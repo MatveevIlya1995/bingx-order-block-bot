@@ -88,16 +88,31 @@ def run_once():
             f"entry~{signal['entry']:.2f} SL={signal['stop_loss']:.2f} TP={signal['take_profit']:.2f}"
         )
 
+        ob = signal["order_block"]
+        formed_ts = df.iloc[ob["formed_idx"]]["ts"]
+        bos_ts = df.iloc[ob["bos_idx"]]["ts"]
+        trigger = (
+            f"{ob['type']} order block retest: zone {ob['bottom']:.4f}-{ob['top']:.4f} "
+            f"(formed {formed_ts:%Y-%m-%d %H:%M} UTC, break of structure confirmed "
+            f"{bos_ts:%Y-%m-%d %H:%M} UTC)"
+        )
+
+        trade_id = risk.new_trade_id()
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
         journal_row = {
-            "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "trade_id": trade_id,
+            "timestamp_utc": now_iso,
             "mode": "DRY_RUN" if cfg.dry_run else "LIVE",
             "symbol": symbol,
             "side": signal["side"].upper(),
+            "position_side": signal["position_side"],
             "qty": round(qty, 6),
-            "entry": round(signal["entry"], 4),
+            "price": round(signal["entry"], 4),
             "stop_loss": round(signal["stop_loss"], 4),
             "take_profit": round(signal["take_profit"], 4),
-            "equity_at_signal": round(equity, 2),
+            "equity": round(equity, 2),
+            "trigger": trigger,
         }
 
         if cfg.dry_run:
@@ -115,6 +130,19 @@ def run_once():
             position_side=signal["position_side"],
         )
         risk.log_trade(journal_row)
+        risk.track_open_trade({
+            "trade_id": trade_id,
+            "entry_time_utc": now_iso,
+            "mode": "LIVE",
+            "symbol": symbol,
+            "side": signal["side"].upper(),
+            "position_side": signal["position_side"],
+            "qty": round(qty, 6),
+            "entry_price": round(signal["entry"], 4),
+            "stop_loss": round(signal["stop_loss"], 4),
+            "take_profit": round(signal["take_profit"], 4),
+            "trigger": trigger,
+        })
         open_count += 1
         open_symbols.add(symbol)
         print(f"[bot] {symbol}: order submitted with attached stop-loss/take-profit, logged.")
@@ -124,5 +152,6 @@ if __name__ == "__main__":
     try:
         run_once()
     except Exception:
+        print("[bot] Unhandled exception:", file=sys.stderr)
         traceback.print_exc()
         sys.exit(1)
