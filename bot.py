@@ -4,14 +4,19 @@ GitHub Actions, systemd timer, etc.) running somewhere with real internet
 access.
 
 Each run:
-  1. reads account equity and open positions (across all watched symbols)
-  2. checks the daily-loss circuit breaker (account-wide)
-  3. scans cfg.symbols in order; for each one not already holding a
-     position, looks for a fresh order-block retest signal
-  4. sizes each position by fixed fractional risk
-  5. if DRY_RUN=true (the default), logs what it WOULD do and moves on
-  6. if DRY_RUN=false, sets leverage and submits entry + stop-loss + take-profit
-  7. stops scanning once max_concurrent_positions is reached for the cycle
+1. reads account equity and open positions (across all watched symbols)
+2. reconciles any previously tracked LIVE trades that have since closed
+   on the exchange, logging an EXIT row and updating today's realized P/L
+3. checks the daily-loss circuit breaker (account-wide)
+4. scans cfg.symbols in order; for each one not already holding a
+   position, looks for a fresh order-block retest signal
+5. sizes each position by fixed fractional risk
+6. if DRY_RUN=true (the default), logs what it WOULD do and moves on
+   (skipping signals already logged today for the same zone, since a
+   DRY_RUN "trade" never closes and would otherwise refire every cycle
+   that the zone keeps getting retested)
+7. if DRY_RUN=false, sets leverage and submits entry + stop-loss + take-profit
+8. stops scanning once max_concurrent_positions is reached for the cycle
 """
 import datetime
 import sys
@@ -21,7 +26,6 @@ from config import load_config
 from exchange_client import ExchangeClient
 from strategy import ohlcv_to_df, detect_order_blocks, generate_signal
 from risk_manager import RiskManager
-
 
 def run_once():
     cfg = load_config()
@@ -38,13 +42,21 @@ def run_once():
         print("[bot] Could not read a positive USDT balance -- aborting this cycle.")
         return
 
-    if risk.circuit_breaker_tripped(equity):
-        print("[bot] Daily loss circuit breaker is tripped. No new entries today.")
-        return
+    equity_warning = risk.check_equity_jump(equity)
+    if equity_warning:
+        print(f"[bot] WARNING: {equity_warning}")
 
     open_positions = client.fetch_open_positions()
     open_symbols = {p.get("symbol") for p in open_positions}
     open_count = len(open_positions)
+
+    closed_trades = risk.reconcile_closed_trades(open_positions, client)
+    if closed_trades:
+        print(f"[bot] Reconciled {len(closed_trades)} closed trade(s), logged EXIT row(s).")
+
+    if risk.circuit_breaker_tripped(equity):
+        print("[bot] Daily loss circuit breaker is tripped. No new entries today.")
+        return
 
     print(
         f"[bot] Equity=${equity:.2f} | {open_count}/{cfg.max_concurrent_positions} "
@@ -97,6 +109,10 @@ def run_once():
             f"{bos_ts:%Y-%m-%d %H:%M} UTC)"
         )
 
+        if cfg.dry_run and risk.already_signaled(symbol, trigger):
+            print(f"[bot] {symbol}: DRY_RUN signal for this zone was already logged -- skipping duplicate.")
+            continue
+
         trade_id = risk.new_trade_id()
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -117,6 +133,7 @@ def run_once():
 
         if cfg.dry_run:
             risk.log_trade(journal_row)
+            risk.remember_signal(symbol, trigger)
             print(f"[bot] {symbol}: DRY_RUN is on -- no order sent (logged to trade journal).")
             continue
 
@@ -146,7 +163,6 @@ def run_once():
         open_count += 1
         open_symbols.add(symbol)
         print(f"[bot] {symbol}: order submitted with attached stop-loss/take-profit, logged.")
-
 
 if __name__ == "__main__":
     try:
