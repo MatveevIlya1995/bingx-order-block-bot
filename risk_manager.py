@@ -25,6 +25,13 @@ TRADE_JOURNAL_FIELDS = [
     "equity", "trigger", "pnl", "duration_minutes",
 ]
 
+# How many days to remember a DRY_RUN signal's (symbol, trigger) key for,
+# so the same not-yet-invalidated order block doesn't get logged again
+# every cycle it keeps getting retested. Comfortably longer than
+# CANDLE_LIMIT * TIMEFRAME (default ~300 * 15m =~ 3.1 days), so a zone
+# still inside the strategy's lookback window won't fall out of dedup
+# memory before it can actually re-trigger legitimately.
+DRY_RUN_SIGNAL_MEMORY_DAYS = 7
 
 class RiskManager:
     def __init__(self, cfg):
@@ -41,6 +48,8 @@ class RiskManager:
         data.setdefault("day_start_equity", None)
         data.setdefault("realized_pnl_today", 0.0)
         data.setdefault("open_trades", [])
+        data.setdefault("dry_run_signaled", {})
+        data.setdefault("last_seen_equity", None)
         return data
 
     def _save_state(self):
@@ -67,6 +76,27 @@ class RiskManager:
         loss_pct = (start - equity) / start
         return loss_pct >= self.cfg.max_daily_loss_pct
 
+    def check_equity_jump(self, equity: float, threshold_pct: float = 0.15) -> str | None:
+        """Flags an equity change between consecutive cycles too large to
+        be explained by this bot's own activity (it never sizes a single
+        position anywhere near threshold_pct of equity). Surfaces things
+        like external transfers, funding events, or reading the wrong
+        wallet/sub-account balance instead of letting them pass through
+        silently into the circuit breaker and the trade journal."""
+        prev = self.state.get("last_seen_equity")
+        self.state["last_seen_equity"] = equity
+        self._save_state()
+        if prev is None or prev <= 0:
+            return None
+        change_pct = abs(equity - prev) / prev
+        if change_pct >= threshold_pct:
+            return (
+                f"equity moved {change_pct:.1%} since last cycle "
+                f"(${prev:.2f} -> ${equity:.2f}) with no matching trade in this "
+                f"run -- check the BingX account directly."
+            )
+        return None
+
     def _write_journal_row(self, row: dict):
         path = self.cfg.trades_csv_path
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -86,6 +116,38 @@ class RiskManager:
         for actual fills and realized P&L."""
         self._write_journal_row({**row, "event": "ENTRY"})
 
+    def already_signaled(self, symbol: str, trigger: str) -> bool:
+        """True if this exact (symbol, order-block zone/timestamps)
+        combination was already logged as a DRY_RUN signal recently. In
+        DRY_RUN there's no open position to make the bot naturally skip
+        re-scanning a symbol, so without this an unmitigated order block
+        would get logged again every single cycle it's still retestable."""
+        key = f"{symbol}|{trigger}"
+        return key in self.state.get("dry_run_signaled", {})
+
+    def remember_signal(self, symbol: str, trigger: str):
+        self._prune_old_signals()
+        key = f"{symbol}|{trigger}"
+        self.state.setdefault("dry_run_signaled", {})[key] = (
+            datetime.datetime.now(datetime.timezone.utc).isoformat()
+        )
+        self._save_state()
+
+    def _prune_old_signals(self):
+        cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+            days=DRY_RUN_SIGNAL_MEMORY_DAYS
+        )
+        signaled = self.state.get("dry_run_signaled", {})
+        pruned = {}
+        for key, seen_iso in signaled.items():
+            try:
+                seen = datetime.datetime.fromisoformat(seen_iso)
+            except (TypeError, ValueError):
+                continue
+            if seen > cutoff:
+                pruned[key] = seen_iso
+        self.state["dry_run_signaled"] = pruned
+
     def track_open_trade(self, trade: dict):
         """Remembers a just-submitted LIVE entry so a later cycle can
         detect when it closes and log the exit. `trade` must include:
@@ -101,6 +163,11 @@ class RiskManager:
         an EXIT row (with duration and realized P/L when it can be
         determined), and updates today's realized P/L running total.
         Returns the list of trades that were closed this cycle.
+
+        Must be called every cycle (bot.py does this right after fetching
+        open_positions, before the circuit-breaker check) -- otherwise
+        LIVE trades never get an EXIT row, duration, or realized P/L
+        recorded, and closed trades never leave `open_trades`.
 
         NOTE: matching a tracked trade to a live position by
         (symbol, position_side) assumes at most one open position per
