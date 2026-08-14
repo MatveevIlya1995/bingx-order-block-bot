@@ -1,6 +1,6 @@
 {
-  "date": "2026-08-13",
-  "day_start_equity": 163.2938,
+  "date": "2026-08-14",
+  "day_start_equity": 263.1031,
   "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
@@ -39,7 +39,10 @@
     "XRP/USDT:USDT|bullish order block retest: zone 1.0070-1.0086 (formed 2026-08-13 21:30 UTC, break of structure confirmed 2026-08-13 22:15 UTC)": "2026-08-13T23:23:08.221249+00:00",
     "DOGE/USDT:USDT|bullish order block retest: zone 0.0699-0.0700 (formed 2026-08-11 01:30 UTC, break of structure confirmed 2026-08-11 02:00 UTC)": "2026-08-13T23:23:08.500648+00:00",
     "ADA/USDT:USDT|bullish order block retest: zone 0.1821-0.1825 (formed 2026-08-12 17:15 UTC, break of structure confirmed 2026-08-12 17:30 UTC)": "2026-08-13T23:23:08.744503+00:00",
-    "LINK/USDT:USDT|bullish order block retest: zone 8.8260-8.8440 (formed 2026-08-13 20:30 UTC, break of structure confirmed 2026-08-13 21:30 UTC)": "2026-08-13T23:23:09.219105+00:00"
+    "LINK/USDT:USDT|bullish order block retest: zone 8.8260-8.8440 (formed 2026-08-13 20:30 UTC, break of structure confirmed 2026-08-13 21:30 UTC)": "2026-08-13T23:23:09.219105+00:00",
+    "AVAX/USDT:USDT|bearish order block retest: zone 6.4670-6.5020 (formed 2026-08-13 14:30 UTC, break of structure confirmed 2026-08-13 15:00 UTC)": "2026-08-14T00:04:29.895402+00:00",
+    "TRX/USDT:USDT|bearish order block retest: zone 0.3344-0.3347 (formed 2026-08-12 01:45 UTC, break of structure confirmed 2026-08-12 03:00 UTC)": "2026-08-14T00:04:31.340940+00:00",
+    "ATOM/USDT:USDT|bearish order block retest: zone 1.5020-1.5070 (formed 2026-08-13 23:15 UTC, break of structure confirmed 2026-08-13 23:45 UTC)": "2026-08-14T00:04:31.799533+00:00"
   },
   "last_seen_equity": 263.1031
 }
