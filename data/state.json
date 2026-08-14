@@ -69,7 +69,9 @@
     "BTC/USDT:USDT|bearish order block retest: zone 62771.9000-62865.5000 (formed 2026-08-14 12:15 UTC, break of structure confirmed 2026-08-14 12:30 UTC)": "2026-08-14T13:37:14.179530+00:00",
     "SOL/USDT:USDT|bullish order block retest: zone 75.0170-75.2990 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 19:30 UTC)": "2026-08-14T13:37:14.667607+00:00",
     "BNB/USDT:USDT|bearish order block retest: zone 604.5100-605.7500 (formed 2026-08-14 12:15 UTC, break of structure confirmed 2026-08-14 12:45 UTC)": "2026-08-14T13:37:14.894566+00:00",
-    "NEAR/USDT:USDT|bearish order block retest: zone 1.5830-1.5890 (formed 2026-08-11 14:00 UTC, break of structure confirmed 2026-08-11 14:30 UTC)": "2026-08-14T14:36:12.649070+00:00"
+    "NEAR/USDT:USDT|bearish order block retest: zone 1.5830-1.5890 (formed 2026-08-11 14:00 UTC, break of structure confirmed 2026-08-11 14:30 UTC)": "2026-08-14T14:36:12.649070+00:00",
+    "ETH/USDT:USDT|bearish order block retest: zone 1874.1600-1877.6900 (formed 2026-08-14 12:15 UTC, break of structure confirmed 2026-08-14 12:45 UTC)": "2026-08-14T15:27:42.840344+00:00",
+    "ATOM/USDT:USDT|bearish order block retest: zone 1.5210-1.5340 (formed 2026-08-14 14:15 UTC, break of structure confirmed 2026-08-14 14:45 UTC)": "2026-08-14T15:27:48.257403+00:00"
   },
   "last_seen_equity": 263.1031
 }
