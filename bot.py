@@ -10,14 +10,18 @@ Each run:
 3. checks the daily-loss circuit breaker (account-wide)
 4. scans cfg.symbols in order; for each one not already holding a
    position, looks for a fresh order-block retest signal
-5. sizes each position by fixed fractional risk
-6. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
+5. if a signal fires, checks the higher-timeframe (default 4h) trend and
+   skips the trade if it clearly goes against that trend (a LONG signal
+   while the 4h trend is bearish, or vice versa); an unclear/neutral 4h
+   trend does not block the trade
+6. sizes each position by fixed fractional risk
+7. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
    this order-block zone before -- the bot only ever takes one trade per
    zone, regardless of how many times it gets retested or re-detected
    under a different formed/BOS labelling across cycles
-7. if DRY_RUN=true (the default), logs what it WOULD do and moves on
-8. if DRY_RUN=false, sets leverage and submits entry + stop-loss + take-profit
-9. stops scanning once max_concurrent_positions is reached for the cycle
+8. if DRY_RUN=true (the default), logs what it WOULD do and moves on
+9. if DRY_RUN=false, sets leverage and submits entry + stop-loss + take-profit
+10. stops scanning once max_concurrent_positions is reached for the cycle
 """
 import datetime
 import sys
@@ -25,7 +29,7 @@ import traceback
 
 from config import load_config
 from exchange_client import ExchangeClient
-from strategy import ohlcv_to_df, detect_order_blocks, generate_signal
+from strategy import ohlcv_to_df, detect_order_blocks, generate_signal, detect_trend
 from risk_manager import RiskManager
 
 def run_once():
@@ -90,6 +94,23 @@ def run_once():
         if not signal:
             print(f"[bot] {symbol}: no order-block retest signal this cycle.")
             continue
+
+        if cfg.trend_filter_enabled:
+            try:
+                htf_raw = client.fetch_ohlcv(
+                    symbol, timeframe=cfg.trend_timeframe, limit=cfg.trend_candle_limit
+                )
+                trend = detect_trend(ohlcv_to_df(htf_raw), ema_period=cfg.trend_ema_period)
+            except Exception as e:
+                print(f"[bot] {symbol}: could not fetch {cfg.trend_timeframe} trend data ({e}) -- allowing trade.")
+                trend = "neutral"
+
+            if signal["position_side"] == "LONG" and trend == "bearish":
+                print(f"[bot] {symbol}: skipping LONG signal -- {cfg.trend_timeframe} trend is bearish.")
+                continue
+            if signal["position_side"] == "SHORT" and trend == "bullish":
+                print(f"[bot] {symbol}: skipping SHORT signal -- {cfg.trend_timeframe} trend is bullish.")
+                continue
 
         qty = risk.position_size(equity, signal["entry"], signal["stop_loss"])
         if qty <= 0:
