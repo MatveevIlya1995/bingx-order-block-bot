@@ -1,5 +1,5 @@
 {
-  "date": "2026-08-14",
+  "date": "2026-08-15",
   "day_start_equity": 263.1031,
   "realized_pnl_today": 0.0,
   "trades": [],
@@ -103,7 +103,8 @@
     "XRP/USDT:USDT|bearish order block retest: zone 0.9953-0.9982 (formed 2026-08-14 21:45 UTC, break of structure confirmed 2026-08-14 22:00 UTC)": "2026-08-14T23:36:31.969091+00:00",
     "BTC/USDT:USDT|bearish order block retest: zone 62976.1000-63047.0000 (formed 2026-08-14 18:15 UTC, break of structure confirmed 2026-08-14 18:45 UTC)": "2026-08-14T23:57:21.374145+00:00",
     "LTC/USDT:USDT|bearish order block retest: zone 43.7600-43.9400 (formed 2026-08-14 18:15 UTC, break of structure confirmed 2026-08-14 18:45 UTC)": "2026-08-14T23:57:23.491061+00:00",
-    "TRX/USDT:USDT|bearish order block retest: zone 0.3327-0.3328 (formed 2026-08-14 20:45 UTC, break of structure confirmed 2026-08-14 21:00 UTC)": "2026-08-14T23:57:23.961530+00:00"
+    "TRX/USDT:USDT|bearish order block retest: zone 0.3327-0.3328 (formed 2026-08-14 20:45 UTC, break of structure confirmed 2026-08-14 21:00 UTC)": "2026-08-14T23:57:23.961530+00:00",
+    "AVAX/USDT:USDT|bullish order block retest: zone 6.4790-6.5010 (formed 2026-08-13 10:00 UTC, break of structure confirmed 2026-08-13 10:30 UTC)": "2026-08-15T00:49:05.688902+00:00"
   },
   "last_seen_equity": 263.1031
 }
