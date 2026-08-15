@@ -39,6 +39,30 @@ def ohlcv_to_df(raw) -> pd.DataFrame:
     return df
 
 
+def detect_trend(df: pd.DataFrame, ema_period: int = 50) -> str:
+    """Higher-timeframe trend filter based on an EMA of closes.
+
+    Meant to be called on 4h (or similar) candles, separate from the 15m
+    candles the order-block logic runs on. Returns "bullish" if the last
+    close is above a rising EMA(ema_period), "bearish" if it's below a
+    falling EMA, and "neutral" if there isn't enough data yet or the EMA
+    is flat/ambiguous. Callers should treat "neutral" as "don't block the
+    trade" -- this filter is meant to veto clear counter-trend entries,
+    not to require a strong trend before trading.
+    """
+    if len(df) < ema_period + 2:
+        return "neutral"
+    ema = df["close"].ewm(span=ema_period, adjust=False).mean()
+    last_close = df["close"].iloc[-1]
+    last_ema = ema.iloc[-1]
+    prev_ema = ema.iloc[-2]
+    if last_close > last_ema and last_ema > prev_ema:
+        return "bullish"
+    if last_close < last_ema and last_ema < prev_ema:
+        return "bearish"
+    return "neutral"
+
+
 def find_fractals(df: pd.DataFrame, n: int = 2) -> pd.DataFrame:
     highs = df["high"].values
     lows = df["low"].values
