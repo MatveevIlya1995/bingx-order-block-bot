@@ -11,12 +11,13 @@ Each run:
 4. scans cfg.symbols in order; for each one not already holding a
    position, looks for a fresh order-block retest signal
 5. sizes each position by fixed fractional risk
-6. if DRY_RUN=true (the default), logs what it WOULD do and moves on
-   (skipping signals already logged today for the same zone, since a
-   DRY_RUN "trade" never closes and would otherwise refire every cycle
-   that the zone keeps getting retested)
-7. if DRY_RUN=false, sets leverage and submits entry + stop-loss + take-profit
-8. stops scanning once max_concurrent_positions is reached for the cycle
+6. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
+   this order-block zone before -- the bot only ever takes one trade per
+   zone, regardless of how many times it gets retested or re-detected
+   under a different formed/BOS labelling across cycles
+7. if DRY_RUN=true (the default), logs what it WOULD do and moves on
+8. if DRY_RUN=false, sets leverage and submits entry + stop-loss + take-profit
+9. stops scanning once max_concurrent_positions is reached for the cycle
 """
 import datetime
 import sys
@@ -109,8 +110,8 @@ def run_once():
             f"{bos_ts:%Y-%m-%d %H:%M} UTC)"
         )
 
-        if cfg.dry_run and risk.already_signaled(symbol, trigger):
-            print(f"[bot] {symbol}: DRY_RUN signal for this zone was already logged -- skipping duplicate.")
+        if risk.zone_already_traded(symbol, ob):
+            print(f"[bot] {symbol}: a trade was already taken in this order-block zone -- skipping duplicate.")
             continue
 
         trade_id = risk.new_trade_id()
@@ -133,7 +134,7 @@ def run_once():
 
         if cfg.dry_run:
             risk.log_trade(journal_row)
-            risk.remember_signal(symbol, trigger)
+            risk.remember_zone_trade(symbol, ob)
             print(f"[bot] {symbol}: DRY_RUN is on -- no order sent (logged to trade journal).")
             continue
 
@@ -147,6 +148,7 @@ def run_once():
             position_side=signal["position_side"],
         )
         risk.log_trade(journal_row)
+        risk.remember_zone_trade(symbol, ob)
         risk.track_open_trade({
             "trade_id": trade_id,
             "entry_time_utc": now_iso,
