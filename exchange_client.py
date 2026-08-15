@@ -32,9 +32,14 @@ class ExchangeClient:
             }
         )
 
-    def fetch_ohlcv(self, symbol: str):
+    def fetch_ohlcv(self, symbol: str, timeframe: str = None, limit: int = None):
+        """Fetches OHLCV candles. Defaults to the strategy timeframe/limit
+        from config, but callers (e.g. the higher-timeframe trend filter)
+        can override both to pull a different timeframe."""
         return self.exchange.fetch_ohlcv(
-            symbol, timeframe=self.cfg.timeframe, limit=self.cfg.candle_limit
+            symbol,
+            timeframe=timeframe or self.cfg.timeframe,
+            limit=limit or self.cfg.candle_limit,
         )
 
     def fetch_balance_usdt(self) -> float:
