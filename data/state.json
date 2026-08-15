@@ -119,7 +119,8 @@
     "LTC/USDT:USDT|bullish order block retest: zone 43.8000-44.0000 (formed 2026-08-15 03:30 UTC, break of structure confirmed 2026-08-15 04:15 UTC)": "2026-08-15T05:14:14.285119+00:00",
     "XRP/USDT:USDT|bearish order block retest: zone 1.0047-1.0075 (formed 2026-08-13 15:30 UTC, break of structure confirmed 2026-08-13 15:45 UTC)": "2026-08-15T05:41:11.254971+00:00",
     "DOGE/USDT:USDT|bearish order block retest: zone 0.0701-0.0703 (formed 2026-08-14 02:30 UTC, break of structure confirmed 2026-08-14 03:00 UTC)": "2026-08-15T05:41:11.546640+00:00",
-    "TRX/USDT:USDT|bearish order block retest: zone 0.3326-0.3327 (formed 2026-08-14 23:00 UTC, break of structure confirmed 2026-08-15 00:15 UTC)": "2026-08-15T05:41:13.242318+00:00"
+    "TRX/USDT:USDT|bearish order block retest: zone 0.3326-0.3327 (formed 2026-08-14 23:00 UTC, break of structure confirmed 2026-08-15 00:15 UTC)": "2026-08-15T05:41:13.242318+00:00",
+    "XRP/USDT:USDT|bullish order block retest: zone 1.0006-1.0041 (formed 2026-08-14 14:45 UTC, break of structure confirmed 2026-08-14 15:15 UTC)": "2026-08-15T05:58:33.623757+00:00"
   },
   "last_seen_equity": 263.1031
 }
