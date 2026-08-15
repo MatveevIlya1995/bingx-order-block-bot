@@ -64,6 +64,15 @@ class Config:
     fractal_n: int = field(default_factory=lambda: int(_env("FRACTAL_N", "2")))
     reward_risk_ratio: float = field(default_factory=lambda: float(_env("REWARD_RISK_RATIO", "2")))
 
+    # --- higher-timeframe trend filter ---
+    # Entries are only vetoed when they clearly go against the 4h trend
+    # (e.g. a LONG signal while the 4h trend is bearish) -- an unclear/
+    # neutral 4h trend does not block a trade.
+    trend_filter_enabled: bool = field(default_factory=lambda: _bool("TREND_FILTER_ENABLED", True))
+    trend_timeframe: str = field(default_factory=lambda: _env("TREND_TIMEFRAME", "4h"))
+    trend_ema_period: int = field(default_factory=lambda: int(_env("TREND_EMA_PERIOD", "50")))
+    trend_candle_limit: int = field(default_factory=lambda: int(_env("TREND_CANDLE_LIMIT", "150")))
+
     # --- risk management ---
     risk_pct_per_trade: float = field(
         default_factory=lambda: float(_env("RISK_PCT_PER_TRADE", "0.5")) / 100
