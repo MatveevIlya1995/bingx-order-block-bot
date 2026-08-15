@@ -49,6 +49,7 @@ class RiskManager:
         data.setdefault("realized_pnl_today", 0.0)
         data.setdefault("open_trades", [])
         data.setdefault("dry_run_signaled", {})
+        data.setdefault("traded_zones", {})
         data.setdefault("last_seen_equity", None)
         return data
 
@@ -116,37 +117,46 @@ class RiskManager:
         for actual fills and realized P&L."""
         self._write_journal_row({**row, "event": "ENTRY"})
 
-    def already_signaled(self, symbol: str, trigger: str) -> bool:
-        """True if this exact (symbol, order-block zone/timestamps)
-        combination was already logged as a DRY_RUN signal recently. In
-        DRY_RUN there's no open position to make the bot naturally skip
-        re-scanning a symbol, so without this an unmitigated order block
-        would get logged again every single cycle it's still retestable."""
-        key = f"{symbol}|{trigger}"
-        return key in self.state.get("dry_run_signaled", {})
+    def _zone_key(self, symbol: str, ob: dict) -> str:
+        """Stable identity for an order-block zone -- deliberately
+        excludes the formed/BOS candle timestamps, which can shift across
+        cycles as new candles arrive and the swing/BOS labelling gets
+        re-evaluated. Keying on the full trigger string (as before) let
+        the same physical zone get "rediscovered" under a new label and
+        traded again; price bounds are rounded to avoid float-formatting
+        drift between cycles."""
+        return f"{symbol}|{ob['type']}|{round(ob['bottom'], 6)}-{round(ob['top'], 6)}"
 
-    def remember_signal(self, symbol: str, trigger: str):
-        self._prune_old_signals()
-        key = f"{symbol}|{trigger}"
-        self.state.setdefault("dry_run_signaled", {})[key] = (
+    def zone_already_traded(self, symbol: str, ob: dict) -> bool:
+        """True if a trade (DRY_RUN or LIVE) was already taken in this
+        order-block zone, so the bot only ever takes one trade per zone
+        no matter how many times it gets retested or re-detected under a
+        different formed/BOS labelling across cycles."""
+        key = self._zone_key(symbol, ob)
+        return key in self.state.get("traded_zones", {})
+
+    def remember_zone_trade(self, symbol: str, ob: dict):
+        self._prune_old_zone_trades()
+        key = self._zone_key(symbol, ob)
+        self.state.setdefault("traded_zones", {})[key] = (
             datetime.datetime.now(datetime.timezone.utc).isoformat()
         )
         self._save_state()
 
-    def _prune_old_signals(self):
+    def _prune_old_zone_trades(self):
         cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
             days=DRY_RUN_SIGNAL_MEMORY_DAYS
         )
-        signaled = self.state.get("dry_run_signaled", {})
+        traded = self.state.get("traded_zones", {})
         pruned = {}
-        for key, seen_iso in signaled.items():
+        for key, seen_iso in traded.items():
             try:
                 seen = datetime.datetime.fromisoformat(seen_iso)
             except (TypeError, ValueError):
                 continue
             if seen > cutoff:
                 pruned[key] = seen_iso
-        self.state["dry_run_signaled"] = pruned
+        self.state["traded_zones"] = pruned
 
     def track_open_trade(self, trade: dict):
         """Remembers a just-submitted LIVE entry so a later cycle can
