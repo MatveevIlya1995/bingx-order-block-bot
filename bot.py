@@ -7,21 +7,27 @@ Each run:
 1. reads account equity and open positions (across all watched symbols)
 2. reconciles any previously tracked LIVE trades that have since closed
    on the exchange, logging an EXIT row and updating today's realized P/L
-3. checks the daily-loss circuit breaker (account-wide)
-4. scans cfg.symbols in order; for each one not already holding a
+3. checks each watched symbol's open DRY_RUN paper trades against its
+   freshly-fetched candle; if the candle's high/low crossed a paper
+   trade's stop-loss or take-profit, closes it there and logs a
+   simulated EXIT row with realized P/L -- this is the only way a
+   DRY_RUN trade's outcome ever gets recorded
+4. checks the daily-loss circuit breaker (account-wide)
+5. scans cfg.symbols in order; for each one not already holding a
    position, looks for a fresh order-block retest signal
-5. if a signal fires, checks the higher-timeframe (default 4h) trend and
+6. if a signal fires, checks the higher-timeframe (default 4h) trend and
    skips the trade if it clearly goes against that trend (a LONG signal
    while the 4h trend is bearish, or vice versa); an unclear/neutral 4h
    trend does not block the trade
-6. sizes each position by fixed fractional risk
-7. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
+7. sizes each position by fixed fractional risk
+8. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
    this order-block zone before -- the bot only ever takes one trade per
    zone, regardless of how many times it gets retested or re-detected
    under a different formed/BOS labelling across cycles
-8. if DRY_RUN=true (the default), logs what it WOULD do and moves on
-9. if DRY_RUN=false, sets leverage and submits entry + stop-loss + take-profit
-10. stops scanning once max_concurrent_positions is reached for the cycle
+9. if DRY_RUN=true (the default), logs what it WOULD do and starts
+   tracking it so step 3 can resolve it on a future cycle
+10. if DRY_RUN=false, sets leverage and submits entry + stop-loss + take-profit
+11. stops scanning once max_concurrent_positions is reached for the cycle
 """
 import datetime
 import sys
@@ -88,6 +94,12 @@ def run_once():
             continue
 
         df = ohlcv_to_df(raw)
+
+        closed_dry_run = risk.reconcile_dry_run_exits(
+            symbol, high=float(df.iloc[-1]["high"]), low=float(df.iloc[-1]["low"])
+        )
+        if closed_dry_run:
+            print(f"[bot] {symbol}: closed {len(closed_dry_run)} DRY_RUN paper trade(s), logged EXIT row(s).")
         obs = detect_order_blocks(df, n=cfg.fractal_n)
         signal = generate_signal(df, obs, reward_risk_ratio=cfg.reward_risk_ratio)
 
@@ -156,6 +168,19 @@ def run_once():
         if cfg.dry_run:
             risk.log_trade(journal_row)
             risk.remember_zone_trade(symbol, ob)
+            risk.track_dry_run_trade({
+                "trade_id": trade_id,
+                "entry_time_utc": now_iso,
+                "mode": "DRY_RUN",
+                "symbol": symbol,
+                "side": signal["side"].upper(),
+                "position_side": signal["position_side"],
+                "qty": round(qty, 6),
+                "entry_price": round(signal["entry"], 4),
+                "stop_loss": round(signal["stop_loss"], 4),
+                "take_profit": round(signal["take_profit"], 4),
+                "trigger": trigger,
+            })
             print(f"[bot] {symbol}: DRY_RUN is on -- no order sent (logged to trade journal).")
             continue
 
