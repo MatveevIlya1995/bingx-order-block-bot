@@ -552,19 +552,6 @@
       "trigger": "bullish order block retest: zone 1.4620-1.4700 (formed 2026-08-15 15:00 UTC, break of structure confirmed 2026-08-15 15:45 UTC)"
     },
     {
-      "trade_id": "3a0f161cfb2b",
-      "entry_time_utc": "2026-08-16T02:09:44.743051+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 5.744358,
-      "entry_price": 606.35,
-      "stop_loss": 605.434,
-      "take_profit": 608.1821,
-      "trigger": "bullish order block retest: zone 606.0400-606.6400 (formed 2026-08-14 16:15 UTC, break of structure confirmed 2026-08-14 16:45 UTC)"
-    },
-    {
       "trade_id": "86e50a969da8",
       "entry_time_utc": "2026-08-16T07:06:22.606147+00:00",
       "mode": "DRY_RUN",
@@ -615,6 +602,19 @@
       "stop_loss": 44.6146,
       "take_profit": 44.3309,
       "trigger": "bearish order block retest: zone 44.5000-44.5700 (formed 2026-08-16 16:45 UTC, break of structure confirmed 2026-08-16 17:15 UTC)"
+    },
+    {
+      "trade_id": "b5506f44c6de",
+      "entry_time_utc": "2026-08-16T18:45:15.057643+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "LINK/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 144.705258,
+      "entry_price": 9.391,
+      "stop_loss": 9.3546,
+      "take_profit": 9.4637,
+      "trigger": "bullish order block retest: zone 9.3640-9.3930 (formed 2026-08-16 16:45 UTC, break of structure confirmed 2026-08-16 17:00 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -826,6 +826,7 @@
     "ETH/USDT:USDT|bearish|1884.71-1888.42": "2026-08-16T16:14:51.570860+00:00",
     "BTC/USDT:USDT|bearish|63321.9-63377.3": "2026-08-16T16:42:34.316949+00:00",
     "ADA/USDT:USDT|bearish|0.1767-0.1773": "2026-08-16T16:59:40.777330+00:00",
-    "LTC/USDT:USDT|bearish|44.5-44.57": "2026-08-16T17:41:02.286668+00:00"
+    "LTC/USDT:USDT|bearish|44.5-44.57": "2026-08-16T17:41:02.286668+00:00",
+    "LINK/USDT:USDT|bullish|9.364-9.393": "2026-08-16T18:45:15.057835+00:00"
   }
 }
