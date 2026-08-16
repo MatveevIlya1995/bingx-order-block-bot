@@ -19,19 +19,6 @@
       "trigger": "bullish order block retest: zone 1.4140-1.4240 (formed 2026-08-11 16:15 UTC, break of structure confirmed 2026-08-11 17:00 UTC)"
     },
     {
-      "trade_id": "93e4c5587057",
-      "entry_time_utc": "2026-08-13T19:41:53.428695+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 243.107508,
-      "entry_price": 1.625,
-      "stop_loss": 1.6466,
-      "take_profit": 1.5817,
-      "trigger": "bearish order block retest: zone 1.6350-1.6450 (formed 2026-08-12 20:15 UTC, break of structure confirmed 2026-08-12 20:45 UTC)"
-    },
-    {
       "trade_id": "8035c4c918d9",
       "entry_time_utc": "2026-08-14T19:10:39.469590+00:00",
       "mode": "DRY_RUN",
