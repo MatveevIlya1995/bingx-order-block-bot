@@ -877,19 +877,6 @@
       "trigger": "bearish order block retest: zone 0.3326-0.3327 (formed 2026-08-14 23:00 UTC, break of structure confirmed 2026-08-15 00:15 UTC)"
     },
     {
-      "trade_id": "c64a9b13f9c3",
-      "entry_time_utc": "2026-08-15T06:31:44.139299+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ATOM/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 390.447577,
-      "entry_price": 1.489,
-      "stop_loss": 1.4755,
-      "take_profit": 1.516,
-      "trigger": "bullish order block retest: zone 1.4770-1.4880 (formed 2026-08-14 21:30 UTC, break of structure confirmed 2026-08-14 22:00 UTC)"
-    },
-    {
       "trade_id": "11edcf49888a",
       "entry_time_utc": "2026-08-15T08:52:44.860348+00:00",
       "mode": "DRY_RUN",
