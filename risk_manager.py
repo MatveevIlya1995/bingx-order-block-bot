@@ -48,6 +48,7 @@ class RiskManager:
         data.setdefault("day_start_equity", None)
         data.setdefault("realized_pnl_today", 0.0)
         data.setdefault("open_trades", [])
+        data.setdefault("open_dry_run_trades", [])
         data.setdefault("dry_run_signaled", {})
         data.setdefault("traded_zones", {})
         data.setdefault("last_seen_equity", None)
@@ -252,6 +253,85 @@ class RiskManager:
                 "duration_minutes": duration_minutes,
             })
 
+        return closed
+
+    def track_dry_run_trade(self, trade: dict):
+        """Remembers a just-logged DRY_RUN paper trade so a later cycle can
+        check it against fresh candles and log a simulated exit once its
+        stop-loss or take-profit is touched. `trade` must include the
+        same fields as track_open_trade(): trade_id, symbol,
+        position_side, side, qty, entry_price, stop_loss, take_profit,
+        trigger, entry_time_utc."""
+        self.state.setdefault("open_dry_run_trades", []).append(trade)
+        self._save_state()
+
+    def reconcile_dry_run_exits(self, symbol: str, high: float, low: float) -> list:
+        """Checks every open DRY_RUN paper trade on `symbol` against the
+        high/low of the most recently fetched candle. If the candle's
+        range crosses the trade's stop-loss or take-profit, closes it at
+        that level, computes realized P/L, and logs a simulated EXIT row
+        the same way reconcile_closed_trades() does for real LIVE fills.
+
+        Must be called every cycle for every symbol right after fetching
+        its candle -- this is the only mechanism that ever resolves a
+        DRY_RUN paper trade; without it, DRY_RUN entries stay open
+        forever and no real win rate can ever be measured.
+
+        If a single candle's range covers BOTH the stop-loss and the
+        take-profit (an unusually volatile bar), the stop-loss is assumed
+        to have been hit first -- the standard conservative assumption
+        when the exact intra-candle tick order isn't known, so this never
+        overstates paper performance.
+        """
+        open_trades = self.state.get("open_dry_run_trades", [])
+        if not open_trades:
+            return []
+
+        remaining = []
+        closed = []
+        for trade in open_trades:
+            if trade["symbol"] != symbol:
+                remaining.append(trade)
+                continue
+
+            is_long = trade["position_side"].upper() == "LONG"
+            sl = trade["stop_loss"]
+            tp = trade["take_profit"]
+            hit_sl = (low <= sl) if is_long else (high >= sl)
+            hit_tp = (high >= tp) if is_long else (low <= tp)
+
+            if not (hit_sl or hit_tp):
+                remaining.append(trade)
+                continue
+
+            exit_price = sl if hit_sl else tp
+            direction = 1 if is_long else -1
+            pnl = (exit_price - trade["entry_price"]) * direction * trade["qty"]
+            exit_time = datetime.datetime.now(datetime.timezone.utc)
+            entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+            duration_minutes = round((exit_time - entry_time).total_seconds() / 60, 1)
+
+            self._write_journal_row({
+                "event": "EXIT",
+                "trade_id": trade["trade_id"],
+                "timestamp_utc": exit_time.isoformat(),
+                "mode": "DRY_RUN",
+                "symbol": trade["symbol"],
+                "side": trade["side"],
+                "position_side": trade["position_side"],
+                "qty": trade["qty"],
+                "price": round(exit_price, 6),
+                "stop_loss": sl,
+                "take_profit": tp,
+                "trigger": "stop_loss hit" if hit_sl else "take_profit hit",
+                "pnl": round(pnl, 4),
+                "duration_minutes": duration_minutes,
+            })
+            closed.append(trade)
+
+        if closed:
+            self.state["open_dry_run_trades"] = remaining
+            self._save_state()
         return closed
 
     def position_size(self, equity: float, entry: float, stop_loss: float) -> float:
