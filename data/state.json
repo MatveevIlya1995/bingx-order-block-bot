@@ -1070,6 +1070,19 @@
       "stop_loss": 0.5359,
       "take_profit": 0.5331,
       "trigger": "bearish order block retest: zone 0.5339-0.5354 (formed 2026-08-16 12:45 UTC, break of structure confirmed 2026-08-16 13:45 UTC)"
+    },
+    {
+      "trade_id": "d10de166c1b2",
+      "entry_time_utc": "2026-08-16T15:57:06.890968+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "DOT/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 2673.540291,
+      "entry_price": 0.767,
+      "stop_loss": 0.769,
+      "take_profit": 0.7631,
+      "trigger": "bearish order block retest: zone 0.7673-0.7682 (formed 2026-08-15 22:15 UTC, break of structure confirmed 2026-08-15 23:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -1276,6 +1289,7 @@
     "DOT/USDT:USDT|bearish|0.7631-0.7642": "2026-08-16T13:00:22.633499+00:00",
     "AVAX/USDT:USDT|bearish|6.428-6.441": "2026-08-16T15:42:26.036111+00:00",
     "LTC/USDT:USDT|bearish|44.71-44.77": "2026-08-16T15:42:27.006138+00:00",
-    "APT/USDT:USDT|bearish|0.5339-0.5354": "2026-08-16T15:42:30.625988+00:00"
+    "APT/USDT:USDT|bearish|0.5339-0.5354": "2026-08-16T15:42:30.625988+00:00",
+    "DOT/USDT:USDT|bearish|0.7673-0.7682": "2026-08-16T15:57:06.891190+00:00"
   }
 }
