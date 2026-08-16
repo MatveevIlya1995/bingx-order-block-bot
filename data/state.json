@@ -32,19 +32,6 @@
       "trigger": "bullish order block retest: zone 0.9962-1.0065 (formed 2026-08-11 15:30 UTC, break of structure confirmed 2026-08-11 16:45 UTC)"
     },
     {
-      "trade_id": "4926c9b7887f",
-      "entry_time_utc": "2026-08-13T00:42:43.599967+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 13062.459003,
-      "entry_price": 0.0698,
-      "stop_loss": 0.0701,
-      "take_profit": 0.0693,
-      "trigger": "bearish order block retest: zone 0.0698-0.0700 (formed 2026-08-10 14:30 UTC, break of structure confirmed 2026-08-10 15:00 UTC)"
-    },
-    {
       "trade_id": "5d2de3eb7903",
       "entry_time_utc": "2026-08-13T00:42:44.210623+00:00",
       "mode": "DRY_RUN",
@@ -162,19 +149,6 @@
       "trigger": "bearish order block retest: zone 63500.0000-63613.4000 (formed 2026-08-11 17:45 UTC, break of structure confirmed 2026-08-11 18:30 UTC)"
     },
     {
-      "trade_id": "ce53cba5d438",
-      "entry_time_utc": "2026-08-13T11:26:14.016115+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ETH/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 0.401097,
-      "entry_price": 1876.09,
-      "stop_loss": 1884.2323,
-      "take_profit": 1859.8053,
-      "trigger": "bearish order block retest: zone 1878.7200-1882.3500 (formed 2026-08-11 22:45 UTC, break of structure confirmed 2026-08-11 23:00 UTC)"
-    },
-    {
       "trade_id": "f9e90799e4e4",
       "entry_time_utc": "2026-08-13T11:26:14.838717+00:00",
       "mode": "DRY_RUN",
@@ -279,19 +253,6 @@
       "trigger": "bullish order block retest: zone 0.9962-1.0065 (formed 2026-08-11 15:30 UTC, break of structure confirmed 2026-08-11 16:45 UTC)"
     },
     {
-      "trade_id": "6d52a6324089",
-      "entry_time_utc": "2026-08-13T15:37:31.266926+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 21769.604053,
-      "entry_price": 0.0699,
-      "stop_loss": 0.0701,
-      "take_profit": 0.0696,
-      "trigger": "bearish order block retest: zone 0.0698-0.0700 (formed 2026-08-10 14:30 UTC, break of structure confirmed 2026-08-10 15:00 UTC)"
-    },
-    {
       "trade_id": "db0dda15a0f7",
       "entry_time_utc": "2026-08-13T16:32:16.294436+00:00",
       "mode": "DRY_RUN",
@@ -394,19 +355,6 @@
       "stop_loss": 0.9952,
       "take_profit": 1.0249,
       "trigger": "bullish order block retest: zone 0.9962-1.0065 (formed 2026-08-11 15:30 UTC, break of structure confirmed 2026-08-11 16:45 UTC)"
-    },
-    {
-      "trade_id": "c04d923a1ebc",
-      "entry_time_utc": "2026-08-13T18:34:23.780307+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 35143.671943,
-      "entry_price": 0.0698,
-      "stop_loss": 0.0697,
-      "take_profit": 0.0701,
-      "trigger": "bullish order block retest: zone 0.0697-0.0700 (formed 2026-08-13 01:15 UTC, break of structure confirmed 2026-08-13 02:45 UTC)"
     },
     {
       "trade_id": "93be4e34e93b",
@@ -539,32 +487,6 @@
       "trigger": "bullish order block retest: zone 75.0170-75.2990 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 19:30 UTC)"
     },
     {
-      "trade_id": "37d5245b7453",
-      "entry_time_utc": "2026-08-14T16:13:53.464053+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 0.037943,
-      "entry_price": 63009.2,
-      "stop_loss": 63147.8848,
-      "take_profit": 62731.8304,
-      "trigger": "bearish order block retest: zone 63042.4000-63084.8000 (formed 2026-08-14 07:15 UTC, break of structure confirmed 2026-08-14 07:45 UTC)"
-    },
-    {
-      "trade_id": "9c70b52c295e",
-      "entry_time_utc": "2026-08-14T16:13:54.176027+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ETH/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 1.181862,
-      "entry_price": 1879.78,
-      "stop_loss": 1884.2323,
-      "take_profit": 1870.8753,
-      "trigger": "bearish order block retest: zone 1878.7200-1882.3500 (formed 2026-08-11 22:45 UTC, break of structure confirmed 2026-08-11 23:00 UTC)"
-    },
-    {
       "trade_id": "54d58305f518",
       "entry_time_utc": "2026-08-14T17:10:57.255292+00:00",
       "mode": "DRY_RUN",
@@ -654,19 +576,6 @@
       "stop_loss": 605.7736,
       "take_profit": 609.0628,
       "trigger": "bullish order block retest: zone 606.3800-606.9200 (formed 2026-08-14 22:30 UTC, break of structure confirmed 2026-08-14 23:15 UTC)"
-    },
-    {
-      "trade_id": "1b331d01ada2",
-      "entry_time_utc": "2026-08-14T23:57:21.373909+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 0.05411,
-      "entry_price": 63012.8,
-      "stop_loss": 63110.047,
-      "take_profit": 62818.306,
-      "trigger": "bearish order block retest: zone 62976.1000-63047.0000 (formed 2026-08-14 18:15 UTC, break of structure confirmed 2026-08-14 18:45 UTC)"
     },
     {
       "trade_id": "34963f1357a9",
@@ -799,19 +708,6 @@
       "trigger": "bearish order block retest: zone 610.8900-613.8300 (formed 2026-08-12 14:00 UTC, break of structure confirmed 2026-08-12 14:45 UTC)"
     },
     {
-      "trade_id": "a16adf5364db",
-      "entry_time_utc": "2026-08-15T13:27:29.772921+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 0.040051,
-      "entry_price": 63016.5,
-      "stop_loss": 63147.8848,
-      "take_profit": 62753.7304,
-      "trigger": "bearish order block retest: zone 63042.4000-63084.8000 (formed 2026-08-14 07:15 UTC, break of structure confirmed 2026-08-14 07:45 UTC)"
-    },
-    {
       "trade_id": "55c49b0c6d2c",
       "entry_time_utc": "2026-08-15T13:27:30.216183+00:00",
       "mode": "DRY_RUN",
@@ -836,19 +732,6 @@
       "stop_loss": 1.0039,
       "take_profit": 0.9961,
       "trigger": "bearish order block retest: zone 1.0010-1.0029 (formed 2026-08-14 11:30 UTC, break of structure confirmed 2026-08-14 12:30 UTC)"
-    },
-    {
-      "trade_id": "77645fccde49",
-      "entry_time_utc": "2026-08-15T13:50:11.879762+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 0.054729,
-      "entry_price": 63013.9,
-      "stop_loss": 63110.047,
-      "take_profit": 62821.606,
-      "trigger": "bearish order block retest: zone 62976.1000-63047.0000 (formed 2026-08-14 18:15 UTC, break of structure confirmed 2026-08-14 18:45 UTC)"
     },
     {
       "trade_id": "ec0054e2f318",
@@ -968,19 +851,6 @@
       "trigger": "bearish order block retest: zone 1.0057-1.0072 (formed 2026-08-12 22:15 UTC, break of structure confirmed 2026-08-12 23:00 UTC)"
     },
     {
-      "trade_id": "af7b1ba40f2a",
-      "entry_time_utc": "2026-08-15T22:56:01.036734+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "AVAX/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 140.602859,
-      "entry_price": 6.394,
-      "stop_loss": 6.4314,
-      "take_profit": 6.3192,
-      "trigger": "bearish order block retest: zone 6.4150-6.4250 (formed 2026-08-14 05:45 UTC, break of structure confirmed 2026-08-14 06:15 UTC)"
-    },
-    {
       "trade_id": "320b527fe4c5",
       "entry_time_utc": "2026-08-15T23:32:36.913988+00:00",
       "mode": "DRY_RUN",
@@ -1059,19 +929,6 @@
       "trigger": "bearish order block retest: zone 44.7100-44.7700 (formed 2026-08-13 17:45 UTC, break of structure confirmed 2026-08-13 18:15 UTC)"
     },
     {
-      "trade_id": "6a3a8f52b53a",
-      "entry_time_utc": "2026-08-16T15:42:30.625789+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 5625.46718,
-      "entry_price": 0.535,
-      "stop_loss": 0.5359,
-      "take_profit": 0.5331,
-      "trigger": "bearish order block retest: zone 0.5339-0.5354 (formed 2026-08-16 12:45 UTC, break of structure confirmed 2026-08-16 13:45 UTC)"
-    },
-    {
       "trade_id": "d10de166c1b2",
       "entry_time_utc": "2026-08-16T15:57:06.890968+00:00",
       "mode": "DRY_RUN",
@@ -1083,6 +940,19 @@
       "stop_loss": 0.769,
       "take_profit": 0.7631,
       "trigger": "bearish order block retest: zone 0.7673-0.7682 (formed 2026-08-15 22:15 UTC, break of structure confirmed 2026-08-15 23:15 UTC)"
+    },
+    {
+      "trade_id": "1db5990154de",
+      "entry_time_utc": "2026-08-16T16:14:51.570676+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ETH/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 0.934909,
+      "entry_price": 1884.68,
+      "stop_loss": 1890.3084,
+      "take_profit": 1873.4232,
+      "trigger": "bearish order block retest: zone 1884.7100-1888.4200 (formed 2026-08-14 03:15 UTC, break of structure confirmed 2026-08-14 03:45 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -1290,6 +1160,7 @@
     "AVAX/USDT:USDT|bearish|6.428-6.441": "2026-08-16T15:42:26.036111+00:00",
     "LTC/USDT:USDT|bearish|44.71-44.77": "2026-08-16T15:42:27.006138+00:00",
     "APT/USDT:USDT|bearish|0.5339-0.5354": "2026-08-16T15:42:30.625988+00:00",
-    "DOT/USDT:USDT|bearish|0.7673-0.7682": "2026-08-16T15:57:06.891190+00:00"
+    "DOT/USDT:USDT|bearish|0.7673-0.7682": "2026-08-16T15:57:06.891190+00:00",
+    "ETH/USDT:USDT|bearish|1884.71-1888.42": "2026-08-16T16:14:51.570860+00:00"
   }
 }
