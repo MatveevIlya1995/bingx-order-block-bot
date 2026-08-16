@@ -578,19 +578,6 @@
       "trigger": "bullish order block retest: zone 75.0170-75.2990 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 19:30 UTC)"
     },
     {
-      "trade_id": "6efee8a31c47",
-      "entry_time_utc": "2026-08-14T15:27:48.257223+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ATOM/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 269.379646,
-      "entry_price": 1.516,
-      "stop_loss": 1.5355,
-      "take_profit": 1.4769,
-      "trigger": "bearish order block retest: zone 1.5210-1.5340 (formed 2026-08-14 14:15 UTC, break of structure confirmed 2026-08-14 14:45 UTC)"
-    },
-    {
       "trade_id": "37d5245b7453",
       "entry_time_utc": "2026-08-14T16:13:53.464053+00:00",
       "mode": "DRY_RUN",
@@ -732,19 +719,6 @@
       "stop_loss": 1.6064,
       "take_profit": 1.6442,
       "trigger": "bullish order block retest: zone 1.6080-1.6120 (formed 2026-08-14 04:45 UTC, break of structure confirmed 2026-08-14 05:30 UTC)"
-    },
-    {
-      "trade_id": "cd2294946aab",
-      "entry_time_utc": "2026-08-14T20:51:54.669415+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 610.235649,
-      "entry_price": 1.63,
-      "stop_loss": 1.6214,
-      "take_profit": 1.6472,
-      "trigger": "bullish order block retest: zone 1.6230-1.6270 (formed 2026-08-13 21:30 UTC, break of structure confirmed 2026-08-13 22:15 UTC)"
     },
     {
       "trade_id": "6a4cc9613e85",
@@ -1109,19 +1083,6 @@
       "stop_loss": 611.8713,
       "take_profit": 605.7475,
       "trigger": "bearish order block retest: zone 609.6200-611.2600 (formed 2026-08-13 14:30 UTC, break of structure confirmed 2026-08-13 15:00 UTC)"
-    },
-    {
-      "trade_id": "c1020c9fe6eb",
-      "entry_time_utc": "2026-08-15T14:10:48.080541+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "LTC/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 62.576549,
-      "entry_price": 44.13,
-      "stop_loss": 44.0459,
-      "take_profit": 44.2982,
-      "trigger": "bullish order block retest: zone 44.0900-44.1300 (formed 2026-08-15 13:15 UTC, break of structure confirmed 2026-08-15 13:45 UTC)"
     },
     {
       "trade_id": "1575678db870",
