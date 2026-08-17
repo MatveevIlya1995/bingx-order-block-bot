@@ -69,19 +69,6 @@
       "stop_loss": 0.3318,
       "take_profit": 0.3333,
       "trigger": "bullish order block retest: zone 0.3321-0.3323 (formed 2026-08-17 05:30 UTC, break of structure confirmed 2026-08-17 06:00 UTC)"
-    },
-    {
-      "trade_id": "6c5e3746cafa",
-      "entry_time_utc": "2026-08-17T11:57:15.322591+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 3699.164851,
-      "entry_price": 0.5216,
-      "stop_loss": 0.523,
-      "take_profit": 0.5188,
-      "trigger": "bearish order block retest: zone 0.5211-0.5225 (formed 2026-08-17 07:45 UTC, break of structure confirmed 2026-08-17 08:00 UTC)"
     }
   ],
   "dry_run_signaled": {
