@@ -32,19 +32,6 @@
       "trigger": "bearish order block retest: zone 1.0047-1.0075 (formed 2026-08-13 15:30 UTC, break of structure confirmed 2026-08-13 15:45 UTC)"
     },
     {
-      "trade_id": "6d1ce5bfd1b7",
-      "entry_time_utc": "2026-08-17T09:54:43.717374+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 52526.073068,
-      "entry_price": 0.0702,
-      "stop_loss": 0.0701,
-      "take_profit": 0.0704,
-      "trigger": "bullish order block retest: zone 0.0702-0.0704 (formed 2026-08-17 06:15 UTC, break of structure confirmed 2026-08-17 06:30 UTC)"
-    },
-    {
       "trade_id": "fc93c38978db",
       "entry_time_utc": "2026-08-17T10:53:58.554765+00:00",
       "mode": "DRY_RUN",
