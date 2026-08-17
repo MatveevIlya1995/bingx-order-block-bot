@@ -56,6 +56,19 @@
       "stop_loss": 44.3443,
       "take_profit": 44.1814,
       "trigger": "bearish order block retest: zone 44.2800-44.3000 (formed 2026-08-16 12:45 UTC, break of structure confirmed 2026-08-16 13:30 UTC)"
+    },
+    {
+      "trade_id": "df8583faac5d",
+      "entry_time_utc": "2026-08-17T05:56:15.396427+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "AVAX/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 235.207492,
+      "entry_price": 6.356,
+      "stop_loss": 6.3784,
+      "take_profit": 6.3113,
+      "trigger": "bearish order block retest: zone 6.3600-6.3720 (formed 2026-08-16 17:15 UTC, break of structure confirmed 2026-08-16 17:45 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -277,6 +290,7 @@
     "LTC/USDT:USDT|bearish|44.22-44.26": "2026-08-17T02:08:03.738273+00:00",
     "BTC/USDT:USDT|bearish|63388.7-63471.7": "2026-08-17T03:10:33.164321+00:00",
     "DOT/USDT:USDT|bearish|0.7645-0.7665": "2026-08-17T03:10:37.091251+00:00",
-    "LTC/USDT:USDT|bearish|44.28-44.3": "2026-08-17T05:19:55.863461+00:00"
+    "LTC/USDT:USDT|bearish|44.28-44.3": "2026-08-17T05:19:55.863461+00:00",
+    "AVAX/USDT:USDT|bearish|6.36-6.372": "2026-08-17T05:56:15.396626+00:00"
   }
 }
