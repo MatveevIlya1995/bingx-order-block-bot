@@ -6,19 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "e370a9305739",
-      "entry_time_utc": "2026-08-13T11:26:17.373294+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ATOM/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 80.810511,
-      "entry_price": 1.453,
-      "stop_loss": 1.4126,
-      "take_profit": 1.5338,
-      "trigger": "bullish order block retest: zone 1.4140-1.4240 (formed 2026-08-11 16:15 UTC, break of structure confirmed 2026-08-11 17:00 UTC)"
-    },
-    {
       "trade_id": "2f3a45a3b7b7",
       "entry_time_utc": "2026-08-15T05:41:11.254737+00:00",
       "mode": "DRY_RUN",
