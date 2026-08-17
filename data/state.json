@@ -45,19 +45,6 @@
       "trigger": "bullish order block retest: zone 9.2720-9.3240 (formed 2026-08-15 11:30 UTC, break of structure confirmed 2026-08-15 12:15 UTC)"
     },
     {
-      "trade_id": "b42f80716729",
-      "entry_time_utc": "2026-08-16T21:53:54.722437+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ETH/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 1.36759,
-      "entry_price": 1875.72,
-      "stop_loss": 1879.5677,
-      "take_profit": 1868.0246,
-      "trigger": "bearish order block retest: zone 1874.1600-1877.6900 (formed 2026-08-14 12:15 UTC, break of structure confirmed 2026-08-14 12:45 UTC)"
-    },
-    {
       "trade_id": "957dde294381",
       "entry_time_utc": "2026-08-16T21:53:55.843635+00:00",
       "mode": "DRY_RUN",
@@ -82,6 +69,19 @@
       "stop_loss": 9.3347,
       "take_profit": 9.5157,
       "trigger": "bullish order block retest: zone 9.3440-9.3570 (formed 2026-08-16 15:00 UTC, break of structure confirmed 2026-08-16 15:15 UTC)"
+    },
+    {
+      "trade_id": "24f1cd6841f5",
+      "entry_time_utc": "2026-08-17T02:08:03.738079+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "LTC/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 81.887053,
+      "entry_price": 44.24,
+      "stop_loss": 44.3043,
+      "take_profit": 44.1115,
+      "trigger": "bearish order block retest: zone 44.2200-44.2600 (formed 2026-08-16 05:00 UTC, break of structure confirmed 2026-08-16 05:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -299,6 +299,7 @@
     "ETH/USDT:USDT|bearish|1874.16-1877.69": "2026-08-16T21:53:54.722635+00:00",
     "XRP/USDT:USDT|bearish|0.9953-0.9982": "2026-08-16T21:53:55.843846+00:00",
     "LINK/USDT:USDT|bullish|9.344-9.357": "2026-08-16T21:53:57.868996+00:00",
-    "BTC/USDT:USDT|bearish|62771.9-62865.5": "2026-08-16T22:34:31.819868+00:00"
+    "BTC/USDT:USDT|bearish|62771.9-62865.5": "2026-08-16T22:34:31.819868+00:00",
+    "LTC/USDT:USDT|bearish|44.22-44.26": "2026-08-17T02:08:03.738273+00:00"
   }
 }
