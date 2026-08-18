@@ -6,19 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "75dc6a19805c",
-      "entry_time_utc": "2026-08-18T19:37:26.740162+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "SOL/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 35.519913,
-      "entry_price": 77.215,
-      "stop_loss": 77.0669,
-      "take_profit": 77.5113,
-      "trigger": "bullish order block retest: zone 77.1440-77.2530 (formed 2026-08-18 19:00 UTC, break of structure confirmed 2026-08-18 19:15 UTC)"
-    },
-    {
       "trade_id": "496d54860440",
       "entry_time_utc": "2026-08-18T19:37:27.520617+00:00",
       "mode": "DRY_RUN",
@@ -30,6 +17,19 @@
       "stop_loss": 1.0032,
       "take_profit": 0.9993,
       "trigger": "bearish order block retest: zone 1.0012-1.0022 (formed 2026-08-16 09:15 UTC, break of structure confirmed 2026-08-16 09:30 UTC)"
+    },
+    {
+      "trade_id": "fe7e27160ada",
+      "entry_time_utc": "2026-08-18T19:55:02.936148+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "NEAR/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 691.103494,
+      "entry_price": 1.608,
+      "stop_loss": 1.6156,
+      "take_profit": 1.5928,
+      "trigger": "bearish order block retest: zone 1.6080-1.6140 (formed 2026-08-16 20:00 UTC, break of structure confirmed 2026-08-16 20:45 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -291,6 +291,7 @@
     "TRX/USDT:USDT|bearish|0.33159-0.33188": "2026-08-18T15:53:59.859438+00:00",
     "ATOM/USDT:USDT|bearish|1.404-1.409": "2026-08-18T16:54:45.909770+00:00",
     "SOL/USDT:USDT|bullish|77.144-77.253": "2026-08-18T19:37:26.740371+00:00",
-    "XRP/USDT:USDT|bearish|1.0012-1.0022": "2026-08-18T19:37:27.520838+00:00"
+    "XRP/USDT:USDT|bearish|1.0012-1.0022": "2026-08-18T19:37:27.520838+00:00",
+    "NEAR/USDT:USDT|bearish|1.608-1.614": "2026-08-18T19:55:02.936370+00:00"
   }
 }
