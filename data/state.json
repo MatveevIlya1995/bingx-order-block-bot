@@ -30,6 +30,19 @@
       "stop_loss": 603.9233,
       "take_profit": 601.7834,
       "trigger": "bearish order block retest: zone 602.6200-603.3200 (formed 2026-08-18 08:30 UTC, break of structure confirmed 2026-08-18 09:15 UTC)"
+    },
+    {
+      "trade_id": "c0ef32200b9b",
+      "entry_time_utc": "2026-08-18T15:53:59.859237+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "TRX/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 11908.350683,
+      "entry_price": 0.3318,
+      "stop_loss": 0.3322,
+      "take_profit": 0.3309,
+      "trigger": "bearish order block retest: zone 0.3316-0.3319 (formed 2026-08-15 19:15 UTC, break of structure confirmed 2026-08-15 20:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -287,6 +300,7 @@
     "BTC/USDT:USDT|bullish|64169.4-64219.7": "2026-08-18T11:02:31.574120+00:00",
     "NEAR/USDT:USDT|bearish|1.622-1.624": "2026-08-18T11:37:12.854450+00:00",
     "DOGE/USDT:USDT|bullish|0.07005-0.07023": "2026-08-18T14:49:41.541610+00:00",
-    "BNB/USDT:USDT|bearish|602.62-603.32": "2026-08-18T15:19:34.300033+00:00"
+    "BNB/USDT:USDT|bearish|602.62-603.32": "2026-08-18T15:19:34.300033+00:00",
+    "TRX/USDT:USDT|bearish|0.33159-0.33188": "2026-08-18T15:53:59.859438+00:00"
   }
 }
