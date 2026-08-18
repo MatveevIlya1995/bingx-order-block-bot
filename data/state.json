@@ -30,19 +30,6 @@
       "stop_loss": 1892.1859,
       "take_profit": 1910.0182,
       "trigger": "bullish order block retest: zone 1894.0800-1896.2400 (formed 2026-08-18 05:45 UTC, break of structure confirmed 2026-08-18 06:15 UTC)"
-    },
-    {
-      "trade_id": "6a3d068e9256",
-      "entry_time_utc": "2026-08-18T11:02:31.573929+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.050129,
-      "entry_price": 64210.2,
-      "stop_loss": 64105.2306,
-      "take_profit": 64420.1388,
-      "trigger": "bullish order block retest: zone 64169.4000-64219.7000 (formed 2026-08-18 05:45 UTC, break of structure confirmed 2026-08-18 06:15 UTC)"
     }
   ],
   "dry_run_signaled": {
