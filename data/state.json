@@ -6,19 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "496d54860440",
-      "entry_time_utc": "2026-08-18T19:37:27.520617+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "XRP/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 4040.901551,
-      "entry_price": 1.0019,
-      "stop_loss": 1.0032,
-      "take_profit": 0.9993,
-      "trigger": "bearish order block retest: zone 1.0012-1.0022 (formed 2026-08-16 09:15 UTC, break of structure confirmed 2026-08-16 09:30 UTC)"
-    },
-    {
       "trade_id": "fe7e27160ada",
       "entry_time_utc": "2026-08-18T19:55:02.936148+00:00",
       "mode": "DRY_RUN",
