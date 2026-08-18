@@ -4,7 +4,21 @@
   "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
-  "open_dry_run_trades": [],
+  "open_dry_run_trades": [
+    {
+      "trade_id": "d25a1503bf18",
+      "entry_time_utc": "2026-08-18T22:59:22.984168+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "DOGE/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 58428.403287,
+      "entry_price": 0.07,
+      "stop_loss": 0.0701,
+      "take_profit": 0.0699,
+      "trigger": "bearish order block retest: zone 0.0699-0.0701 (formed 2026-08-15 21:15 UTC, break of structure confirmed 2026-08-15 22:45 UTC)"
+    }
+  ],
   "dry_run_signaled": {
     "BTC/USDT:USDT|bullish order block retest: zone 63204.2000-63362.4000 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 20:00 UTC)": "2026-08-13T19:41:47.282751+00:00",
     "ETH/USDT:USDT|bearish order block retest: zone 1886.0300-1890.7000 (formed 2026-08-12 18:30 UTC, break of structure confirmed 2026-08-12 19:00 UTC)": "2026-08-13T19:41:47.547834+00:00",
@@ -266,6 +280,7 @@
     "SOL/USDT:USDT|bullish|77.144-77.253": "2026-08-18T19:37:26.740371+00:00",
     "XRP/USDT:USDT|bearish|1.0012-1.0022": "2026-08-18T19:37:27.520838+00:00",
     "NEAR/USDT:USDT|bearish|1.608-1.614": "2026-08-18T19:55:02.936370+00:00",
-    "SOL/USDT:USDT|bullish|76.84-76.992": "2026-08-18T20:37:48.477129+00:00"
+    "SOL/USDT:USDT|bullish|76.84-76.992": "2026-08-18T20:37:48.477129+00:00",
+    "DOGE/USDT:USDT|bearish|0.06993-0.07006": "2026-08-18T22:59:22.984372+00:00"
   }
 }
