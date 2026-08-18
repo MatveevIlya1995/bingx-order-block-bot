@@ -4,7 +4,34 @@
   "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
-  "open_dry_run_trades": [],
+  "open_dry_run_trades": [
+    {
+      "trade_id": "75dc6a19805c",
+      "entry_time_utc": "2026-08-18T19:37:26.740162+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "SOL/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 35.519913,
+      "entry_price": 77.215,
+      "stop_loss": 77.0669,
+      "take_profit": 77.5113,
+      "trigger": "bullish order block retest: zone 77.1440-77.2530 (formed 2026-08-18 19:00 UTC, break of structure confirmed 2026-08-18 19:15 UTC)"
+    },
+    {
+      "trade_id": "496d54860440",
+      "entry_time_utc": "2026-08-18T19:37:27.520617+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "XRP/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 4040.901551,
+      "entry_price": 1.0019,
+      "stop_loss": 1.0032,
+      "take_profit": 0.9993,
+      "trigger": "bearish order block retest: zone 1.0012-1.0022 (formed 2026-08-16 09:15 UTC, break of structure confirmed 2026-08-16 09:30 UTC)"
+    }
+  ],
   "dry_run_signaled": {
     "BTC/USDT:USDT|bullish order block retest: zone 63204.2000-63362.4000 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 20:00 UTC)": "2026-08-13T19:41:47.282751+00:00",
     "ETH/USDT:USDT|bearish order block retest: zone 1886.0300-1890.7000 (formed 2026-08-12 18:30 UTC, break of structure confirmed 2026-08-12 19:00 UTC)": "2026-08-13T19:41:47.547834+00:00",
@@ -262,6 +289,8 @@
     "DOGE/USDT:USDT|bullish|0.07005-0.07023": "2026-08-18T14:49:41.541610+00:00",
     "BNB/USDT:USDT|bearish|602.62-603.32": "2026-08-18T15:19:34.300033+00:00",
     "TRX/USDT:USDT|bearish|0.33159-0.33188": "2026-08-18T15:53:59.859438+00:00",
-    "ATOM/USDT:USDT|bearish|1.404-1.409": "2026-08-18T16:54:45.909770+00:00"
+    "ATOM/USDT:USDT|bearish|1.404-1.409": "2026-08-18T16:54:45.909770+00:00",
+    "SOL/USDT:USDT|bullish|77.144-77.253": "2026-08-18T19:37:26.740371+00:00",
+    "XRP/USDT:USDT|bearish|1.0012-1.0022": "2026-08-18T19:37:27.520838+00:00"
   }
 }
