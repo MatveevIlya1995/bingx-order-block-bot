@@ -17,6 +17,19 @@
       "stop_loss": 0.3307,
       "take_profit": 0.3357,
       "trigger": "bullish order block retest: zone 0.3311-0.3326 (formed 2026-08-18 15:45 UTC, break of structure confirmed 2026-08-18 16:00 UTC)"
+    },
+    {
+      "trade_id": "8ebfbd0ada77",
+      "entry_time_utc": "2026-08-19T06:02:18.295692+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "DOT/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 2057.260927,
+      "entry_price": 0.756,
+      "stop_loss": 0.7586,
+      "take_profit": 0.7509,
+      "trigger": "bearish order block retest: zone 0.7571-0.7578 (formed 2026-08-16 04:45 UTC, break of structure confirmed 2026-08-16 05:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -287,6 +300,7 @@
     "TRX/USDT:USDT|bullish|0.33107-0.33259": "2026-08-19T02:15:14.732340+00:00",
     "DOGE/USDT:USDT|bearish|0.0699-0.07": "2026-08-19T03:11:40.902426+00:00",
     "NEAR/USDT:USDT|bearish|1.587-1.593": "2026-08-19T03:11:44.356628+00:00",
-    "ADA/USDT:USDT|bearish|0.1739-0.1747": "2026-08-19T04:28:20.333902+00:00"
+    "ADA/USDT:USDT|bearish|0.1739-0.1747": "2026-08-19T04:28:20.333902+00:00",
+    "DOT/USDT:USDT|bearish|0.7571-0.7578": "2026-08-19T06:02:18.295917+00:00"
   }
 }
