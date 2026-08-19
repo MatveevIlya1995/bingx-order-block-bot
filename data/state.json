@@ -45,19 +45,6 @@
       "trigger": "bearish order block retest: zone 0.1749-0.1755 (formed 2026-08-19 08:15 UTC, break of structure confirmed 2026-08-19 09:00 UTC)"
     },
     {
-      "trade_id": "3cbdbba6cd1a",
-      "entry_time_utc": "2026-08-19T12:37:17.399088+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.027719,
-      "entry_price": 64663.8,
-      "stop_loss": 64473.9615,
-      "take_profit": 65043.477,
-      "trigger": "bullish order block retest: zone 64538.5000-64588.2000 (formed 2026-08-18 22:00 UTC, break of structure confirmed 2026-08-18 23:00 UTC)"
-    },
-    {
       "trade_id": "2eacf6cc0533",
       "entry_time_utc": "2026-08-19T12:37:25.199702+00:00",
       "mode": "DRY_RUN",
@@ -71,17 +58,17 @@
       "trigger": "bullish order block retest: zone 1.6120-1.6250 (formed 2026-08-18 14:00 UTC, break of structure confirmed 2026-08-18 14:15 UTC)"
     },
     {
-      "trade_id": "35ca72b75309",
-      "entry_time_utc": "2026-08-19T13:29:26.798365+00:00",
+      "trade_id": "ee3cf8a593a0",
+      "entry_time_utc": "2026-08-19T14:06:19.004397+00:00",
       "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
+      "symbol": "LTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 4.896763,
-      "entry_price": 605.07,
-      "stop_loss": 603.9954,
-      "take_profit": 607.2192,
-      "trigger": "bullish order block retest: zone 604.6000-605.1800 (formed 2026-08-17 04:15 UTC, break of structure confirmed 2026-08-17 04:30 UTC)"
+      "qty": 30.094721,
+      "entry_price": 44.98,
+      "stop_loss": 44.8052,
+      "take_profit": 45.3297,
+      "trigger": "bullish order block retest: zone 44.8500-44.9300 (formed 2026-08-19 13:00 UTC, break of structure confirmed 2026-08-19 13:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -363,6 +350,7 @@
     "ADA/USDT:USDT|bearish|0.1749-0.1755": "2026-08-19T11:39:24.620032+00:00",
     "BTC/USDT:USDT|bullish|64538.5-64588.2": "2026-08-19T12:37:17.399318+00:00",
     "NEAR/USDT:USDT|bullish|1.612-1.625": "2026-08-19T12:37:25.199928+00:00",
-    "BNB/USDT:USDT|bullish|604.6-605.18": "2026-08-19T13:29:26.798605+00:00"
+    "BNB/USDT:USDT|bullish|604.6-605.18": "2026-08-19T13:29:26.798605+00:00",
+    "LTC/USDT:USDT|bullish|44.85-44.93": "2026-08-19T14:06:19.004605+00:00"
   }
 }
