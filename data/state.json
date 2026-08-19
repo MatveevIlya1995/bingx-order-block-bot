@@ -69,6 +69,19 @@
       "stop_loss": 1.6104,
       "take_profit": 1.6572,
       "trigger": "bullish order block retest: zone 1.6120-1.6250 (formed 2026-08-18 14:00 UTC, break of structure confirmed 2026-08-18 14:15 UTC)"
+    },
+    {
+      "trade_id": "35ca72b75309",
+      "entry_time_utc": "2026-08-19T13:29:26.798365+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "BNB/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 4.896763,
+      "entry_price": 605.07,
+      "stop_loss": 603.9954,
+      "take_profit": 607.2192,
+      "trigger": "bullish order block retest: zone 604.6000-605.1800 (formed 2026-08-17 04:15 UTC, break of structure confirmed 2026-08-17 04:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -349,6 +362,7 @@
     "DOGE/USDT:USDT|bullish|0.06996-0.07004": "2026-08-19T11:14:02.959580+00:00",
     "ADA/USDT:USDT|bearish|0.1749-0.1755": "2026-08-19T11:39:24.620032+00:00",
     "BTC/USDT:USDT|bullish|64538.5-64588.2": "2026-08-19T12:37:17.399318+00:00",
-    "NEAR/USDT:USDT|bullish|1.612-1.625": "2026-08-19T12:37:25.199928+00:00"
+    "NEAR/USDT:USDT|bullish|1.612-1.625": "2026-08-19T12:37:25.199928+00:00",
+    "BNB/USDT:USDT|bullish|604.6-605.18": "2026-08-19T13:29:26.798605+00:00"
   }
 }
