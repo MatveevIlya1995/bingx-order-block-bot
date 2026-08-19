@@ -56,6 +56,19 @@
       "stop_loss": 1.4356,
       "take_profit": 1.4669,
       "trigger": "bullish order block retest: zone 1.4370-1.4420 (formed 2026-08-17 10:45 UTC, break of structure confirmed 2026-08-17 11:15 UTC)"
+    },
+    {
+      "trade_id": "1346aefd20d9",
+      "entry_time_utc": "2026-08-19T19:24:03.546584+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "NEAR/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 166.142397,
+      "entry_price": 1.702,
+      "stop_loss": 1.6703,
+      "take_profit": 1.7653,
+      "trigger": "bullish order block retest: zone 1.6720-1.6910 (formed 2026-08-19 17:15 UTC, break of structure confirmed 2026-08-19 17:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -342,6 +355,7 @@
     "TRX/USDT:USDT|bearish|0.3319-0.332": "2026-08-19T14:50:03.354742+00:00",
     "TRX/USDT:USDT|bearish|0.33144-0.33172": "2026-08-19T18:16:05.385129+00:00",
     "BNB/USDT:USDT|bullish|616.4-617.49": "2026-08-19T18:59:35.969173+00:00",
-    "ATOM/USDT:USDT|bullish|1.437-1.442": "2026-08-19T18:59:39.522569+00:00"
+    "ATOM/USDT:USDT|bullish|1.437-1.442": "2026-08-19T18:59:39.522569+00:00",
+    "NEAR/USDT:USDT|bullish|1.672-1.691": "2026-08-19T19:24:03.546780+00:00"
   }
 }
