@@ -17,6 +17,19 @@
       "stop_loss": 0.3307,
       "take_profit": 0.3357,
       "trigger": "bullish order block retest: zone 0.3311-0.3326 (formed 2026-08-18 15:45 UTC, break of structure confirmed 2026-08-18 16:00 UTC)"
+    },
+    {
+      "trade_id": "f13e4d24a042",
+      "entry_time_utc": "2026-08-19T18:16:05.384860+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "TRX/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 7952.097564,
+      "entry_price": 0.3314,
+      "stop_loss": 0.3321,
+      "take_profit": 0.3301,
+      "trigger": "bearish order block retest: zone 0.3314-0.3317 (formed 2026-08-16 20:30 UTC, break of structure confirmed 2026-08-16 21:00 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -300,6 +313,7 @@
     "NEAR/USDT:USDT|bullish|1.612-1.625": "2026-08-19T12:37:25.199928+00:00",
     "BNB/USDT:USDT|bullish|604.6-605.18": "2026-08-19T13:29:26.798605+00:00",
     "LTC/USDT:USDT|bullish|44.85-44.93": "2026-08-19T14:06:19.004605+00:00",
-    "TRX/USDT:USDT|bearish|0.3319-0.332": "2026-08-19T14:50:03.354742+00:00"
+    "TRX/USDT:USDT|bearish|0.3319-0.332": "2026-08-19T14:50:03.354742+00:00",
+    "TRX/USDT:USDT|bearish|0.33144-0.33172": "2026-08-19T18:16:05.385129+00:00"
   }
 }
