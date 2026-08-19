@@ -30,6 +30,32 @@
       "stop_loss": 0.3321,
       "take_profit": 0.3301,
       "trigger": "bearish order block retest: zone 0.3314-0.3317 (formed 2026-08-16 20:30 UTC, break of structure confirmed 2026-08-16 21:00 UTC)"
+    },
+    {
+      "trade_id": "09beddb0e42f",
+      "entry_time_utc": "2026-08-19T18:59:35.968981+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "BNB/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 4.361789,
+      "entry_price": 616.99,
+      "stop_loss": 615.7836,
+      "take_profit": 619.4028,
+      "trigger": "bullish order block retest: zone 616.4000-617.4900 (formed 2026-08-19 18:15 UTC, break of structure confirmed 2026-08-19 18:30 UTC)"
+    },
+    {
+      "trade_id": "0cbe362a6fae",
+      "entry_time_utc": "2026-08-19T18:59:39.522384+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ATOM/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 504.173805,
+      "entry_price": 1.446,
+      "stop_loss": 1.4356,
+      "take_profit": 1.4669,
+      "trigger": "bullish order block retest: zone 1.4370-1.4420 (formed 2026-08-17 10:45 UTC, break of structure confirmed 2026-08-17 11:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -314,6 +340,8 @@
     "BNB/USDT:USDT|bullish|604.6-605.18": "2026-08-19T13:29:26.798605+00:00",
     "LTC/USDT:USDT|bullish|44.85-44.93": "2026-08-19T14:06:19.004605+00:00",
     "TRX/USDT:USDT|bearish|0.3319-0.332": "2026-08-19T14:50:03.354742+00:00",
-    "TRX/USDT:USDT|bearish|0.33144-0.33172": "2026-08-19T18:16:05.385129+00:00"
+    "TRX/USDT:USDT|bearish|0.33144-0.33172": "2026-08-19T18:16:05.385129+00:00",
+    "BNB/USDT:USDT|bullish|616.4-617.49": "2026-08-19T18:59:35.969173+00:00",
+    "ATOM/USDT:USDT|bullish|1.437-1.442": "2026-08-19T18:59:39.522569+00:00"
   }
 }
