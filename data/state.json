@@ -19,19 +19,6 @@
       "trigger": "bullish order block retest: zone 0.3311-0.3326 (formed 2026-08-18 15:45 UTC, break of structure confirmed 2026-08-18 16:00 UTC)"
     },
     {
-      "trade_id": "c05e1c452177",
-      "entry_time_utc": "2026-08-20T03:56:12.423832+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "TRX/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 8191.764743,
-      "entry_price": 0.3321,
-      "stop_loss": 0.3327,
-      "take_profit": 0.3308,
-      "trigger": "bearish order block retest: zone 0.3322-0.3324 (formed 2026-08-17 11:30 UTC, break of structure confirmed 2026-08-17 11:45 UTC)"
-    },
-    {
       "trade_id": "98043e7f2e94",
       "entry_time_utc": "2026-08-20T04:26:10.167624+00:00",
       "mode": "DRY_RUN",
@@ -43,6 +30,19 @@
       "stop_loss": 69146.8839,
       "take_profit": 69755.9322,
       "trigger": "bullish order block retest: zone 69216.1000-69400.0000 (formed 2026-08-19 23:30 UTC, break of structure confirmed 2026-08-20 00:00 UTC)"
+    },
+    {
+      "trade_id": "33da8900d756",
+      "entry_time_utc": "2026-08-20T05:43:53.628223+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ADA/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 5957.276124,
+      "entry_price": 0.184,
+      "stop_loss": 0.1831,
+      "take_profit": 0.1858,
+      "trigger": "bullish order block retest: zone 0.1833-0.1842 (formed 2026-08-20 05:00 UTC, break of structure confirmed 2026-08-20 05:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -334,6 +334,7 @@
     "DOGE/USDT:USDT|bullish|0.07473-0.07517": "2026-08-20T03:08:44.125363+00:00",
     "NEAR/USDT:USDT|bullish|1.727-1.735": "2026-08-20T03:08:47.535752+00:00",
     "TRX/USDT:USDT|bearish|0.33215-0.33236": "2026-08-20T03:56:12.424071+00:00",
-    "BTC/USDT:USDT|bullish|69216.1-69400.0": "2026-08-20T04:26:10.167866+00:00"
+    "BTC/USDT:USDT|bullish|69216.1-69400.0": "2026-08-20T04:26:10.167866+00:00",
+    "ADA/USDT:USDT|bullish|0.1833-0.1842": "2026-08-20T05:43:53.628475+00:00"
   }
 }
