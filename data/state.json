@@ -6,32 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "d04b965c2245",
-      "entry_time_utc": "2026-08-20T19:42:23.899190+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 1127.673317,
-      "entry_price": 0.5704,
-      "stop_loss": 0.5657,
-      "take_profit": 0.5797,
-      "trigger": "bullish order block retest: zone 0.5663-0.5703 (formed 2026-08-20 14:30 UTC, break of structure confirmed 2026-08-20 15:15 UTC)"
-    },
-    {
-      "trade_id": "21e25d1bda7c",
-      "entry_time_utc": "2026-08-20T21:39:54.922472+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "SOL/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 9.798432,
-      "entry_price": 87.481,
-      "stop_loss": 86.944,
-      "take_profit": 88.5551,
-      "trigger": "bullish order block retest: zone 87.0310-87.4420 (formed 2026-08-20 19:45 UTC, break of structure confirmed 2026-08-20 20:45 UTC)"
-    },
-    {
       "trade_id": "e41300f7249a",
       "entry_time_utc": "2026-08-20T23:57:32.833801+00:00",
       "mode": "DRY_RUN",
