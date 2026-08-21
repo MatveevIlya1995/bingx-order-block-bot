@@ -6,58 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "77ecc21db0e9",
-      "entry_time_utc": "2026-08-21T11:42:40.390377+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.007061,
-      "entry_price": 76886.1,
-      "stop_loss": 76140.8829,
-      "take_profit": 78376.5342,
-      "trigger": "bullish order block retest: zone 76217.1000-76624.5000 (formed 2026-08-21 07:45 UTC, break of structure confirmed 2026-08-21 08:15 UTC)"
-    },
-    {
-      "trade_id": "894dea0e76c8",
-      "entry_time_utc": "2026-08-21T11:42:42.026213+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.953383,
-      "entry_price": 674.21,
-      "stop_loss": 668.6906,
-      "take_profit": 685.2487,
-      "trigger": "bullish order block retest: zone 669.3600-671.7000 (formed 2026-08-21 07:45 UTC, break of structure confirmed 2026-08-21 08:00 UTC)"
-    },
-    {
-      "trade_id": "ce5fc7d6c9ac",
-      "entry_time_utc": "2026-08-21T19:04:20.395246+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 360.383117,
-      "entry_price": 0.6153,
-      "stop_loss": 0.6007,
-      "take_profit": 0.6445,
-      "trigger": "bullish order block retest: zone 0.6013-0.6210 (formed 2026-08-21 09:00 UTC, break of structure confirmed 2026-08-21 09:30 UTC)"
-    },
-    {
-      "trade_id": "4eae6c638586",
-      "entry_time_utc": "2026-08-21T21:18:04.459167+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ETH/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.229563,
-      "entry_price": 2452.6,
-      "stop_loss": 2429.6779,
-      "take_profit": 2498.4442,
-      "trigger": "bullish order block retest: zone 2432.1100-2444.9300 (formed 2026-08-21 20:30 UTC, break of structure confirmed 2026-08-21 21:00 UTC)"
-    },
-    {
       "trade_id": "c9c310030872",
       "entry_time_utc": "2026-08-21T21:18:09.494399+00:00",
       "mode": "DRY_RUN",
