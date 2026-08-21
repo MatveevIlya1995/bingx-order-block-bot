@@ -6,30 +6,56 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "0878fde1342c",
-      "entry_time_utc": "2026-08-21T09:50:41.362492+00:00",
+      "trade_id": "77ecc21db0e9",
+      "entry_time_utc": "2026-08-21T11:42:40.390377+00:00",
       "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
+      "symbol": "BTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 4199.034441,
-      "entry_price": 0.0843,
-      "stop_loss": 0.0831,
-      "take_profit": 0.0868,
-      "trigger": "bullish order block retest: zone 0.0832-0.0844 (formed 2026-08-21 07:45 UTC, break of structure confirmed 2026-08-21 08:30 UTC)"
+      "qty": 0.007061,
+      "entry_price": 76886.1,
+      "stop_loss": 76140.8829,
+      "take_profit": 78376.5342,
+      "trigger": "bullish order block retest: zone 76217.1000-76624.5000 (formed 2026-08-21 07:45 UTC, break of structure confirmed 2026-08-21 08:15 UTC)"
     },
     {
-      "trade_id": "53315d1e7843",
-      "entry_time_utc": "2026-08-21T11:15:20.035403+00:00",
+      "trade_id": "6bf9260048e4",
+      "entry_time_utc": "2026-08-21T11:42:40.977240+00:00",
       "mode": "DRY_RUN",
-      "symbol": "AVAX/USDT:USDT",
+      "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 110.645149,
-      "entry_price": 7.598,
-      "stop_loss": 7.5504,
-      "take_profit": 7.6931,
-      "trigger": "bullish order block retest: zone 7.5580-7.6000 (formed 2026-08-21 10:30 UTC, break of structure confirmed 2026-08-21 10:45 UTC)"
+      "qty": 0.24642,
+      "entry_price": 2373.01,
+      "stop_loss": 2351.656,
+      "take_profit": 2415.718,
+      "trigger": "bullish order block retest: zone 2354.0100-2367.7700 (formed 2026-08-21 06:15 UTC, break of structure confirmed 2026-08-21 07:00 UTC)"
+    },
+    {
+      "trade_id": "894dea0e76c8",
+      "entry_time_utc": "2026-08-21T11:42:42.026213+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "BNB/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 0.953383,
+      "entry_price": 674.21,
+      "stop_loss": 668.6906,
+      "take_profit": 685.2487,
+      "trigger": "bullish order block retest: zone 669.3600-671.7000 (formed 2026-08-21 07:45 UTC, break of structure confirmed 2026-08-21 08:00 UTC)"
+    },
+    {
+      "trade_id": "301627085646",
+      "entry_time_utc": "2026-08-21T11:42:43.083039+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ADA/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 1381.408695,
+      "entry_price": 0.2128,
+      "stop_loss": 0.209,
+      "take_profit": 0.2204,
+      "trigger": "bullish order block retest: zone 0.2092-0.2113 (formed 2026-08-21 07:45 UTC, break of structure confirmed 2026-08-21 08:00 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -356,6 +382,10 @@
     "SOL/USDT:USDT|bullish|90.317-90.708": "2026-08-21T09:07:18.124873+00:00",
     "AVAX/USDT:USDT|bullish|7.311-7.425": "2026-08-21T09:07:19.499005+00:00",
     "DOGE/USDT:USDT|bullish|0.08316-0.08441": "2026-08-21T09:50:41.362694+00:00",
-    "AVAX/USDT:USDT|bullish|7.558-7.6": "2026-08-21T11:15:20.035630+00:00"
+    "AVAX/USDT:USDT|bullish|7.558-7.6": "2026-08-21T11:15:20.035630+00:00",
+    "BTC/USDT:USDT|bullish|76217.1-76624.5": "2026-08-21T11:42:40.390589+00:00",
+    "ETH/USDT:USDT|bullish|2354.01-2367.77": "2026-08-21T11:42:40.977463+00:00",
+    "BNB/USDT:USDT|bullish|669.36-671.7": "2026-08-21T11:42:42.026439+00:00",
+    "ADA/USDT:USDT|bullish|0.2092-0.2113": "2026-08-21T11:42:43.083251+00:00"
   }
 }
