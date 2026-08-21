@@ -30,6 +30,32 @@
       "stop_loss": 0.2026,
       "take_profit": 0.211,
       "trigger": "bullish order block retest: zone 0.2028-0.2049 (formed 2026-08-21 01:00 UTC, break of structure confirmed 2026-08-21 01:30 UTC)"
+    },
+    {
+      "trade_id": "beabce1524aa",
+      "entry_time_utc": "2026-08-21T06:23:25.711515+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "LTC/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 19.611143,
+      "entry_price": 48.54,
+      "stop_loss": 48.2717,
+      "take_profit": 49.0766,
+      "trigger": "bullish order block retest: zone 48.3200-48.5200 (formed 2026-08-21 04:15 UTC, break of structure confirmed 2026-08-21 04:30 UTC)"
+    },
+    {
+      "trade_id": "4ad4c78c4414",
+      "entry_time_utc": "2026-08-21T06:23:26.915185+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "NEAR/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 252.947267,
+      "entry_price": 1.822,
+      "stop_loss": 1.8012,
+      "take_profit": 1.8636,
+      "trigger": "bullish order block retest: zone 1.8030-1.8200 (formed 2026-08-21 05:00 UTC, break of structure confirmed 2026-08-21 05:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -348,6 +374,8 @@
     "SOL/USDT:USDT|bullish|87.031-87.442": "2026-08-20T21:39:54.922714+00:00",
     "AVAX/USDT:USDT|bullish|7.16-7.193": "2026-08-20T21:39:58.242816+00:00",
     "TRX/USDT:USDT|bullish|0.33713-0.33753": "2026-08-20T23:57:32.834012+00:00",
-    "ADA/USDT:USDT|bullish|0.2028-0.2049": "2026-08-21T03:27:22.709519+00:00"
+    "ADA/USDT:USDT|bullish|0.2028-0.2049": "2026-08-21T03:27:22.709519+00:00",
+    "LTC/USDT:USDT|bullish|48.32-48.52": "2026-08-21T06:23:25.711744+00:00",
+    "NEAR/USDT:USDT|bullish|1.803-1.82": "2026-08-21T06:23:26.915398+00:00"
   }
 }
