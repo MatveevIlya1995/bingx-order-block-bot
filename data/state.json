@@ -32,30 +32,30 @@
       "trigger": "bullish order block retest: zone 669.3600-671.7000 (formed 2026-08-21 07:45 UTC, break of structure confirmed 2026-08-21 08:00 UTC)"
     },
     {
-      "trade_id": "59c695f5b109",
-      "entry_time_utc": "2026-08-21T16:03:12.646725+00:00",
+      "trade_id": "9dcd2362797b",
+      "entry_time_utc": "2026-08-21T19:04:14.244008+00:00",
       "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
+      "symbol": "SOL/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 1.596306,
-      "entry_price": 679.02,
-      "stop_loss": 675.7236,
-      "take_profit": 685.6128,
-      "trigger": "bullish order block retest: zone 676.4000-679.0800 (formed 2026-08-21 14:30 UTC, break of structure confirmed 2026-08-21 15:00 UTC)"
+      "qty": 9.142953,
+      "entry_price": 91.017,
+      "stop_loss": 90.4415,
+      "take_profit": 92.1681,
+      "trigger": "bullish order block retest: zone 90.5320-91.1290 (formed 2026-08-21 14:00 UTC, break of structure confirmed 2026-08-21 14:15 UTC)"
     },
     {
-      "trade_id": "9fd87652f5b2",
-      "entry_time_utc": "2026-08-21T17:18:09.451987+00:00",
+      "trade_id": "ce5fc7d6c9ac",
+      "entry_time_utc": "2026-08-21T19:04:20.395246+00:00",
       "mode": "DRY_RUN",
       "symbol": "APT/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 430.540173,
-      "entry_price": 0.6336,
-      "stop_loss": 0.6214,
-      "take_profit": 0.658,
-      "trigger": "bullish order block retest: zone 0.6220-0.6335 (formed 2026-08-21 11:30 UTC, break of structure confirmed 2026-08-21 12:00 UTC)"
+      "qty": 360.383117,
+      "entry_price": 0.6153,
+      "stop_loss": 0.6007,
+      "take_profit": 0.6445,
+      "trigger": "bullish order block retest: zone 0.6013-0.6210 (formed 2026-08-21 09:00 UTC, break of structure confirmed 2026-08-21 09:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -390,6 +390,8 @@
     "DOT/USDT:USDT|bullish|0.89-0.8987": "2026-08-21T15:32:36.710042+00:00",
     "BNB/USDT:USDT|bullish|676.4-679.08": "2026-08-21T16:03:12.646982+00:00",
     "NEAR/USDT:USDT|bullish|1.883-1.895": "2026-08-21T17:18:07.536804+00:00",
-    "APT/USDT:USDT|bullish|0.622-0.6335": "2026-08-21T17:18:09.452223+00:00"
+    "APT/USDT:USDT|bullish|0.622-0.6335": "2026-08-21T17:18:09.452223+00:00",
+    "SOL/USDT:USDT|bullish|90.532-91.129": "2026-08-21T19:04:14.244207+00:00",
+    "APT/USDT:USDT|bullish|0.6013-0.621": "2026-08-21T19:04:20.395439+00:00"
   }
 }
