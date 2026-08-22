@@ -45,58 +45,6 @@
       "trigger": "bullish order block retest: zone 93.4580-94.0440 (formed 2026-08-22 01:45 UTC, break of structure confirmed 2026-08-22 02:15 UTC)"
     },
     {
-      "trade_id": "5898e04f06cc",
-      "entry_time_utc": "2026-08-22T05:49:27.502165+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ADA/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 1136.612666,
-      "entry_price": 0.234,
-      "stop_loss": 0.2294,
-      "take_profit": 0.2433,
-      "trigger": "bullish order block retest: zone 0.2296-0.2326 (formed 2026-08-22 01:45 UTC, break of structure confirmed 2026-08-22 02:15 UTC)"
-    },
-    {
-      "trade_id": "8862e724882f",
-      "entry_time_utc": "2026-08-22T05:49:30.798401+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 306.981501,
-      "entry_price": 0.6578,
-      "stop_loss": 0.6407,
-      "take_profit": 0.6921,
-      "trigger": "bullish order block retest: zone 0.6413-0.6501 (formed 2026-08-22 00:00 UTC, break of structure confirmed 2026-08-22 00:45 UTC)"
-    },
-    {
-      "trade_id": "404e99d8ba79",
-      "entry_time_utc": "2026-08-22T07:06:56.043128+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 181.613239,
-      "entry_price": 2.001,
-      "stop_loss": 1.972,
-      "take_profit": 2.0589,
-      "trigger": "bullish order block retest: zone 1.9740-1.9920 (formed 2026-08-22 01:00 UTC, break of structure confirmed 2026-08-22 01:45 UTC)"
-    },
-    {
-      "trade_id": "28caf9a8e7b9",
-      "entry_time_utc": "2026-08-22T07:42:33.872355+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "SOL/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 6.806444,
-      "entry_price": 94.779,
-      "stop_loss": 94.0059,
-      "take_profit": 96.3252,
-      "trigger": "bullish order block retest: zone 94.1000-94.8430 (formed 2026-08-22 06:45 UTC, break of structure confirmed 2026-08-22 07:15 UTC)"
-    },
-    {
       "trade_id": "a063a5759124",
       "entry_time_utc": "2026-08-22T07:42:34.293914+00:00",
       "mode": "DRY_RUN",
@@ -108,6 +56,19 @@
       "stop_loss": 697.7316,
       "take_profit": 723.8869,
       "trigger": "bullish order block retest: zone 698.4300-704.3200 (formed 2026-08-22 07:00 UTC, break of structure confirmed 2026-08-22 07:15 UTC)"
+    },
+    {
+      "trade_id": "6df33c02f080",
+      "entry_time_utc": "2026-08-22T08:29:39.530865+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "NEAR/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 1066.057942,
+      "entry_price": 1.939,
+      "stop_loss": 1.9341,
+      "take_profit": 1.9489,
+      "trigger": "bullish order block retest: zone 1.9360-1.9680 (formed 2026-08-22 06:15 UTC, break of structure confirmed 2026-08-22 06:45 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -464,6 +425,7 @@
     "NEAR/USDT:USDT|bullish|1.974-1.992": "2026-08-22T07:06:56.043379+00:00",
     "APT/USDT:USDT|bullish|0.658-0.6676": "2026-08-22T07:06:56.894876+00:00",
     "SOL/USDT:USDT|bullish|94.1-94.843": "2026-08-22T07:42:33.872574+00:00",
-    "BNB/USDT:USDT|bullish|698.43-704.32": "2026-08-22T07:42:34.294114+00:00"
+    "BNB/USDT:USDT|bullish|698.43-704.32": "2026-08-22T07:42:34.294114+00:00",
+    "NEAR/USDT:USDT|bullish|1.936-1.968": "2026-08-22T08:29:39.531108+00:00"
   }
 }
