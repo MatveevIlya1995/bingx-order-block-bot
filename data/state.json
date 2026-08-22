@@ -56,6 +56,19 @@
       "stop_loss": 76902.9201,
       "take_profit": 77445.2598,
       "trigger": "bullish order block retest: zone 76979.9000-77212.5000 (formed 2026-08-21 19:45 UTC, break of structure confirmed 2026-08-21 20:15 UTC)"
+    },
+    {
+      "trade_id": "6b530931e263",
+      "entry_time_utc": "2026-08-22T11:55:33.371195+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "LTC/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 13.121695,
+      "entry_price": 51.37,
+      "stop_loss": 50.969,
+      "take_profit": 52.172,
+      "trigger": "bullish order block retest: zone 51.0200-51.3400 (formed 2026-08-22 11:00 UTC, break of structure confirmed 2026-08-22 11:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -420,6 +433,7 @@
     "TRX/USDT:USDT|bullish|0.3434-0.34377": "2026-08-22T09:48:23.981007+00:00",
     "ETH/USDT:USDT|bullish|2398.13-2402.6": "2026-08-22T10:11:22.211179+00:00",
     "NEAR/USDT:USDT|bullish|1.871-1.887": "2026-08-22T10:57:10.433729+00:00",
-    "BTC/USDT:USDT|bullish|76979.9-77212.5": "2026-08-22T11:34:37.943485+00:00"
+    "BTC/USDT:USDT|bullish|76979.9-77212.5": "2026-08-22T11:34:37.943485+00:00",
+    "LTC/USDT:USDT|bullish|51.02-51.34": "2026-08-22T11:55:33.371461+00:00"
   }
 }
