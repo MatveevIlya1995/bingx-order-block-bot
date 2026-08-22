@@ -32,19 +32,6 @@
       "trigger": "bullish order block retest: zone 0.3436-0.3440 (formed 2026-08-22 15:15 UTC, break of structure confirmed 2026-08-22 16:15 UTC)"
     },
     {
-      "trade_id": "a85f0a5c7da6",
-      "entry_time_utc": "2026-08-22T22:09:49.910644+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 6.693373,
-      "entry_price": 696.25,
-      "stop_loss": 695.4638,
-      "take_profit": 697.8223,
-      "trigger": "bullish order block retest: zone 696.1600-698.2600 (formed 2026-08-22 17:45 UTC, break of structure confirmed 2026-08-22 18:15 UTC)"
-    },
-    {
       "trade_id": "bfa54a2074d8",
       "entry_time_utc": "2026-08-22T22:10:01.571926+00:00",
       "mode": "DRY_RUN",
@@ -56,6 +43,32 @@
       "stop_loss": 0.3439,
       "take_profit": 0.3466,
       "trigger": "bullish order block retest: zone 0.3442-0.3445 (formed 2026-08-22 17:45 UTC, break of structure confirmed 2026-08-22 18:00 UTC)"
+    },
+    {
+      "trade_id": "96a1a2d13b57",
+      "entry_time_utc": "2026-08-22T22:35:53.704297+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "AVAX/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 223.879425,
+      "entry_price": 7.52,
+      "stop_loss": 7.4965,
+      "take_profit": 7.567,
+      "trigger": "bullish order block retest: zone 7.5040-7.5390 (formed 2026-08-22 11:45 UTC, break of structure confirmed 2026-08-22 12:00 UTC)"
+    },
+    {
+      "trade_id": "0b558757ba27",
+      "entry_time_utc": "2026-08-22T22:35:55.990736+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "NEAR/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 203.231191,
+      "entry_price": 1.916,
+      "stop_loss": 1.8901,
+      "take_profit": 1.9678,
+      "trigger": "bullish order block retest: zone 1.8920-1.9120 (formed 2026-08-22 17:15 UTC, break of structure confirmed 2026-08-22 17:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -193,7 +206,6 @@
   },
   "last_seen_equity": 263.1031,
   "traded_zones": {
-    "XRP/USDT:USDT|bearish|1.0057-1.0072": "2026-08-15T22:35:22.215646+00:00",
     "AVAX/USDT:USDT|bearish|6.415-6.425": "2026-08-15T22:56:01.036950+00:00",
     "ATOM/USDT:USDT|bullish|1.477-1.488": "2026-08-15T22:56:05.352610+00:00",
     "SOL/USDT:USDT|bearish|75.214-75.367": "2026-08-15T23:32:32.711747+00:00",
@@ -387,6 +399,8 @@
     "BTC/USDT:USDT|bullish|76915.0-77102.8": "2026-08-22T21:55:36.728094+00:00",
     "LINK/USDT:USDT|bullish|11.511-11.574": "2026-08-22T21:55:43.143845+00:00",
     "BNB/USDT:USDT|bullish|696.16-698.26": "2026-08-22T22:09:49.910862+00:00",
-    "TRX/USDT:USDT|bullish|0.34424-0.34451": "2026-08-22T22:10:01.572145+00:00"
+    "TRX/USDT:USDT|bullish|0.34424-0.34451": "2026-08-22T22:10:01.572145+00:00",
+    "AVAX/USDT:USDT|bullish|7.504-7.539": "2026-08-22T22:35:53.704519+00:00",
+    "NEAR/USDT:USDT|bullish|1.892-1.912": "2026-08-22T22:35:55.990964+00:00"
   }
 }
