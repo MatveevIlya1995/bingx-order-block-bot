@@ -30,32 +30,6 @@
       "stop_loss": 0.3433,
       "take_profit": 0.3468,
       "trigger": "bullish order block retest: zone 0.3436-0.3440 (formed 2026-08-22 15:15 UTC, break of structure confirmed 2026-08-22 16:15 UTC)"
-    },
-    {
-      "trade_id": "bfa54a2074d8",
-      "entry_time_utc": "2026-08-22T22:10:01.571926+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "TRX/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 5884.395688,
-      "entry_price": 0.3448,
-      "stop_loss": 0.3439,
-      "take_profit": 0.3466,
-      "trigger": "bullish order block retest: zone 0.3442-0.3445 (formed 2026-08-22 17:45 UTC, break of structure confirmed 2026-08-22 18:00 UTC)"
-    },
-    {
-      "trade_id": "0b558757ba27",
-      "entry_time_utc": "2026-08-22T22:35:55.990736+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 203.231191,
-      "entry_price": 1.916,
-      "stop_loss": 1.8901,
-      "take_profit": 1.9678,
-      "trigger": "bullish order block retest: zone 1.8920-1.9120 (formed 2026-08-22 17:15 UTC, break of structure confirmed 2026-08-22 17:30 UTC)"
     }
   ],
   "dry_run_signaled": {
