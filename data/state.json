@@ -32,30 +32,30 @@
       "trigger": "bullish order block retest: zone 0.3436-0.3440 (formed 2026-08-22 15:15 UTC, break of structure confirmed 2026-08-22 16:15 UTC)"
     },
     {
-      "trade_id": "8c2e5fbe1237",
-      "entry_time_utc": "2026-08-22T21:55:36.727956+00:00",
+      "trade_id": "a85f0a5c7da6",
+      "entry_time_utc": "2026-08-22T22:09:49.910644+00:00",
       "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
+      "symbol": "BNB/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.046233,
-      "entry_price": 76951.9,
-      "stop_loss": 76838.085,
-      "take_profit": 77179.53,
-      "trigger": "bullish order block retest: zone 76915.0000-77102.8000 (formed 2026-08-22 15:45 UTC, break of structure confirmed 2026-08-22 16:15 UTC)"
+      "qty": 6.693373,
+      "entry_price": 696.25,
+      "stop_loss": 695.4638,
+      "take_profit": 697.8223,
+      "trigger": "bullish order block retest: zone 696.1600-698.2600 (formed 2026-08-22 17:45 UTC, break of structure confirmed 2026-08-22 18:15 UTC)"
     },
     {
-      "trade_id": "7722466cfd5c",
-      "entry_time_utc": "2026-08-22T21:55:43.143703+00:00",
+      "trade_id": "bfa54a2074d8",
+      "entry_time_utc": "2026-08-22T22:10:01.571926+00:00",
       "mode": "DRY_RUN",
-      "symbol": "LINK/USDT:USDT",
+      "symbol": "TRX/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 318.700382,
-      "entry_price": 11.516,
-      "stop_loss": 11.4995,
-      "take_profit": 11.549,
-      "trigger": "bullish order block retest: zone 11.5110-11.5740 (formed 2026-08-22 10:45 UTC, break of structure confirmed 2026-08-22 11:30 UTC)"
+      "qty": 5884.395688,
+      "entry_price": 0.3448,
+      "stop_loss": 0.3439,
+      "take_profit": 0.3466,
+      "trigger": "bullish order block retest: zone 0.3442-0.3445 (formed 2026-08-22 17:45 UTC, break of structure confirmed 2026-08-22 18:00 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -385,6 +385,8 @@
     "XRP/USDT:USDT|bullish|1.4852-1.4969": "2026-08-22T20:36:35.015637+00:00",
     "AVAX/USDT:USDT|bullish|7.448-7.483": "2026-08-22T21:35:12.664611+00:00",
     "BTC/USDT:USDT|bullish|76915.0-77102.8": "2026-08-22T21:55:36.728094+00:00",
-    "LINK/USDT:USDT|bullish|11.511-11.574": "2026-08-22T21:55:43.143845+00:00"
+    "LINK/USDT:USDT|bullish|11.511-11.574": "2026-08-22T21:55:43.143845+00:00",
+    "BNB/USDT:USDT|bullish|696.16-698.26": "2026-08-22T22:09:49.910862+00:00",
+    "TRX/USDT:USDT|bullish|0.34424-0.34451": "2026-08-22T22:10:01.572145+00:00"
   }
 }
