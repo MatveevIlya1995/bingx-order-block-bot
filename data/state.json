@@ -32,19 +32,6 @@
       "trigger": "bullish order block retest: zone 76979.9000-77212.5000 (formed 2026-08-21 19:45 UTC, break of structure confirmed 2026-08-21 20:15 UTC)"
     },
     {
-      "trade_id": "6b530931e263",
-      "entry_time_utc": "2026-08-22T11:55:33.371195+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "LTC/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 13.121695,
-      "entry_price": 51.37,
-      "stop_loss": 50.969,
-      "take_profit": 52.172,
-      "trigger": "bullish order block retest: zone 51.0200-51.3400 (formed 2026-08-22 11:00 UTC, break of structure confirmed 2026-08-22 11:30 UTC)"
-    },
-    {
       "trade_id": "a3a8e3972827",
       "entry_time_utc": "2026-08-22T12:14:25.615934+00:00",
       "mode": "DRY_RUN",
@@ -56,6 +43,19 @@
       "stop_loss": 0.9128,
       "take_profit": 0.9632,
       "trigger": "bullish order block retest: zone 0.9137-0.9210 (formed 2026-08-22 11:00 UTC, break of structure confirmed 2026-08-22 11:30 UTC)"
+    },
+    {
+      "trade_id": "820efeb6cabc",
+      "entry_time_utc": "2026-08-22T14:13:05.500838+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "XRP/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 450.596164,
+      "entry_price": 1.4882,
+      "stop_loss": 1.4765,
+      "take_profit": 1.5116,
+      "trigger": "bullish order block retest: zone 1.4780-1.4901 (formed 2026-08-22 11:45 UTC, break of structure confirmed 2026-08-22 12:00 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -193,26 +193,6 @@
   },
   "last_seen_equity": 263.1031,
   "traded_zones": {
-    "BTC/USDT:USDT|bearish|63042.4-63084.8": "2026-08-15T13:27:29.773048+00:00",
-    "ETH/USDT:USDT|bearish|1878.02-1882.19": "2026-08-15T13:27:29.993839+00:00",
-    "SOL/USDT:USDT|bearish|75.432-75.547": "2026-08-15T13:27:30.216293+00:00",
-    "BNB/USDT:USDT|bearish|610.1-610.7": "2026-08-15T13:27:30.426650+00:00",
-    "XRP/USDT:USDT|bearish|1.001-1.0029": "2026-08-15T13:27:30.637609+00:00",
-    "DOGE/USDT:USDT|bullish|0.06997-0.07009": "2026-08-15T13:27:30.844667+00:00",
-    "ADA/USDT:USDT|bullish|0.1783-0.1789": "2026-08-15T13:27:31.058440+00:00",
-    "LINK/USDT:USDT|bearish|9.451-9.507": "2026-08-15T13:27:31.953557+00:00",
-    "NEAR/USDT:USDT|bullish|1.632-1.636": "2026-08-15T13:27:33.305015+00:00",
-    "APT/USDT:USDT|bullish|0.537-0.539": "2026-08-15T13:27:33.773792+00:00",
-    "BTC/USDT:USDT|bearish|62976.1-63047.0": "2026-08-15T13:50:11.879936+00:00",
-    "ETH/USDT:USDT|bearish|1883.0-1886.62": "2026-08-15T13:50:12.153338+00:00",
-    "SOL/USDT:USDT|bearish|75.497-75.637": "2026-08-15T13:50:12.419571+00:00",
-    "BNB/USDT:USDT|bullish|609.0-609.53": "2026-08-15T13:50:12.785513+00:00",
-    "ETH/USDT:USDT|bearish|1881.02-1883.91": "2026-08-15T14:10:45.929312+00:00",
-    "BNB/USDT:USDT|bearish|609.62-611.26": "2026-08-15T14:10:46.485202+00:00",
-    "AVAX/USDT:USDT|bearish|6.568-6.594": "2026-08-15T14:10:47.540746+00:00",
-    "LTC/USDT:USDT|bullish|44.09-44.13": "2026-08-15T14:10:48.080715+00:00",
-    "DOT/USDT:USDT|bullish|0.7767-0.7782": "2026-08-15T14:10:48.336311+00:00",
-    "APT/USDT:USDT|bearish|0.5388-0.5401": "2026-08-15T14:10:49.518901+00:00",
     "XRP/USDT:USDT|bullish|1.0006-1.0041": "2026-08-15T14:36:20.908593+00:00",
     "DOGE/USDT:USDT|bullish|0.06973-0.07": "2026-08-15T14:36:21.201876+00:00",
     "ADA/USDT:USDT|bullish|0.1779-0.1784": "2026-08-15T14:36:21.481207+00:00",
@@ -422,6 +402,7 @@
     "NEAR/USDT:USDT|bullish|1.871-1.887": "2026-08-22T10:57:10.433729+00:00",
     "BTC/USDT:USDT|bullish|76979.9-77212.5": "2026-08-22T11:34:37.943485+00:00",
     "LTC/USDT:USDT|bullish|51.02-51.34": "2026-08-22T11:55:33.371461+00:00",
-    "DOT/USDT:USDT|bullish|0.9137-0.921": "2026-08-22T12:14:25.616171+00:00"
+    "DOT/USDT:USDT|bullish|0.9137-0.921": "2026-08-22T12:14:25.616171+00:00",
+    "XRP/USDT:USDT|bullish|1.478-1.4901": "2026-08-22T14:13:05.501080+00:00"
   }
 }
