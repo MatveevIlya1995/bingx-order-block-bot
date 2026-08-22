@@ -95,6 +95,58 @@
       "stop_loss": 0.6407,
       "take_profit": 0.6921,
       "trigger": "bullish order block retest: zone 0.6413-0.6501 (formed 2026-08-22 00:00 UTC, break of structure confirmed 2026-08-22 00:45 UTC)"
+    },
+    {
+      "trade_id": "097bda38751a",
+      "entry_time_utc": "2026-08-22T07:06:53.413502+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "XRP/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 144.315538,
+      "entry_price": 1.5971,
+      "stop_loss": 1.5606,
+      "take_profit": 1.67,
+      "trigger": "bullish order block retest: zone 1.5622-1.5775 (formed 2026-08-22 03:45 UTC, break of structure confirmed 2026-08-22 04:30 UTC)"
+    },
+    {
+      "trade_id": "798323eaac1f",
+      "entry_time_utc": "2026-08-22T07:06:54.993166+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "LTC/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 39.806808,
+      "entry_price": 52.27,
+      "stop_loss": 52.1378,
+      "take_profit": 52.5344,
+      "trigger": "bullish order block retest: zone 52.1900-52.4400 (formed 2026-08-21 21:15 UTC, break of structure confirmed 2026-08-21 21:30 UTC)"
+    },
+    {
+      "trade_id": "404e99d8ba79",
+      "entry_time_utc": "2026-08-22T07:06:56.043128+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "NEAR/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 181.613239,
+      "entry_price": 2.001,
+      "stop_loss": 1.972,
+      "take_profit": 2.0589,
+      "trigger": "bullish order block retest: zone 1.9740-1.9920 (formed 2026-08-22 01:00 UTC, break of structure confirmed 2026-08-22 01:45 UTC)"
+    },
+    {
+      "trade_id": "63d68a6f2573",
+      "entry_time_utc": "2026-08-22T07:06:56.894661+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "APT/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 2993.209329,
+      "entry_price": 0.6591,
+      "stop_loss": 0.6573,
+      "take_profit": 0.6626,
+      "trigger": "bullish order block retest: zone 0.6580-0.6676 (formed 2026-08-22 01:45 UTC, break of structure confirmed 2026-08-22 02:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -445,6 +497,10 @@
     "SOL/USDT:USDT|bullish|93.458-94.044": "2026-08-22T05:49:25.264984+00:00",
     "DOGE/USDT:USDT|bullish|0.091-0.09196": "2026-08-22T05:49:26.976026+00:00",
     "ADA/USDT:USDT|bullish|0.2296-0.2326": "2026-08-22T05:49:27.502380+00:00",
-    "APT/USDT:USDT|bullish|0.6413-0.6501": "2026-08-22T05:49:30.798612+00:00"
+    "APT/USDT:USDT|bullish|0.6413-0.6501": "2026-08-22T05:49:30.798612+00:00",
+    "XRP/USDT:USDT|bullish|1.5622-1.5775": "2026-08-22T07:06:53.413732+00:00",
+    "LTC/USDT:USDT|bullish|52.19-52.44": "2026-08-22T07:06:54.993408+00:00",
+    "NEAR/USDT:USDT|bullish|1.974-1.992": "2026-08-22T07:06:56.043379+00:00",
+    "APT/USDT:USDT|bullish|0.658-0.6676": "2026-08-22T07:06:56.894876+00:00"
   }
 }
