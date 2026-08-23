@@ -43,6 +43,32 @@
       "stop_loss": 682.347,
       "take_profit": 689.2261,
       "trigger": "bullish order block retest: zone 683.0300-685.0400 (formed 2026-08-23 05:45 UTC, break of structure confirmed 2026-08-23 06:15 UTC)"
+    },
+    {
+      "trade_id": "b4dd237a86eb",
+      "entry_time_utc": "2026-08-23T08:19:58.839323+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ETH/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 1.055579,
+      "entry_price": 2407.58,
+      "stop_loss": 2402.595,
+      "take_profit": 2417.55,
+      "trigger": "bullish order block retest: zone 2405.0000-2415.5300 (formed 2026-08-22 11:00 UTC, break of structure confirmed 2026-08-22 11:30 UTC)"
+    },
+    {
+      "trade_id": "b8a906841035",
+      "entry_time_utc": "2026-08-23T08:20:07.837327+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ATOM/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 499.152153,
+      "entry_price": 1.551,
+      "stop_loss": 1.5405,
+      "take_profit": 1.5721,
+      "trigger": "bullish order block retest: zone 1.5420-1.5560 (formed 2026-08-21 19:30 UTC, break of structure confirmed 2026-08-21 21:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -180,8 +206,6 @@
   },
   "last_seen_equity": 263.1031,
   "traded_zones": {
-    "LINK/USDT:USDT|bullish|9.272-9.324": "2026-08-16T07:06:22.606361+00:00",
-    "APT/USDT:USDT|bearish|0.5316-0.5328": "2026-08-16T07:59:43.394411+00:00",
     "BNB/USDT:USDT|bullish|606.38-606.92": "2026-08-16T09:16:09.094954+00:00",
     "ATOM/USDT:USDT|bullish|1.499-1.504": "2026-08-16T09:16:13.167332+00:00",
     "LTC/USDT:USDT|bearish|44.38-44.48": "2026-08-16T10:11:12.975349+00:00",
@@ -374,6 +398,8 @@
     "AVAX/USDT:USDT|bullish|7.302-7.346": "2026-08-23T05:06:33.786584+00:00",
     "TRX/USDT:USDT|bullish|0.34118-0.342": "2026-08-23T05:06:35.706795+00:00",
     "ATOM/USDT:USDT|bullish|1.525-1.534": "2026-08-23T05:06:36.782736+00:00",
-    "BNB/USDT:USDT|bullish|683.03-685.04": "2026-08-23T06:58:30.719787+00:00"
+    "BNB/USDT:USDT|bullish|683.03-685.04": "2026-08-23T06:58:30.719787+00:00",
+    "ETH/USDT:USDT|bullish|2405.0-2415.53": "2026-08-23T08:19:58.839546+00:00",
+    "ATOM/USDT:USDT|bullish|1.542-1.556": "2026-08-23T08:20:07.837540+00:00"
   }
 }
