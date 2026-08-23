@@ -43,6 +43,19 @@
       "stop_loss": 11.3406,
       "take_profit": 11.6897,
       "trigger": "bullish order block retest: zone 11.3520-11.4430 (formed 2026-08-23 12:45 UTC, break of structure confirmed 2026-08-23 13:15 UTC)"
+    },
+    {
+      "trade_id": "3ee88557f893",
+      "entry_time_utc": "2026-08-23T20:56:40.877122+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "XRP/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 424.685202,
+      "entry_price": 1.5014,
+      "stop_loss": 1.489,
+      "take_profit": 1.5262,
+      "trigger": "bullish order block retest: zone 1.4905-1.4986 (formed 2026-08-23 12:45 UTC, break of structure confirmed 2026-08-23 13:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -365,6 +378,7 @@
     "BTC/USDT:USDT|bullish|77254.5-77349.9": "2026-08-23T13:43:12.082840+00:00",
     "ADA/USDT:USDT|bullish|0.2238-0.2251": "2026-08-23T14:45:54.251575+00:00",
     "ATOM/USDT:USDT|bullish|1.595-1.604": "2026-08-23T19:34:01.644044+00:00",
-    "LINK/USDT:USDT|bullish|11.352-11.443": "2026-08-23T20:09:13.147514+00:00"
+    "LINK/USDT:USDT|bullish|11.352-11.443": "2026-08-23T20:09:13.147514+00:00",
+    "XRP/USDT:USDT|bullish|1.4905-1.4986": "2026-08-23T20:56:40.877373+00:00"
   }
 }
