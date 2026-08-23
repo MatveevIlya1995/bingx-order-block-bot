@@ -19,30 +19,17 @@
       "trigger": "bullish order block retest: zone 0.3412-0.3420 (formed 2026-08-21 21:30 UTC, break of structure confirmed 2026-08-21 22:00 UTC)"
     },
     {
-      "trade_id": "b8a906841035",
-      "entry_time_utc": "2026-08-23T08:20:07.837327+00:00",
+      "trade_id": "c6fd9be886d1",
+      "entry_time_utc": "2026-08-23T11:35:10.139091+00:00",
       "mode": "DRY_RUN",
-      "symbol": "ATOM/USDT:USDT",
+      "symbol": "AVAX/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 499.152153,
-      "entry_price": 1.551,
-      "stop_loss": 1.5405,
-      "take_profit": 1.5721,
-      "trigger": "bullish order block retest: zone 1.5420-1.5560 (formed 2026-08-21 19:30 UTC, break of structure confirmed 2026-08-21 21:15 UTC)"
-    },
-    {
-      "trade_id": "cf0c67bf2198",
-      "entry_time_utc": "2026-08-23T08:54:26.660310+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "SOL/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 12.865803,
-      "entry_price": 93.312,
-      "stop_loss": 92.903,
-      "take_profit": 94.13,
-      "trigger": "bullish order block retest: zone 92.9960-93.3730 (formed 2026-08-22 15:45 UTC, break of structure confirmed 2026-08-22 16:15 UTC)"
+      "qty": 118.336339,
+      "entry_price": 7.504,
+      "stop_loss": 7.4595,
+      "take_profit": 7.5929,
+      "trigger": "bullish order block retest: zone 7.4670-7.5050 (formed 2026-08-23 00:00 UTC, break of structure confirmed 2026-08-23 00:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -180,7 +167,6 @@
   },
   "last_seen_equity": 263.1031,
   "traded_zones": {
-    "ATOM/USDT:USDT|bullish|1.484-1.491": "2026-08-16T11:12:07.795255+00:00",
     "AVAX/USDT:USDT|bearish|6.381-6.394": "2026-08-16T13:00:21.331487+00:00",
     "LINK/USDT:USDT|bullish|9.331-9.348": "2026-08-16T13:00:21.850294+00:00",
     "DOT/USDT:USDT|bearish|0.7631-0.7642": "2026-08-16T13:00:22.633499+00:00",
@@ -373,6 +359,7 @@
     "ETH/USDT:USDT|bullish|2405.0-2415.53": "2026-08-23T08:19:58.839546+00:00",
     "ATOM/USDT:USDT|bullish|1.542-1.556": "2026-08-23T08:20:07.837540+00:00",
     "SOL/USDT:USDT|bullish|92.996-93.373": "2026-08-23T08:54:26.660527+00:00",
-    "LINK/USDT:USDT|bullish|11.333-11.418": "2026-08-23T10:37:35.035995+00:00"
+    "LINK/USDT:USDT|bullish|11.333-11.418": "2026-08-23T10:37:35.035995+00:00",
+    "AVAX/USDT:USDT|bullish|7.467-7.505": "2026-08-23T11:35:10.139292+00:00"
   }
 }
