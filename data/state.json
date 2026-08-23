@@ -19,19 +19,6 @@
       "trigger": "bullish order block retest: zone 1.4509-1.4639 (formed 2026-08-22 23:30 UTC, break of structure confirmed 2026-08-23 00:15 UTC)"
     },
     {
-      "trade_id": "88dc7db29adc",
-      "entry_time_utc": "2026-08-23T05:06:33.243359+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ADA/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 12649.1875,
-      "entry_price": 0.2162,
-      "stop_loss": 0.2158,
-      "take_profit": 0.217,
-      "trigger": "bullish order block retest: zone 0.2160-0.2173 (formed 2026-08-21 19:45 UTC, break of structure confirmed 2026-08-21 20:00 UTC)"
-    },
-    {
       "trade_id": "775cddf59abf",
       "entry_time_utc": "2026-08-23T05:06:33.786353+00:00",
       "mode": "DRY_RUN",
@@ -56,19 +43,6 @@
       "stop_loss": 0.3408,
       "take_profit": 0.3454,
       "trigger": "bullish order block retest: zone 0.3412-0.3420 (formed 2026-08-21 21:30 UTC, break of structure confirmed 2026-08-21 22:00 UTC)"
-    },
-    {
-      "trade_id": "b4be45ed0c87",
-      "entry_time_utc": "2026-08-23T05:06:36.782487+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ATOM/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 1162.88663,
-      "entry_price": 1.528,
-      "stop_loss": 1.5235,
-      "take_profit": 1.5371,
-      "trigger": "bullish order block retest: zone 1.5250-1.5340 (formed 2026-08-21 05:00 UTC, break of structure confirmed 2026-08-21 05:45 UTC)"
     }
   ],
   "dry_run_signaled": {
