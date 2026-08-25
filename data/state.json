@@ -6,30 +6,17 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "511ef2c99e01",
-      "entry_time_utc": "2026-08-25T07:15:56.221173+00:00",
+      "trade_id": "5968ffc0914d",
+      "entry_time_utc": "2026-08-25T08:04:31.613400+00:00",
       "mode": "DRY_RUN",
-      "symbol": "LTC/USDT:USDT",
+      "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 24.822218,
-      "entry_price": 52.15,
-      "stop_loss": 51.938,
-      "take_profit": 52.574,
-      "trigger": "bullish order block retest: zone 51.9900-52.3000 (formed 2026-08-23 12:00 UTC, break of structure confirmed 2026-08-23 12:45 UTC)"
-    },
-    {
-      "trade_id": "08b84a25c852",
-      "entry_time_utc": "2026-08-25T07:16:01.322809+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 1419.761487,
-      "entry_price": 0.6094,
-      "stop_loss": 0.6057,
-      "take_profit": 0.6168,
-      "trigger": "bullish order block retest: zone 0.6063-0.6095 (formed 2026-08-25 02:00 UTC, break of structure confirmed 2026-08-25 02:15 UTC)"
+      "qty": 0.455931,
+      "entry_price": 2480.43,
+      "stop_loss": 2468.8886,
+      "take_profit": 2503.5127,
+      "trigger": "bullish order block retest: zone 2471.3600-2481.3200 (formed 2026-08-25 00:15 UTC, break of structure confirmed 2026-08-25 00:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -167,7 +154,6 @@
   },
   "last_seen_equity": 263.1031,
   "traded_zones": {
-    "BTC/USDT:USDT|bullish|64056.8-64147.4": "2026-08-18T07:51:24.303358+00:00",
     "ETH/USDT:USDT|bullish|1894.08-1896.24": "2026-08-18T08:21:32.052630+00:00",
     "BTC/USDT:USDT|bullish|64169.4-64219.7": "2026-08-18T11:02:31.574120+00:00",
     "NEAR/USDT:USDT|bearish|1.622-1.624": "2026-08-18T11:37:12.854450+00:00",
@@ -344,6 +330,7 @@
     "ATOM/USDT:USDT|bullish|1.552-1.559": "2026-08-25T04:30:40.852097+00:00",
     "AVAX/USDT:USDT|bullish|7.629-7.656": "2026-08-25T06:23:48.183505+00:00",
     "LTC/USDT:USDT|bullish|51.99-52.3": "2026-08-25T07:15:56.221387+00:00",
-    "APT/USDT:USDT|bullish|0.6063-0.6095": "2026-08-25T07:16:01.323009+00:00"
+    "APT/USDT:USDT|bullish|0.6063-0.6095": "2026-08-25T07:16:01.323009+00:00",
+    "ETH/USDT:USDT|bullish|2471.36-2481.32": "2026-08-25T08:04:31.613623+00:00"
   }
 }
