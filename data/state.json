@@ -6,30 +6,30 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "6bb7605d3cf4",
-      "entry_time_utc": "2026-08-25T03:10:38.559416+00:00",
+      "trade_id": "511ef2c99e01",
+      "entry_time_utc": "2026-08-25T07:15:56.221173+00:00",
       "mode": "DRY_RUN",
       "symbol": "LTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 11.383831,
-      "entry_price": 52.65,
-      "stop_loss": 52.1878,
-      "take_profit": 53.5745,
-      "trigger": "bullish order block retest: zone 52.2400-52.4400 (formed 2026-08-23 20:30 UTC, break of structure confirmed 2026-08-23 21:00 UTC)"
+      "qty": 24.822218,
+      "entry_price": 52.15,
+      "stop_loss": 51.938,
+      "take_profit": 52.574,
+      "trigger": "bullish order block retest: zone 51.9900-52.3000 (formed 2026-08-23 12:00 UTC, break of structure confirmed 2026-08-23 12:45 UTC)"
     },
     {
-      "trade_id": "7449f7899a5e",
-      "entry_time_utc": "2026-08-25T06:23:48.183265+00:00",
+      "trade_id": "08b84a25c852",
+      "entry_time_utc": "2026-08-25T07:16:01.322809+00:00",
       "mode": "DRY_RUN",
-      "symbol": "AVAX/USDT:USDT",
+      "symbol": "APT/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 132.783113,
-      "entry_price": 7.661,
-      "stop_loss": 7.6214,
-      "take_profit": 7.7403,
-      "trigger": "bullish order block retest: zone 7.6290-7.6560 (formed 2026-08-25 04:30 UTC, break of structure confirmed 2026-08-25 05:00 UTC)"
+      "qty": 1419.761487,
+      "entry_price": 0.6094,
+      "stop_loss": 0.6057,
+      "take_profit": 0.6168,
+      "trigger": "bullish order block retest: zone 0.6063-0.6095 (formed 2026-08-25 02:00 UTC, break of structure confirmed 2026-08-25 02:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -167,8 +167,6 @@
   },
   "last_seen_equity": 263.1031,
   "traded_zones": {
-    "TRX/USDT:USDT|bullish|0.33282-0.33291": "2026-08-18T07:11:36.360890+00:00",
-    "NEAR/USDT:USDT|bullish|1.632-1.639": "2026-08-18T07:11:37.217779+00:00",
     "BTC/USDT:USDT|bullish|64056.8-64147.4": "2026-08-18T07:51:24.303358+00:00",
     "ETH/USDT:USDT|bullish|1894.08-1896.24": "2026-08-18T08:21:32.052630+00:00",
     "BTC/USDT:USDT|bullish|64169.4-64219.7": "2026-08-18T11:02:31.574120+00:00",
@@ -344,6 +342,8 @@
     "NEAR/USDT:USDT|bullish|1.967-1.991": "2026-08-25T03:56:53.954474+00:00",
     "DOGE/USDT:USDT|bullish|0.09158-0.09223": "2026-08-25T04:30:36.571319+00:00",
     "ATOM/USDT:USDT|bullish|1.552-1.559": "2026-08-25T04:30:40.852097+00:00",
-    "AVAX/USDT:USDT|bullish|7.629-7.656": "2026-08-25T06:23:48.183505+00:00"
+    "AVAX/USDT:USDT|bullish|7.629-7.656": "2026-08-25T06:23:48.183505+00:00",
+    "LTC/USDT:USDT|bullish|51.99-52.3": "2026-08-25T07:15:56.221387+00:00",
+    "APT/USDT:USDT|bullish|0.6063-0.6095": "2026-08-25T07:16:01.323009+00:00"
   }
 }
