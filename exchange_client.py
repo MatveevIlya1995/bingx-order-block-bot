@@ -94,6 +94,54 @@ class ExchangeClient:
         self.exchange.create_order(symbol, "TAKE_PROFIT_MARKET", opposite, amount, None, tp_params)
         return order
 
+    def close_partial_position(self, symbol: str, side: str, amount: float, position_side: str):
+        """Reduce-only market order closing PART of an open position --
+        used for the partial take-profit (see risk_manager.py). `side` is
+        the CLOSING side (opposite of the original entry side), same
+        convention as the SL/TP orders in create_market_order_with_stops().
+
+        UNVERIFIED against live BingX data, like the rest of this file --
+        confirm the resulting position size matches expectations the
+        first time this fires on a real account (see the README)."""
+        amount = self.amount_to_precision(symbol, amount)
+        params = {"positionSide": position_side, "reduceOnly": True}
+        return self.exchange.create_order(symbol, "market", side, amount, None, params)
+
+    def replace_stop_order(
+        self, symbol: str, side: str, amount: float, new_stop_price: float, position_side: str,
+    ):
+        """Cancels this symbol/position_side's existing STOP_MARKET
+        reduce-only order (if any) and places a new one at
+        new_stop_price -- used to move the stop to breakeven right after
+        a partial take-profit, and again on each trailing-stop step.
+
+        NOTE: like fetch_trade_exit(), how to identify "the" existing
+        stop order among fetch_open_orders() results is unverified
+        against live BingX data -- confirm this cancels the correct order
+        (and not, say, the take-profit order) before relying on it with
+        real money (see the README's Step 3)."""
+        amount = self.amount_to_precision(symbol, amount)
+        try:
+            open_orders = self.exchange.fetch_open_orders(symbol)
+        except Exception as e:
+            print(f"[exchange] {symbol}: could not fetch open orders to replace stop: {e}")
+            open_orders = []
+
+        for o in open_orders:
+            o_type = (o.get("type") or "").upper()
+            o_info = o.get("info", {}) or {}
+            o_side = str(o_info.get("positionSide", "")).upper()
+            if "STOP" in o_type and "TAKE_PROFIT" not in o_type and (
+                not position_side or o_side == position_side.upper()
+            ):
+                try:
+                    self.exchange.cancel_order(o["id"], symbol)
+                except Exception as e:
+                    print(f"[exchange] {symbol}: could not cancel existing stop order {o.get('id')}: {e}")
+
+        params = {"positionSide": position_side, "stopPrice": new_stop_price, "reduceOnly": True}
+        return self.exchange.create_order(symbol, "STOP_MARKET", side, amount, None, params)
+
     def fetch_trade_exit(self, symbol: str, position_side: str, since_iso: str):
         """Looks up the fill that closed a previously-tracked position, so
         risk_manager.reconcile_closed_trades() can log an accurate EXIT

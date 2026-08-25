@@ -45,14 +45,24 @@ DEFAULT_SYMBOLS = (
     "DOT/USDT:USDT,TRX/USDT:USDT,NEAR/USDT:USDT,ATOM/USDT:USDT,APT/USDT:USDT"
 )
 
-# Top-down multi-timeframe cascade, highest timeframe first: the weekly
-# trend sets the bias, then daily, 4h and 1h must each not contradict it
-# (a clear disagreement between any two levels blocks the trade entirely
-# -- see strategy.combine_htf_bias()). The actual entry signal itself
-# still comes from an order-block retest on `timeframe` (15m by default)
-# below. Override with the HTF_TIMEFRAMES repo variable (comma-separated,
-# highest timeframe first) if you want a different cascade.
+# Full top-down cascade, highest timeframe first -- every level here is
+# fetched and logged each cycle (see bot.analyze_higher_timeframes()), so
+# you always see weekly through 1h trend context. Override with the
+# HTF_TIMEFRAMES repo variable (comma-separated, highest timeframe first).
 DEFAULT_HTF_TIMEFRAMES = "1w,1d,4h,1h"
+
+# Of the levels above, only these are DIRECTIONAL/AUTHORITATIVE: they set
+# the trade's allowed bias, and a disagreement between them blocks the
+# trade outright (see strategy.combine_htf_bias() and
+# bot.analyze_higher_timeframes()). The remaining HTF_TIMEFRAMES levels
+# are "refinement" levels -- still fetched, analyzed and logged every
+# cycle, but purely informational: they never veto a trade. This mirrors
+# how most top-down multi-timeframe traders actually work -- the higher
+# timeframe sets direction, lower ones are for timing entries, not for
+# overruling the primary trend on every small pullback. Override with the
+# HTF_PRIMARY_TIMEFRAMES repo variable if you want a different split (e.g.
+# just the weekly, or weekly+daily+4h).
+DEFAULT_HTF_PRIMARY_TIMEFRAMES = "1w,1d"
 
 
 @dataclass
@@ -75,18 +85,26 @@ class Config:
     # Hard rule, not just a default: take-profit is always exactly this
     # multiple of the stop-loss distance. load_config() below forces
     # reward_risk_ratio to this value even if REWARD_RISK_RATIO is set to
-    # something else in the environment.
+    # something else in the environment. NOTE: since partial_tp_r_multiple
+    # and trailing (below) now manage the runner after the partial exit,
+    # this fixed 2R target is really only ever hit as a full exit if
+    # trailing never gets the chance to activate (e.g. PARTIAL_TP_FRACTION
+    # is set to 0, disabling partials).
     required_reward_risk_ratio: float = 2.0
 
     # --- top-down higher-timeframe trend filter ---
     # Weekly -> daily -> 4h -> 1h, highest timeframe first (see
-    # DEFAULT_HTF_TIMEFRAMES above and bot.analyze_higher_timeframes()).
-    # A signal is only vetoed when one level's trend clearly contradicts
-    # another level's, or contradicts the signal's own direction -- an
-    # unclear/neutral trend at any single level does not block a trade
-    # by itself.
+    # DEFAULT_HTF_TIMEFRAMES/DEFAULT_HTF_PRIMARY_TIMEFRAMES above and
+    # bot.analyze_higher_timeframes()). A signal is only vetoed when a
+    # PRIMARY level's trend clearly contradicts another primary level's,
+    # or contradicts the signal's own direction -- an unclear/neutral
+    # trend, or a disagreeing REFINEMENT-only level, does not block a
+    # trade by itself.
     trend_filter_enabled: bool = field(default_factory=lambda: _bool("TREND_FILTER_ENABLED", True))
     htf_timeframes: list = field(default_factory=lambda: _env_list("HTF_TIMEFRAMES", DEFAULT_HTF_TIMEFRAMES))
+    primary_htf_timeframes: list = field(
+        default_factory=lambda: _env_list("HTF_PRIMARY_TIMEFRAMES", DEFAULT_HTF_PRIMARY_TIMEFRAMES)
+    )
     trend_ema_period: int = field(default_factory=lambda: int(_env("TREND_EMA_PERIOD", "50")))
     trend_candle_limit: int = field(default_factory=lambda: int(_env("TREND_CANDLE_LIMIT", "150")))
 
@@ -101,11 +119,66 @@ class Config:
     leverage: int = field(default_factory=lambda: int(_env("LEVERAGE", "3")))
     # Hard ceiling enforced in code regardless of what LEVERAGE env var says.
     max_leverage_hard_cap: int = 10
+    # Second, independent cap on top of risk_pct_per_trade: the NOTIONAL
+    # value of a single position, and of all open positions combined, may
+    # never require more than this fraction of equity*leverage in margin.
+    # Without this, a tight stop-loss (a small stop_distance) makes
+    # risk_amount / stop_distance blow up into a notional far larger than
+    # the account can actually margin -- risk_pct_per_trade alone only
+    # bounds what you lose if stopped out, not how big the position is.
+    # 0.5 means: never let open positions collectively require more than
+    # 50% of the account's theoretical max notional (equity * leverage) --
+    # deliberately leaving headroom so one position's stop-out doesn't
+    # eat margin needed by others, and so a fill doesn't get rejected
+    # outright for insufficient margin.
+    max_margin_utilization_pct: float = field(
+        default_factory=lambda: float(_env("MAX_MARGIN_UTILIZATION_PCT", "50")) / 100
+    )
     max_daily_loss_pct: float = field(
         default_factory=lambda: float(_env("MAX_DAILY_LOSS_PCT", "3")) / 100
     )
     max_concurrent_positions: int = field(
         default_factory=lambda: int(_env("MAX_CONCURRENT_POSITIONS", "1"))
+    )
+
+    # --- partial take-profit + trailing stop ---
+    # At PARTIAL_TP_R_MULTIPLE times the original risk (1R = the distance
+    # from entry to the initial stop-loss), PARTIAL_TP_FRACTION of the
+    # position is closed and the stop for the remainder moves to
+    # breakeven (the original entry price) -- the classic "take some off,
+    # can't lose on the rest" adjustment. From then on the remainder is a
+    # trailing-stop runner with no fixed cap, so a strong trend can pay
+    # out well beyond the fixed 2R take-profit instead of being capped
+    # there every time. Set PARTIAL_TP_FRACTION to 0 to disable this and
+    # fall back to the old fixed-2R-take-profit-only behavior.
+    partial_tp_r_multiple: float = field(
+        default_factory=lambda: float(_env("PARTIAL_TP_R_MULTIPLE", "1.0"))
+    )
+    partial_tp_fraction: float = field(
+        default_factory=lambda: float(_env("PARTIAL_TP_FRACTION", "0.5"))
+    )
+    # Once trailing, the stop is ratcheted to (favorable extreme so far)
+    # minus/plus this many R-multiples -- i.e. the runner is allowed this
+    # much room to breathe before the trail locks in the next step of
+    # profit. Smaller = locks in profit faster but gets stopped out of
+    # trends sooner; larger = rides trends further but gives back more.
+    trail_r_multiple: float = field(
+        default_factory=lambda: float(_env("TRAIL_R_MULTIPLE", "1.0"))
+    )
+
+    # --- cost modeling ---
+    # DRY_RUN's simulated exits previously assumed a fill at the exact
+    # stop/take-profit price with no trading fees at all, which makes
+    # paper-trading stats look better than live trading ever will. This
+    # is a round-trip (entry + exit) taker-fee estimate applied to
+    # simulated DRY_RUN P/L only, so paper stats are a more honest
+    # preview -- it does NOT touch LIVE P/L, which already comes from
+    # BingX's own realized-PnL field (see exchange_client.fetch_trade_exit).
+    # 0.05% is BingX's standard default USDT-M perpetual taker fee at the
+    # time this was written -- check your own account's actual fee tier
+    # (maker/taker, any VIP discount) and adjust if it differs.
+    dry_run_fee_pct_per_side: float = field(
+        default_factory=lambda: float(_env("DRY_RUN_FEE_PCT_PER_SIDE", "0.05")) / 100
     )
 
     # --- safety ---
@@ -140,4 +213,17 @@ def load_config() -> Config:
             f"uses a fixed {cfg.required_reward_risk_ratio}:1 reward:risk ratio."
         )
         cfg.reward_risk_ratio = cfg.required_reward_risk_ratio
+    if not (0.0 < cfg.max_margin_utilization_pct <= 1.0):
+        print(
+            f"[config] MAX_MARGIN_UTILIZATION_PCT={cfg.max_margin_utilization_pct * 100:.0f}% "
+            f"is out of range (0-100]; clamping to 50%."
+        )
+        cfg.max_margin_utilization_pct = 0.5
+    missing_primary = [tf for tf in cfg.primary_htf_timeframes if tf not in cfg.htf_timeframes]
+    if missing_primary:
+        print(
+            f"[config] HTF_PRIMARY_TIMEFRAMES contains {missing_primary}, not present in "
+            f"HTF_TIMEFRAMES={cfg.htf_timeframes}; adding them so they still get analyzed."
+        )
+        cfg.htf_timeframes = cfg.htf_timeframes + missing_primary
     return cfg

@@ -1,7 +1,9 @@
 """
-Risk management: position sizing, leverage cap, a daily-loss circuit
-breaker, and a CSV trade journal that tracks both trade entries and exits
-(so duration and realized P/L per trade can be reported later).
+Risk management: position sizing (with a margin/notional cap), leverage
+cap, a daily-loss circuit breaker, partial take-profit + trailing-stop
+management for open trades, and a CSV trade journal that tracks entries,
+partial exits, and full exits (so duration and realized P/L per trade can
+be reported later).
 
 The circuit breaker compares CURRENT account equity (fetched fresh from
 BingX every cycle) against the equity recorded at the start of the UTC
@@ -12,6 +14,20 @@ runs, which also catches large *unrealized* drawdowns on an open
 position, not only realized losses. State (including which trades are
 still open) persists to a small JSON file so it survives across separate
 scheduled-task invocations, which each run as a fresh process.
+
+Partial take-profit + trailing stop (see config.py's PARTIAL_TP_* /
+TRAIL_R_MULTIPLE): once a trade reaches partial_tp_r_multiple times its
+original risk (1R), PARTIAL_EXIT closes partial_tp_fraction of the
+position and the remainder's stop moves to breakeven; from there the
+remainder is a trailing-stop runner with no fixed take-profit cap, so a
+strong trend can pay out beyond the fixed 2R the trade would otherwise be
+capped at. This is simulated candle-by-candle for DRY_RUN trades (see
+reconcile_dry_run_exits) and, for LIVE trades, actually places the
+partial-close and replacement-stop orders on the exchange (see
+reconcile_live_exits and exchange_client.py) -- like the rest of this
+bot's BingX order wiring, the live path has not been verified against a
+real BingX account; validate it with a small real trade before trusting
+it (see the README).
 """
 import csv
 import json
@@ -32,6 +48,7 @@ TRADE_JOURNAL_FIELDS = [
 # still inside the strategy's lookback window won't fall out of dedup
 # memory before it can actually re-trigger legitimately.
 DRY_RUN_SIGNAL_MEMORY_DAYS = 7
+
 
 class RiskManager:
     def __init__(self, cfg):
@@ -159,21 +176,70 @@ class RiskManager:
                 pruned[key] = seen_iso
         self.state["traded_zones"] = pruned
 
+    # --- occupied symbols (LIVE + DRY_RUN), used so paper trading obeys
+    # the same "one position per symbol" / max_concurrent_positions rules
+    # a real account would -- previously only real exchange positions
+    # counted, so DRY_RUN could (and did) stack unlimited paper trades on
+    # the same symbol at once, understating how selective LIVE trading
+    # would actually be. ---
+    def occupied_symbols(self) -> set:
+        live = {t["symbol"] for t in self.state.get("open_trades", [])}
+        paper = {t["symbol"] for t in self.state.get("open_dry_run_trades", [])}
+        return live | paper
+
+    def total_open_count(self) -> int:
+        return len(self.state.get("open_trades", [])) + len(self.state.get("open_dry_run_trades", []))
+
+    def total_open_notional(self, mark_prices: dict | None = None) -> float:
+        """Approximate combined notional of every currently-tracked open
+        trade (LIVE + DRY_RUN), used to cap how much MORE margin a new
+        trade is allowed to use (see position_size()). Uses each trade's
+        entry price as a stand-in for current mark price unless
+        mark_prices (a {symbol: price} dict) supplies something fresher --
+        an approximation, not an exact live margin read."""
+        total = 0.0
+        for trade in self.state.get("open_trades", []) + self.state.get("open_dry_run_trades", []):
+            price = (mark_prices or {}).get(trade["symbol"], trade.get("entry_price", 0.0))
+            total += trade.get("qty", 0.0) * price
+        return total
+
     def track_open_trade(self, trade: dict):
         """Remembers a just-submitted LIVE entry so a later cycle can
         detect when it closes and log the exit. `trade` must include:
         trade_id, symbol, position_side, side, qty, entry_price,
         stop_loss, take_profit, trigger, entry_time_utc."""
+        trade = self._arm_partial_and_trail(trade)
         self.state.setdefault("open_trades", []).append(trade)
         self._save_state()
 
+    def _arm_partial_and_trail(self, trade: dict) -> dict:
+        """Attaches the partial-take-profit / trailing-stop bookkeeping
+        fields to a freshly-opened trade record (used for both LIVE and
+        DRY_RUN trades so they're managed identically)."""
+        is_long = trade["position_side"].upper() == "LONG"
+        risk_per_unit = abs(trade["entry_price"] - trade["stop_loss"])
+        partial_tp_price = (
+            trade["entry_price"] + risk_per_unit * self.cfg.partial_tp_r_multiple
+            if is_long else
+            trade["entry_price"] - risk_per_unit * self.cfg.partial_tp_r_multiple
+        )
+        return {
+            **trade,
+            "initial_qty": trade["qty"],
+            "risk_per_unit": risk_per_unit,
+            "partial_tp_price": partial_tp_price,
+            "partial_taken": False,
+        }
+
     def reconcile_closed_trades(self, open_positions: list, exchange_client) -> list:
-        """Compares tracked open trades against the exchange's current
-        open positions. Any tracked trade no longer open is treated as
-        closed: looks up the closing fill via the exchange client, logs
-        an EXIT row (with duration and realized P/L when it can be
-        determined), and updates today's realized P/L running total.
-        Returns the list of trades that were closed this cycle.
+        """Compares tracked open LIVE trades against the exchange's
+        current open positions. Any tracked trade no longer open at all
+        is treated as fully closed (its stop or the trailing stop was
+        hit, or it was closed manually): looks up the closing fill via
+        the exchange client, logs an EXIT row (with duration and realized
+        P/L when it can be determined), and updates today's realized P/L
+        running total. Returns the list of trades that were closed this
+        cycle.
 
         Must be called every cycle (bot.py does this right after fetching
         open_positions, before the circuit-breaker check) -- otherwise
@@ -255,33 +321,222 @@ class RiskManager:
 
         return closed
 
+    def reconcile_live_exits(self, symbol: str, high: float, low: float, exchange_client) -> list:
+        """LIVE counterpart of reconcile_dry_run_exits(): checks every
+        tracked open LIVE trade on `symbol` against the latest candle's
+        high/low for a partial-take-profit trigger, and actually executes
+        it on the exchange (a reduce-only partial close, then replacing
+        the stop order at breakeven -- see exchange_client.py). A full
+        stop-out or trailing-stop exit is NOT decided here: it's detected
+        the normal way, by reconcile_closed_trades() noticing the position
+        is no longer open on the exchange (the exchange's own stop order
+        is what actually closes it). This method only ever *adds* the
+        partial-exit order and moves the stop; it never assumes a fill
+        happened without the exchange confirming it.
+
+        UNVERIFIED against live BingX data, like the rest of this bot's
+        order-submission code -- validate with a small real trade before
+        relying on it (see the README).
+        """
+        open_trades = self.state.get("open_trades", [])
+        touched = [t for t in open_trades if t["symbol"] == symbol and not t.get("partial_taken")]
+        if not touched:
+            return []
+
+        acted = []
+        for trade in touched:
+            is_long = trade["position_side"].upper() == "LONG"
+            partial_level = trade["partial_tp_price"]
+            hit_partial = (high >= partial_level) if is_long else (low <= partial_level)
+            if not hit_partial:
+                continue
+
+            partial_qty = round(trade["qty"] * self.cfg.partial_tp_fraction, 8)
+            remaining_qty = round(trade["qty"] - partial_qty, 8)
+            if partial_qty <= 0 or remaining_qty <= 0:
+                continue
+
+            close_side = "sell" if trade["side"].upper() == "BUY" else "buy"
+            try:
+                exchange_client.close_partial_position(
+                    symbol=symbol, side=close_side, amount=partial_qty,
+                    position_side=trade["position_side"],
+                )
+                exchange_client.replace_stop_order(
+                    symbol=symbol, side=close_side, amount=remaining_qty,
+                    new_stop_price=trade["entry_price"], position_side=trade["position_side"],
+                )
+            except Exception as e:
+                print(f"[risk] {symbol}: partial take-profit order failed, leaving trade untouched: {e}")
+                continue
+
+            now = datetime.datetime.now(datetime.timezone.utc)
+            entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+            self._write_journal_row({
+                "event": "PARTIAL_EXIT",
+                "trade_id": trade["trade_id"],
+                "timestamp_utc": now.isoformat(),
+                "mode": "LIVE",
+                "symbol": symbol,
+                "side": trade["side"],
+                "position_side": trade["position_side"],
+                "qty": partial_qty,
+                "price": round(partial_level, 6),
+                "stop_loss": trade["entry_price"],
+                "take_profit": trade.get("take_profit", ""),
+                "trigger": (
+                    f"partial take-profit ({self.cfg.partial_tp_fraction:.0%} of position) at "
+                    f"{self.cfg.partial_tp_r_multiple:g}R -- stop moved to breakeven, remainder trailing"
+                ),
+                "pnl": "",  # realized P/L for this slice comes from reconcile_closed_trades/exchange
+                "duration_minutes": round((now - entry_time).total_seconds() / 60, 1),
+            })
+
+            trade["qty"] = remaining_qty
+            trade["stop_loss"] = trade["entry_price"]
+            trade["partial_taken"] = True
+            trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+            acted.append(trade)
+
+        if acted:
+            self._save_state()
+        return acted
+
+    def trail_live_stops(self, symbol: str, high: float, low: float, exchange_client):
+        """For LIVE trades already past their partial take-profit (i.e.
+        trailing runners), ratchets the exchange's stop order forward as
+        price makes new favorable extremes -- mirrors the DRY_RUN trailing
+        simulation in reconcile_dry_run_exits(). Never moves the stop
+        backward. UNVERIFIED against live BingX data -- see the README."""
+        open_trades = self.state.get("open_trades", [])
+        trailing = [t for t in open_trades if t["symbol"] == symbol and t.get("partial_taken")]
+        moved = False
+        for trade in trailing:
+            is_long = trade["position_side"].upper() == "LONG"
+            if is_long:
+                candidate = high - trade["trail_distance"]
+                new_stop = max(trade["stop_loss"], candidate)
+            else:
+                candidate = low + trade["trail_distance"]
+                new_stop = min(trade["stop_loss"], candidate)
+            if new_stop == trade["stop_loss"]:
+                continue
+            close_side = "sell" if trade["side"].upper() == "BUY" else "buy"
+            try:
+                exchange_client.replace_stop_order(
+                    symbol=symbol, side=close_side, amount=trade["qty"],
+                    new_stop_price=new_stop, position_side=trade["position_side"],
+                )
+            except Exception as e:
+                print(f"[risk] {symbol}: could not move trailing stop, leaving it where it was: {e}")
+                continue
+            trade["stop_loss"] = new_stop
+            moved = True
+        if moved:
+            self._save_state()
+
     def track_dry_run_trade(self, trade: dict):
         """Remembers a just-logged DRY_RUN paper trade so a later cycle can
         check it against fresh candles and log a simulated exit once its
-        stop-loss or take-profit is touched. `trade` must include the
-        same fields as track_open_trade(): trade_id, symbol,
-        position_side, side, qty, entry_price, stop_loss, take_profit,
-        trigger, entry_time_utc."""
+        stop-loss, partial take-profit, or trailing stop is touched.
+        `trade` must include: trade_id, symbol, position_side, side, qty,
+        entry_price, stop_loss, take_profit, trigger, entry_time_utc."""
+        trade = self._arm_partial_and_trail(trade)
         self.state.setdefault("open_dry_run_trades", []).append(trade)
         self._save_state()
 
+    def _estimate_round_trip_fee(self, qty: float, entry_price: float, exit_price: float) -> float:
+        """Rough taker-fee estimate for one round trip (entry + this
+        exit), applied to DRY_RUN P/L only -- see config.py's
+        dry_run_fee_pct_per_side for why. LIVE P/L is unaffected: it
+        comes from BingX's own realized-PnL field, which already reflects
+        whatever BingX actually charged."""
+        return (qty * entry_price + qty * exit_price) * self.cfg.dry_run_fee_pct_per_side
+
+    def _close_dry_run_trade(self, trade: dict, exit_price: float, qty: float, reason: str):
+        is_long = trade["position_side"].upper() == "LONG"
+        direction = 1 if is_long else -1
+        gross_pnl = (exit_price - trade["entry_price"]) * direction * qty
+        fee = self._estimate_round_trip_fee(qty, trade["entry_price"], exit_price)
+        pnl = gross_pnl - fee
+        exit_time = datetime.datetime.now(datetime.timezone.utc)
+        entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+        duration_minutes = round((exit_time - entry_time).total_seconds() / 60, 1)
+        self._write_journal_row({
+            "event": "EXIT",
+            "trade_id": trade["trade_id"],
+            "timestamp_utc": exit_time.isoformat(),
+            "mode": "DRY_RUN",
+            "symbol": trade["symbol"],
+            "side": trade["side"],
+            "position_side": trade["position_side"],
+            "qty": qty,
+            "price": round(exit_price, 6),
+            "stop_loss": trade["stop_loss"],
+            "take_profit": trade.get("take_profit", ""),
+            "trigger": reason,
+            "pnl": round(pnl, 4),
+            "duration_minutes": duration_minutes,
+        })
+
+    def _take_dry_run_partial(self, trade: dict, symbol: str):
+        partial_qty = round(trade["qty"] * self.cfg.partial_tp_fraction, 8)
+        remaining_qty = round(trade["qty"] - partial_qty, 8)
+        exit_price = trade["partial_tp_price"]
+        is_long = trade["position_side"].upper() == "LONG"
+        direction = 1 if is_long else -1
+        gross_pnl = (exit_price - trade["entry_price"]) * direction * partial_qty
+        fee = self._estimate_round_trip_fee(partial_qty, trade["entry_price"], exit_price)
+        pnl = gross_pnl - fee
+        now = datetime.datetime.now(datetime.timezone.utc)
+        entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+        self._write_journal_row({
+            "event": "PARTIAL_EXIT",
+            "trade_id": trade["trade_id"],
+            "timestamp_utc": now.isoformat(),
+            "mode": "DRY_RUN",
+            "symbol": symbol,
+            "side": trade["side"],
+            "position_side": trade["position_side"],
+            "qty": partial_qty,
+            "price": round(exit_price, 6),
+            "stop_loss": trade["entry_price"],
+            "take_profit": trade.get("take_profit", ""),
+            "trigger": (
+                f"partial take-profit ({self.cfg.partial_tp_fraction:.0%} of position) at "
+                f"{self.cfg.partial_tp_r_multiple:g}R -- stop moved to breakeven, remainder trailing"
+            ),
+            "pnl": round(pnl, 4),
+            "duration_minutes": round((now - entry_time).total_seconds() / 60, 1),
+        })
+        trade["qty"] = remaining_qty
+        trade["stop_loss"] = trade["entry_price"]
+        trade["partial_taken"] = True
+        trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+
     def reconcile_dry_run_exits(self, symbol: str, high: float, low: float) -> list:
         """Checks every open DRY_RUN paper trade on `symbol` against the
-        high/low of the most recently fetched candle. If the candle's
-        range crosses the trade's stop-loss or take-profit, closes it at
-        that level, computes realized P/L, and logs a simulated EXIT row
-        the same way reconcile_closed_trades() does for real LIVE fills.
+        high/low of the most recently fetched candle:
+
+        - Before the partial take-profit: a stop-loss hit closes the
+          whole trade; a partial-take-profit hit closes
+          partial_tp_fraction of it, moves the stop to breakeven for the
+          rest, and arms trailing for the remainder (only one of these
+          two is applied per candle -- if the candle's range covers the
+          stop AND the partial level, the stop is assumed to have been
+          hit first, the same conservative assumption used for
+          simultaneous SL/TP hits, so this never overstates performance).
+        - After the partial take-profit: the trade is a trailing runner.
+          Each candle first checks the CURRENT trailing stop (so a stop
+          that was only just moved can't retroactively claim a hit from
+          this same candle's favorable extreme); only if that isn't hit
+          does the stop then ratchet forward using this candle's high (for
+          a LONG) or low (for a SHORT), for the next candle to check.
 
         Must be called every cycle for every symbol right after fetching
         its candle -- this is the only mechanism that ever resolves a
         DRY_RUN paper trade; without it, DRY_RUN entries stay open
         forever and no real win rate can ever be measured.
-
-        If a single candle's range covers BOTH the stop-loss and the
-        take-profit (an unusually volatile bar), the stop-loss is assumed
-        to have been hit first -- the standard conservative assumption
-        when the exact intra-candle tick order isn't known, so this never
-        overstates paper performance.
         """
         open_trades = self.state.get("open_dry_run_trades", [])
         if not open_trades:
@@ -289,60 +544,87 @@ class RiskManager:
 
         remaining = []
         closed = []
+        changed = False
         for trade in open_trades:
             if trade["symbol"] != symbol:
                 remaining.append(trade)
                 continue
 
             is_long = trade["position_side"].upper() == "LONG"
-            sl = trade["stop_loss"]
-            tp = trade["take_profit"]
-            hit_sl = (low <= sl) if is_long else (high >= sl)
-            hit_tp = (high >= tp) if is_long else (low <= tp)
 
-            if not (hit_sl or hit_tp):
+            if not trade.get("partial_taken"):
+                sl = trade["stop_loss"]
+                hit_sl = (low <= sl) if is_long else (high >= sl)
+                if hit_sl:
+                    self._close_dry_run_trade(
+                        trade, exit_price=sl, qty=trade["qty"], reason="stop_loss hit"
+                    )
+                    closed.append(trade)
+                    changed = True
+                    continue
+
+                partial_level = trade["partial_tp_price"]
+                hit_partial = (high >= partial_level) if is_long else (low <= partial_level)
+                if hit_partial:
+                    self._take_dry_run_partial(trade, symbol)
+                    changed = True
                 remaining.append(trade)
                 continue
 
-            exit_price = sl if hit_sl else tp
-            direction = 1 if is_long else -1
-            pnl = (exit_price - trade["entry_price"]) * direction * trade["qty"]
-            exit_time = datetime.datetime.now(datetime.timezone.utc)
-            entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
-            duration_minutes = round((exit_time - entry_time).total_seconds() / 60, 1)
+            # Trailing runner: check the stop as it stood BEFORE this
+            # candle first, then ratchet it forward for next time.
+            sl = trade["stop_loss"]
+            hit_sl = (low <= sl) if is_long else (high >= sl)
+            if hit_sl:
+                self._close_dry_run_trade(
+                    trade, exit_price=sl, qty=trade["qty"],
+                    reason=f"trailing stop hit ({self.cfg.trail_r_multiple:g}R trail)",
+                )
+                closed.append(trade)
+                changed = True
+                continue
 
-            self._write_journal_row({
-                "event": "EXIT",
-                "trade_id": trade["trade_id"],
-                "timestamp_utc": exit_time.isoformat(),
-                "mode": "DRY_RUN",
-                "symbol": trade["symbol"],
-                "side": trade["side"],
-                "position_side": trade["position_side"],
-                "qty": trade["qty"],
-                "price": round(exit_price, 6),
-                "stop_loss": sl,
-                "take_profit": tp,
-                "trigger": "stop_loss hit" if hit_sl else "take_profit hit",
-                "pnl": round(pnl, 4),
-                "duration_minutes": duration_minutes,
-            })
-            closed.append(trade)
+            if is_long:
+                candidate = high - trade["trail_distance"]
+                new_stop = max(sl, candidate)
+            else:
+                candidate = low + trade["trail_distance"]
+                new_stop = min(sl, candidate)
+            if new_stop != sl:
+                trade["stop_loss"] = new_stop
+                changed = True
+            remaining.append(trade)
 
-        if closed:
+        if changed:
             self.state["open_dry_run_trades"] = remaining
             self._save_state()
         return closed
 
-    def position_size(self, equity: float, entry: float, stop_loss: float) -> float:
+    def position_size(
+        self, equity: float, entry: float, stop_loss: float,
+        leverage: int | None = None, existing_notional: float = 0.0,
+    ) -> float:
         """Size the position so a stop-out loses roughly risk_pct_per_trade
-        of equity. Caller is still responsible for rounding to the
-        exchange's amount precision/step size before submitting."""
+        of equity, THEN cap that size so the position's notional (plus
+        whatever's already open) doesn't require more margin than
+        max_margin_utilization_pct of the account's theoretical capacity
+        at the given leverage. A tight stop-loss on its own can otherwise
+        make risk_amount / stop_distance far larger than the account can
+        actually margin -- this second cap is what keeps that in check.
+        Caller is still responsible for rounding to the exchange's amount
+        precision/step size before submitting."""
         risk_amount = equity * self.cfg.risk_pct_per_trade
         stop_distance = abs(entry - stop_loss)
         if stop_distance <= 0:
             return 0.0
-        return risk_amount / stop_distance
+        qty = risk_amount / stop_distance
+
+        lev = leverage if leverage else self.safe_leverage()
+        max_total_notional = equity * lev * self.cfg.max_margin_utilization_pct
+        available_notional = max(max_total_notional - existing_notional, 0.0)
+        if entry > 0:
+            qty = min(qty, available_notional / entry)
+        return max(qty, 0.0)
 
     def safe_leverage(self) -> int:
         return min(self.cfg.leverage, self.cfg.max_leverage_hard_cap)

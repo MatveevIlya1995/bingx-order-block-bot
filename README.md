@@ -2,38 +2,96 @@
 
 A rule-based bot for BingX USDT-M perpetual futures that trades an "order
 block" (smart-money-concept) strategy with a top-down multi-timeframe
-filter: it only takes a trade when the weekly, daily, 4h and 1h trends
-agree (or have no opinion), then looks for an order-block retest on the
-15m chart in that direction. Every entry gets an automatic stop-loss
-(hard-capped at 3% of equity) and a take-profit that's always exactly
-twice the stop-loss distance. A daily-loss circuit breaker halts new
-entries if losses get too large for the day.
+filter: the weekly and daily trend (the "primary" levels) set the
+allowed direction, then it looks for an order-block retest on the 15m
+chart in that direction, using the 4h and 1h trend as entry-timing
+context rather than a veto. Every entry gets an automatic stop-loss
+(hard-capped at 3% of equity) sized so it also never asks for more
+margin than the account can actually support. At 1R (the same distance
+as the initial risk) half the position takes profit and the stop for the
+rest moves to breakeven; the remainder then trails with no fixed cap
+instead of being capped at a fixed 2R target. A daily-loss circuit
+breaker halts new entries if losses get too large for the day.
 
 ## How a trade gets taken
 
 1. **Weekly** -- trend is read from an EMA of weekly closes, and weekly
-   order blocks are located for context.
-2. **Daily** -- same analysis, and the daily trend must not contradict
-   the weekly trend.
-3. **4h** -- same analysis again, must not contradict weekly/daily.
-4. **1h** -- same analysis again, must not contradict the levels above.
-   If any two of these four levels disagree (one bullish, one bearish),
-   the symbol is skipped entirely for this cycle -- the bot never trades
-   against a higher timeframe's trend. If every level agrees, or every
-   level is neutral/unclear, that becomes the one direction (or "either
-   direction") a trade is allowed to take below.
+   order blocks are located for context. This is a **primary** level: it
+   sets the allowed trade direction.
+2. **Daily** -- same analysis. Also **primary**: if the daily trend
+   clearly contradicts the weekly trend, the symbol is skipped entirely
+   for this cycle -- the bot never trades against its primary timeframes'
+   trend. If weekly and daily agree (or either/both are neutral), that
+   becomes the one direction (or "either direction") a trade is allowed
+   to take below.
+3. **4h** -- same analysis again, but this level is for **timing** only:
+   it's still fetched, analyzed, and logged every cycle, but it can never
+   veto a trade on its own. A 4h pullback against a strong weekly/daily
+   uptrend is normal -- often exactly the retracement this strategy is
+   trying to trade -- not a reason to skip it.
+4. **1h** -- same analysis again, also timing-only, same reasoning as 4h.
 5. **15m (entry timeframe)** -- the bot looks for a fresh order-block
-   retest signal, exactly as before, but the signal's direction must
-   match the bias established in steps 1-4.
+   retest signal, and the signal's direction must match the PRIMARY
+   (weekly/daily) bias established in steps 1-2. An all-neutral primary
+   read imposes no directional constraint at all.
 6. **Stop-loss & take-profit** -- the stop-loss sits just beyond the 15m
    order block that produced the signal (below it for a LONG, above it
-   for a SHORT), and position size is chosen so that stop-out risk is
-   never more than 3% of account equity, regardless of what
-   `RISK_PCT_PER_TRADE` is set to. Take-profit is always exactly 2x that
-   risk, regardless of what `REWARD_RISK_RATIO` is set to.
+   for a SHORT). Position size is chosen two ways at once and the
+   smaller wins: (a) so that stop-out risk is never more than 3% of
+   account equity, regardless of what `RISK_PCT_PER_TRADE` is set to,
+   and (b) so the position's notional -- combined with whatever's
+   already open -- never requires more margin than
+   `MAX_MARGIN_UTILIZATION_PCT` of the account's theoretical capacity at
+   the configured leverage. (a) alone can size a position far larger
+   than the account can actually margin whenever the stop is tight
+   relative to price; (b) is what keeps that in check.
+7. **Partial take-profit + trailing stop** -- at `PARTIAL_TP_R_MULTIPLE`
+   times the initial risk (1R by default), `PARTIAL_TP_FRACTION` of the
+   position (50% by default) closes and the stop for the remainder moves
+   to breakeven (the entry price). From there the remainder trails
+   `TRAIL_R_MULTIPLE` behind the best price reached so far, with no fixed
+   take-profit cap -- a strong trend can pay out well beyond the fixed 2R
+   the trade would otherwise be capped at. Set `PARTIAL_TP_FRACTION=0` to
+   disable this and fall back to a fixed-2R-take-profit-only exit.
 
 See `strategy.combine_htf_bias()` and `bot.analyze_higher_timeframes()`
-for the exact cascade logic, and `config.py` for the hard caps.
+for the primary/timing cascade logic, `risk_manager.position_size()` for
+the margin cap, `risk_manager.reconcile_dry_run_exits()` /
+`reconcile_live_exits()` / `trail_live_stops()` for the partial-TP and
+trailing-stop mechanics, and `config.py` for every hard cap and default.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `bot.py` | Entry point -- runs one full check-and-maybe-trade cycle, including the weekly/daily (primary) + 4h/1h (timing) cascade and per-cycle trade management |
+| `strategy.py` | Order block detection, retest signal generation, EMA trend detection, and the multi-timeframe bias combiner |
+| `risk_manager.py` | Position sizing (risk + margin caps), leverage cap, daily-loss circuit breaker, partial-take-profit/trailing-stop management, DRY_RUN P/L simulation (with an estimated fee deduction) |
+| `exchange_client.py` | Thin wrapper around ccxt's BingX integration, including exit-fill lookup and the partial-close/replace-stop order calls used for LIVE trailing |
+| `config.py` | Loads settings from environment variables, and enforces the hard caps (3% risk, margin utilization, fixed 2:1 reward:risk, 10x leverage) |
+| `.env.example` | Template for your API keys and settings |
+| `.gitignore` | Keeps `.env`, Python bytecode caches, and OS metadata files out of version control |
+| `run.sh` | Loads `.env` and runs one cycle -- point cron at this |
+| `.github/workflows/bot.yml` | GitHub Actions alternative to cron -- runs on a schedule and commits state/journal updates back to the repo |
+| `data/state.json` | Auto-created; tracks today's P&L and open trades (including partial-TP/trailing state) for the circuit breaker and exit reconciliation |
+| `data/trades.csv` | Auto-created trade journal (`ENTRY`/`PARTIAL_EXIT`/`EXIT` rows); open it on github.com and it renders as a table |
+
+The strategy, risk-management, multi-timeframe cascade, margin-cap
+sizing, and partial-take-profit/trailing-stop logic were all tested in
+this session against hand-built and synthetic scenarios (bullish retest
+-> correct LONG signal, a close-through -> correctly produces no trade,
+a primary-level disagreement blocking a trade while a timing-level-only
+disagreement does not, an oversized-notional trade (reproduced from this
+bot's own live trade history) getting capped by the margin check instead
+of the pure risk-based size, and a full partial-take-profit -> breakeven
+-> trail -> stop-out lifecycle, including the fee deduction reducing the
+simulated P/L). They have not been tested against live BingX data or
+backtested over history, because this sandbox can't reach BingX -- and
+the LIVE partial-take-profit/trailing-stop order calls in
+`exchange_client.py` (`close_partial_position`, `replace_stop_order`)
+are new and, like the rest of this bot's order-submission code, have
+**not** been verified against a real BingX account. Do that yourself
+before risking real money (see Step 3 below).
 
 ## Where this needs to run
 
@@ -44,32 +102,6 @@ with normal internet access -- your own computer, a small VPS (e.g. a
 $5/mo box), or similar. The scheduling instructions below assume a plain
 cron job on Linux/macOS; swap in Task Scheduler or a systemd timer if you
 prefer (a GitHub Actions workflow is also included -- see `.github/workflows/bot.yml`).
-
-## Files
-
-| File | Purpose |
-|---|---|
-| `bot.py` | Entry point -- runs one full check-and-maybe-trade cycle, including the weekly/daily/4h/1h cascade |
-| `strategy.py` | Order block detection, retest signal generation, EMA trend detection, and the multi-timeframe bias combiner |
-| `risk_manager.py` | Position sizing, leverage cap, daily-loss circuit breaker |
-| `exchange_client.py` | Thin wrapper around ccxt's BingX integration, including exit-fill lookup for the trade journal |
-| `config.py` | Loads settings from environment variables, and enforces the hard caps (3% risk, fixed 2:1 reward:risk, 10x leverage) |
-| `.env.example` | Template for your API keys and settings |
-| `run.sh` | Loads `.env` and runs one cycle -- point cron at this |
-| `.github/workflows/bot.yml` | GitHub Actions alternative to cron -- runs on a schedule and commits state/journal updates back to the repo |
-| `data/state.json` | Auto-created; tracks today's P&L and open trades for the circuit breaker and exit reconciliation |
-| `data/trades.csv` | Auto-created trade journal (ENTRY/EXIT rows); open it on github.com and it renders as a table |
-
-The strategy, risk-management and multi-timeframe cascade logic were
-tested in this session against hand-built OHLCV scenarios (bullish
-retest -> correct LONG signal with SL beyond the order block and TP at
-exactly 2x risk, a close-through -> correctly produces no trade, the
-weekly/daily/4h/1h cascade correctly blocking a trade when levels
-disagree and correctly passing an all-agreeing or all-neutral case,
-leverage/risk-pct/reward:risk hard-cap clamping, and the exit-fill lookup
-used by the trade journal). They have not been tested against live BingX
-data or backtested over history, because this sandbox can't reach BingX.
-Do that yourself before risking real money (see Step 3 below).
 
 ## Setup
 
@@ -92,7 +124,7 @@ cp .env.example .env
 
 - Run `python3 bot.py` a few times with `DRY_RUN=true` (the default) and confirm it reads your balance, fetches weekly/daily/4h/1h/15m candles, and logs sensible trend/signal output without error.
 - If you can, point `SYMBOLS`/test against BingX's demo trading (VST) environment first, or at minimum keep `RISK_PCT_PER_TRADE` very small for the first week live.
-- Open a Python REPL and place one manual small test order through `ExchangeClient` to confirm `positionSide` and stop-order params match your account's position mode (BingX supports both "one-way" and "hedge" mode, which changes some order parameters), and confirm `fetch_trade_exit()`'s field-name assumptions (`reduceOnly`, `positionSide`, `realizedPnl`) against a real closed trade. This is the one step that could not be verified from this environment -- do not skip it.
+- Open a Python REPL and place one manual small test order through `ExchangeClient` to confirm `positionSide` and stop-order params match your account's position mode (BingX supports both "one-way" and "hedge" mode, which changes some order parameters), and confirm `fetch_trade_exit()`'s field-name assumptions (`reduceOnly`, `positionSide`, `realizedPnl`) against a real closed trade. Also specifically exercise a partial take-profit once live (or watch closely the first time one fires): confirm `close_partial_position()` reduces the position by the expected amount and `replace_stop_order()` cancels the correct existing order (not the take-profit) and re-places the stop at breakeven. This is the one set of steps that could not be verified from this environment -- do not skip it.
 - Only then set `DRY_RUN=false`.
 
 4. Schedule it. The strategy runs on the `TIMEFRAME` candle (default 15m), so a cron entry that fires a bit more often than that is enough -- the bot itself is idempotent per cycle (it checks existing positions before opening a new one):
@@ -111,22 +143,29 @@ Or use the included `.github/workflows/bot.yml` (runs every 15 minutes via GitHu
 | `TIMEFRAME` | `15m` | Entry candle timeframe -- where the order-block retest signal itself fires |
 | `CANDLE_LIMIT` | `300` | How many entry-timeframe candles to fetch per cycle |
 | `FRACTAL_N` | `2` | Fractal window (bars each side) used for swing-high/low detection, on every timeframe |
-| `REWARD_RISK_RATIO` | `2` | Ignored: always forced to `2` (take-profit is always twice the stop-loss distance) |
+| `REWARD_RISK_RATIO` | `2` | Ignored: always forced to `2` (the fixed take-profit is twice the stop-loss distance -- see partial-TP/trailing above for what usually happens before that fixed target is reached) |
 | `TREND_FILTER_ENABLED` | `true` | Master toggle for the weekly/daily/4h/1h cascade |
-| `HTF_TIMEFRAMES` | `1w,1d,4h,1h` | The cascade itself, highest timeframe first |
+| `HTF_TIMEFRAMES` | `1w,1d,4h,1h` | Every level analyzed and logged each cycle, highest timeframe first |
+| `HTF_PRIMARY_TIMEFRAMES` | `1w,1d` | Which of the levels above can actually veto a trade on disagreement; the rest are timing-only context |
 | `TREND_EMA_PERIOD` | `50` | EMA period used for the trend read at every cascade level |
 | `TREND_CANDLE_LIMIT` | `150` | How many candles to fetch per cascade level |
 | `RISK_PCT_PER_TRADE` | `0.5` | % of account equity risked per trade (via stop distance); hard-capped at 3% regardless of this value |
 | `LEVERAGE` | `3` | Requested leverage; hard-capped at 10x in code regardless of this value |
+| `MAX_MARGIN_UTILIZATION_PCT` | `50` | Open positions combined may never require more than this % of equity*leverage in margin, regardless of what the risk-based size alone would compute |
 | `MAX_DAILY_LOSS_PCT` | `3` | Daily realized-loss % that halts new entries for the rest of the UTC day |
-| `MAX_CONCURRENT_POSITIONS` | `1` | Won't open a new position while this many are already open |
-| `DRY_RUN` | `true` | Logs signals only; set `false` to place real orders |
+| `MAX_CONCURRENT_POSITIONS` | `1` | Won't open a new position while this many are already open -- now counts DRY_RUN paper trades the same as LIVE positions, so paper-trading behavior is a faithful preview of live behavior |
+| `PARTIAL_TP_R_MULTIPLE` | `1.0` | R-multiple at which the partial take-profit fires |
+| `PARTIAL_TP_FRACTION` | `0.5` | Fraction of the position closed at the partial take-profit; set to `0` to disable partial-TP/trailing entirely |
+| `TRAIL_R_MULTIPLE` | `1.0` | How many R behind the best price reached so far the trailing stop sits, once armed |
+| `DRY_RUN_FEE_PCT_PER_SIDE` | `0.05` (%) | Round-trip taker-fee estimate subtracted from DRY_RUN's simulated P/L only -- does not affect LIVE P/L, which comes from BingX's own realized-PnL field |
+| `DRY_RUN` | `true` | Logs signals only (and simulates their outcome); set `false` to place real orders |
 
 ## Important limitations and risks -- please read
 
-- Leverage amplifies losses, including to zero (liquidation). A 3x leveraged position can be liquidated by a ~33% adverse move; the code's hard leverage cap (10x) is a backstop, not a recommendation to use it.
-- Order blocks, as implemented here, are one reasonable interpretation of a discretionary trading concept, not a guaranteed edge, and the weekly/daily/4h/1h agreement rule is a deliberate design choice (fewer, more conservative trades) that has not been backtested. There is no backtest included proving this makes money -- you should backtest it against BingX historical data yourself before trusting it with real funds.
-- API/library details can drift. BingX's position-mode handling (`positionSide`, one-way vs. hedge accounts) and ccxt's exact param names for `STOP_MARKET`/`TAKE_PROFIT_MARKET` orders, and the `info` field names `exchange_client.fetch_trade_exit()` reads for exit fills (`reduceOnly`, `positionSide`, `realizedPnl`) are the most likely things to need a small adjustment for your account -- this is what Step 3 above is for.
-- The weekly/daily/4h/1h cascade means the bot needs more historical candles and more API calls per symbol per cycle (five timeframes instead of one). If you watch many symbols on a tight schedule, keep an eye on BingX's rate limits.
+- Leverage amplifies losses, including to zero (liquidation). A 3x leveraged position can be liquidated by a ~33% adverse move; the code's hard leverage cap (10x) and margin-utilization cap are backstops, not a recommendation to use them.
+- Order blocks, as implemented here, are one reasonable interpretation of a discretionary trading concept, not a guaranteed edge, and the primary/timing cascade split is a deliberate design choice that has not been backtested. There is no backtest included proving this makes money -- you should backtest it against BingX historical data yourself before trusting it with real funds. DRY_RUN's simulated P/L now nets out an estimated trading fee, but still doesn't model slippage -- real fills on a fast-moving stop or trailing exit can be worse than the simulated price.
+- API/library details can drift. BingX's position-mode handling (`positionSide`, one-way vs. hedge accounts) and ccxt's exact param names for `STOP_MARKET`/`TAKE_PROFIT_MARKET` orders, the `info` field names `exchange_client.fetch_trade_exit()` reads for exit fills (`reduceOnly`, `positionSide`, `realizedPnl`), and the new partial-close/replace-stop order calls are the most likely things to need a small adjustment for your account -- this is what Step 3 above is for.
+- The weekly/daily/4h/1h cascade means the bot needs more historical candles and more API calls per symbol per cycle (five timeframes instead of one), and trade management (checking every open position's candle for a partial-TP/trailing trigger) adds one more fetch per open symbol per cycle. If you watch many symbols on a tight schedule, keep an eye on BingX's rate limits.
+- The margin-utilization cap is a heuristic based on each open trade's entry price, not a live mark-to-market margin read from the exchange -- it substantially reduces the risk of a rejected order or an unexpectedly over-leveraged account, but isn't a guarantee BingX's own margin calculation will match exactly.
 - Nothing here is financial advice, and I'm not a financial advisor -- this is software that automates a rule set you should understand and agree with before it trades your money.
 - Keep `.env` out of version control and off any machine you don't control; anyone with the API key/secret can trade on your account (not withdraw, since that permission is off).
