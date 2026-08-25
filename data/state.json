@@ -19,17 +19,30 @@
       "trigger": "bullish order block retest: zone 52.2400-52.4400 (formed 2026-08-23 20:30 UTC, break of structure confirmed 2026-08-23 21:00 UTC)"
     },
     {
-      "trade_id": "5aec16b103ad",
-      "entry_time_utc": "2026-08-25T03:56:53.954236+00:00",
+      "trade_id": "66278fbf4612",
+      "entry_time_utc": "2026-08-25T04:30:36.571063+00:00",
       "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
+      "symbol": "DOGE/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 881.860566,
-      "entry_price": 1.971,
-      "stop_loss": 1.965,
-      "take_profit": 1.9829,
-      "trigger": "bullish order block retest: zone 1.9670-1.9910 (formed 2026-08-24 12:00 UTC, break of structure confirmed 2026-08-24 12:15 UTC)"
+      "qty": 14966.898003,
+      "entry_price": 0.0918,
+      "stop_loss": 0.0915,
+      "take_profit": 0.0925,
+      "trigger": "bullish order block retest: zone 0.0916-0.0922 (formed 2026-08-22 16:45 UTC, break of structure confirmed 2026-08-22 17:30 UTC)"
+    },
+    {
+      "trade_id": "1c6998aacef7",
+      "entry_time_utc": "2026-08-25T04:30:40.851864+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ATOM/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 2061.93652,
+      "entry_price": 1.553,
+      "stop_loss": 1.5504,
+      "take_profit": 1.5581,
+      "trigger": "bullish order block retest: zone 1.5520-1.5590 (formed 2026-08-23 09:30 UTC, break of structure confirmed 2026-08-23 10:00 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -345,6 +358,8 @@
     "BNB/USDT:USDT|bullish|714.93-717.76": "2026-08-25T03:10:34.334330+00:00",
     "LTC/USDT:USDT|bullish|52.24-52.44": "2026-08-25T03:10:38.559666+00:00",
     "APT/USDT:USDT|bullish|0.6145-0.6184": "2026-08-25T03:10:42.044686+00:00",
-    "NEAR/USDT:USDT|bullish|1.967-1.991": "2026-08-25T03:56:53.954474+00:00"
+    "NEAR/USDT:USDT|bullish|1.967-1.991": "2026-08-25T03:56:53.954474+00:00",
+    "DOGE/USDT:USDT|bullish|0.09158-0.09223": "2026-08-25T04:30:36.571319+00:00",
+    "ATOM/USDT:USDT|bullish|1.552-1.559": "2026-08-25T04:30:40.852097+00:00"
   }
 }
