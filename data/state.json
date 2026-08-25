@@ -4,42 +4,7 @@
   "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
-  "open_dry_run_trades": [
-    {
-      "trade_id": "a476e7570f65",
-      "entry_time_utc": "2026-08-25T14:11:09.614285+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "SOL/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 3.957729,
-      "entry_price": 97.799,
-      "stop_loss": 96.4694,
-      "take_profit": 100.4581,
-      "trigger": "bullish order block retest: zone 96.5660-96.8810 (formed 2026-08-24 21:15 UTC, break of structure confirmed 2026-08-24 21:45 UTC)",
-      "initial_qty": 3.957729,
-      "risk_per_unit": 1.3296000000000134,
-      "partial_tp_price": 99.12860000000002,
-      "partial_taken": false
-    },
-    {
-      "trade_id": "aba8dc3b0c27",
-      "entry_time_utc": "2026-08-25T15:02:06.720201+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ATOM/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 318.58461,
-      "entry_price": 1.532,
-      "stop_loss": 1.5155,
-      "take_profit": 1.565,
-      "trigger": "bullish order block retest: zone 1.5170-1.5410 (formed 2026-08-25 07:45 UTC, break of structure confirmed 2026-08-25 08:15 UTC)",
-      "initial_qty": 318.58461,
-      "risk_per_unit": 0.01649999999999996,
-      "partial_tp_price": 1.5485,
-      "partial_taken": false
-    }
-  ],
+  "open_dry_run_trades": [],
   "dry_run_signaled": {
     "BTC/USDT:USDT|bullish order block retest: zone 63204.2000-63362.4000 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 20:00 UTC)": "2026-08-13T19:41:47.282751+00:00",
     "ETH/USDT:USDT|bearish order block retest: zone 1886.0300-1890.7000 (formed 2026-08-12 18:30 UTC, break of structure confirmed 2026-08-12 19:00 UTC)": "2026-08-13T19:41:47.547834+00:00",
@@ -173,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 163.1258,
+  "last_seen_equity": 195.1066,
   "traded_zones": {
     "ATOM/USDT:USDT|bearish|1.404-1.409": "2026-08-18T16:54:45.909770+00:00",
     "SOL/USDT:USDT|bullish|77.144-77.253": "2026-08-18T19:37:26.740371+00:00",
