@@ -28,13 +28,17 @@ jobs:
         env:
           BINGX_API_KEY: ${{ secrets.BINGX_API_KEY }}
           BINGX_API_SECRET: ${{ secrets.BINGX_API_SECRET }}
-          SYMBOL: ${{ vars.SYMBOL }}
+          SYMBOLS: ${{ vars.SYMBOLS }}
           TIMEFRAME: ${{ vars.TIMEFRAME }}
           RISK_PCT_PER_TRADE: ${{ vars.RISK_PCT_PER_TRADE }}
           LEVERAGE: ${{ vars.LEVERAGE }}
           MAX_DAILY_LOSS_PCT: ${{ vars.MAX_DAILY_LOSS_PCT }}
           MAX_CONCURRENT_POSITIONS: ${{ vars.MAX_CONCURRENT_POSITIONS }}
           REWARD_RISK_RATIO: ${{ vars.REWARD_RISK_RATIO }}
+          TREND_FILTER_ENABLED: ${{ vars.TREND_FILTER_ENABLED }}
+          HTF_TIMEFRAMES: ${{ vars.HTF_TIMEFRAMES }}
+          TREND_EMA_PERIOD: ${{ vars.TREND_EMA_PERIOD }}
+          TREND_CANDLE_LIMIT: ${{ vars.TREND_CANDLE_LIMIT }}
           DRY_RUN: ${{ vars.DRY_RUN }}
         run: python3 bot.py
 
