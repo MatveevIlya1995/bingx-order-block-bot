@@ -1,0 +1,10 @@
+# Local secrets -- never commit the real one.
+.env
+
+# Python bytecode cache -- regenerated automatically at run time, tied to
+# whatever Python version ran it, and never needed in version control.
+__pycache__/
+*.pyc
+
+# macOS Finder metadata.
+.DS_Store
