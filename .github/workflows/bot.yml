@@ -32,13 +32,19 @@ jobs:
           TIMEFRAME: ${{ vars.TIMEFRAME }}
           RISK_PCT_PER_TRADE: ${{ vars.RISK_PCT_PER_TRADE }}
           LEVERAGE: ${{ vars.LEVERAGE }}
+          MAX_MARGIN_UTILIZATION_PCT: ${{ vars.MAX_MARGIN_UTILIZATION_PCT }}
           MAX_DAILY_LOSS_PCT: ${{ vars.MAX_DAILY_LOSS_PCT }}
           MAX_CONCURRENT_POSITIONS: ${{ vars.MAX_CONCURRENT_POSITIONS }}
           REWARD_RISK_RATIO: ${{ vars.REWARD_RISK_RATIO }}
           TREND_FILTER_ENABLED: ${{ vars.TREND_FILTER_ENABLED }}
           HTF_TIMEFRAMES: ${{ vars.HTF_TIMEFRAMES }}
+          HTF_PRIMARY_TIMEFRAMES: ${{ vars.HTF_PRIMARY_TIMEFRAMES }}
           TREND_EMA_PERIOD: ${{ vars.TREND_EMA_PERIOD }}
           TREND_CANDLE_LIMIT: ${{ vars.TREND_CANDLE_LIMIT }}
+          PARTIAL_TP_R_MULTIPLE: ${{ vars.PARTIAL_TP_R_MULTIPLE }}
+          PARTIAL_TP_FRACTION: ${{ vars.PARTIAL_TP_FRACTION }}
+          TRAIL_R_MULTIPLE: ${{ vars.TRAIL_R_MULTIPLE }}
+          DRY_RUN_FEE_PCT_PER_SIDE: ${{ vars.DRY_RUN_FEE_PCT_PER_SIDE }}
           DRY_RUN: ${{ vars.DRY_RUN }}
         run: python3 bot.py
 
