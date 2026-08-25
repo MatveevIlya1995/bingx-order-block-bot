@@ -30,6 +30,19 @@
       "stop_loss": 0.3418,
       "take_profit": 0.3431,
       "trigger": "bullish order block retest: zone 0.3421-0.3424 (formed 2026-08-23 07:30 UTC, break of structure confirmed 2026-08-23 08:00 UTC)"
+    },
+    {
+      "trade_id": "a25326e22f7e",
+      "entry_time_utc": "2026-08-25T11:51:11.491953+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ATOM/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 206.153262,
+      "entry_price": 1.549,
+      "stop_loss": 1.5235,
+      "take_profit": 1.6,
+      "trigger": "bullish order block retest: zone 1.5250-1.5440 (formed 2026-08-25 09:45 UTC, break of structure confirmed 2026-08-25 10:15 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -167,8 +180,6 @@
   },
   "last_seen_equity": 263.1031,
   "traded_zones": {
-    "BTC/USDT:USDT|bullish|64169.4-64219.7": "2026-08-18T11:02:31.574120+00:00",
-    "NEAR/USDT:USDT|bearish|1.622-1.624": "2026-08-18T11:37:12.854450+00:00",
     "DOGE/USDT:USDT|bullish|0.07005-0.07023": "2026-08-18T14:49:41.541610+00:00",
     "BNB/USDT:USDT|bearish|602.62-603.32": "2026-08-18T15:19:34.300033+00:00",
     "TRX/USDT:USDT|bearish|0.33159-0.33188": "2026-08-18T15:53:59.859438+00:00",
@@ -347,6 +358,7 @@
     "BTC/USDT:USDT|bullish|79638.9-79892.4": "2026-08-25T08:56:46.447683+00:00",
     "ADA/USDT:USDT|bullish|0.2205-0.2219": "2026-08-25T09:25:43.573356+00:00",
     "BTC/USDT:USDT|bullish|78680.0-78921.4": "2026-08-25T09:58:28.765293+00:00",
-    "TRX/USDT:USDT|bullish|0.3421-0.34242": "2026-08-25T10:26:47.024065+00:00"
+    "TRX/USDT:USDT|bullish|0.3421-0.34242": "2026-08-25T10:26:47.024065+00:00",
+    "ATOM/USDT:USDT|bullish|1.525-1.544": "2026-08-25T11:51:11.492178+00:00"
   }
 }
