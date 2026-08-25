@@ -17,6 +17,8 @@ running this live, place one small test trade manually (or via a Python
 REPL) and confirm `create_order` behaves as expected for your account's
 position mode -- see the README for a step-by-step check.
 """
+import datetime
+
 import ccxt
 
 
@@ -91,3 +93,69 @@ class ExchangeClient:
         self.exchange.create_order(symbol, "STOP_MARKET", opposite, amount, None, sl_params)
         self.exchange.create_order(symbol, "TAKE_PROFIT_MARKET", opposite, amount, None, tp_params)
         return order
+
+    def fetch_trade_exit(self, symbol: str, position_side: str, since_iso: str):
+        """Looks up the fill that closed a previously-tracked position, so
+        risk_manager.reconcile_closed_trades() can log an accurate EXIT
+        row instead of falling back to an approximate "now" exit with
+        unknown P/L.
+
+        Returns {"timestamp": datetime, "price": float, "realized_pnl":
+        float or None} for the most recent reduce-only fill on `symbol`
+        since `since_iso`, or None if nothing could be found.
+
+        NOTE: like the rest of this file, the exact `info` field names
+        BingX returns for a fill's reduceOnly flag / positionSide /
+        realized PnL could not be verified against live BingX data from
+        the sandbox this bot was written in -- confirm these once a real
+        trade has gone through (see the README's Step 3), and adjust the
+        lookups below if BingX/ccxt name them differently.
+        """
+        since_ms = int(datetime.datetime.fromisoformat(since_iso).timestamp() * 1000)
+        try:
+            trades = self.exchange.fetch_my_trades(symbol, since=since_ms)
+        except Exception as e:
+            print(f"[exchange] {symbol}: could not fetch trade history for exit reconciliation: {e}")
+            return None
+        if not trades:
+            return None
+
+        def _is_reduce_only(t):
+            info = t.get("info", {}) or {}
+            return str(info.get("reduceOnly", "")).strip().lower() == "true"
+
+        closing = [t for t in trades if _is_reduce_only(t)]
+        if position_side:
+            same_side = [
+                t for t in closing
+                if str((t.get("info", {}) or {}).get("positionSide", "")).upper() == position_side.upper()
+            ]
+            if same_side:
+                closing = same_side
+        if not closing:
+            # Couldn't identify a reduce-only fill (e.g. unexpected info
+            # field names) -- fall back to the most recent fill of any
+            # kind rather than reporting nothing.
+            closing = trades
+
+        closing = sorted(closing, key=lambda t: t.get("timestamp") or 0)
+        last = closing[-1]
+        ts = last.get("timestamp")
+        if ts is None:
+            return None
+
+        realized_pnl = None
+        info = last.get("info", {}) or {}
+        for key in ("realizedPnl", "realisedPnl", "profit"):
+            if key in info:
+                try:
+                    realized_pnl = float(info[key])
+                except (TypeError, ValueError):
+                    realized_pnl = None
+                break
+
+        return {
+            "timestamp": datetime.datetime.fromtimestamp(ts / 1000, tz=datetime.timezone.utc),
+            "price": float(last["price"]) if last.get("price") is not None else None,
+            "realized_pnl": realized_pnl,
+        }

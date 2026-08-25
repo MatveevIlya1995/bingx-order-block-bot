@@ -7,24 +7,32 @@ that exist in trading communities -- tune to taste):
 1. Swing points are found with a simple N-bar fractal: a candle is a swing
    high if its high is the max of the (2N+1)-bar window centered on it,
    and symmetrically for swing lows.
-
 2. A "break of structure" (BOS) happens when a candle *closes* beyond the
    most recent confirmed swing high (bullish BOS) or swing low (bearish
    BOS).
-
 3. The order block is the last opposite-colored candle before the
    impulsive move that produced the BOS:
-     - bullish OB = last bearish (red) candle before a bullish BOS
-     - bearish OB = last bullish (green) candle before a bearish BOS
+   - bullish OB = last bearish (red) candle before a bullish BOS
+   - bearish OB = last bullish (green) candle before a bearish BOS
    Its zone is that candle's [low, high].
-
 4. A signal fires the first time price trades back into an unmitigated
    OB zone and closes back out of it in the direction of the original
    impulse (a "retest and reaction"). If price closes all the way through
    the zone instead, the OB is invalidated ("mitigated") without a trade.
 
-Stop-loss is placed just beyond the OB zone; take-profit is a configurable
-risk multiple.
+Stop-loss is placed just beyond the OB zone (below it for a LONG, above it
+for a SHORT); take-profit is a fixed risk multiple -- config.py hard-
+enforces a 2:1 reward:risk ratio regardless of what REWARD_RISK_RATIO is
+set to (see required_reward_risk_ratio there), and the position sizer in
+risk_manager.py hard-caps the stop-loss risk itself at 3% of equity.
+
+Multi-timeframe use: every function below operates on a single timeframe's
+DataFrame. bot.py calls detect_trend() and detect_order_blocks() once per
+level of its weekly -> daily -> 4h -> 1h cascade (see
+bot.analyze_higher_timeframes()), and again on the 15m entry timeframe for
+generate_signal(). combine_htf_bias() folds the cascade's trend readings
+into one overall directional bias that bot.py then requires the entry
+signal not to contradict.
 """
 import pandas as pd
 import numpy as np
@@ -40,15 +48,15 @@ def ohlcv_to_df(raw) -> pd.DataFrame:
 
 
 def detect_trend(df: pd.DataFrame, ema_period: int = 50) -> str:
-    """Higher-timeframe trend filter based on an EMA of closes.
+    """Trend filter based on an EMA of closes.
 
-    Meant to be called on 4h (or similar) candles, separate from the 15m
-    candles the order-block logic runs on. Returns "bullish" if the last
-    close is above a rising EMA(ema_period), "bearish" if it's below a
-    falling EMA, and "neutral" if there isn't enough data yet or the EMA
-    is flat/ambiguous. Callers should treat "neutral" as "don't block the
-    trade" -- this filter is meant to veto clear counter-trend entries,
-    not to require a strong trend before trading.
+    Meant to be called on weekly/daily/4h/1h (or similar) candles,
+    separate from the 15m candles the order-block logic runs on. Returns
+    "bullish" if the last close is above a rising EMA(ema_period),
+    "bearish" if it's below a falling EMA, and "neutral" if there isn't
+    enough data yet or the EMA is flat/ambiguous. Callers should treat
+    "neutral" as "no opinion" -- this filter is meant to veto clear
+    counter-trend entries, not to require a strong trend before trading.
     """
     if len(df) < ema_period + 2:
         return "neutral"
@@ -61,6 +69,32 @@ def detect_trend(df: pd.DataFrame, ema_period: int = 50) -> str:
     if last_close < last_ema and last_ema < prev_ema:
         return "bearish"
     return "neutral"
+
+
+def combine_htf_bias(trends: list) -> str | None:
+    """Fold an ordered (highest-timeframe-first) list of "bullish" /
+    "bearish" / "neutral" readings into one overall directional bias for
+    the weekly -> daily -> 4h -> 1h cascade:
+
+    - "neutral" readings are skipped: an unclear level doesn't block a
+      trade, it simply has no opinion.
+    - if every non-neutral reading agrees, that direction is returned.
+    - if any two levels disagree (one bullish, one bearish), returns
+      "conflict" -- the strategy's rule is to never trade against a
+      higher timeframe's trend, so a clear disagreement between levels
+      kills the setup outright rather than picking a side.
+    - if every level is neutral, returns None: no directional bias,
+      both LONG and SHORT entry signals are allowed through unfiltered.
+    """
+    bias = None
+    for t in trends:
+        if t == "neutral":
+            continue
+        if bias is None:
+            bias = t
+        elif t != bias:
+            return "conflict"
+    return bias
 
 
 def find_fractals(df: pd.DataFrame, n: int = 2) -> pd.DataFrame:
@@ -152,6 +186,7 @@ def detect_order_blocks(df: pd.DataFrame, n: int = 2) -> list[dict]:
 
 def generate_signal(df: pd.DataFrame, order_blocks: list[dict], reward_risk_ratio: float = 2.0):
     """Evaluate only the most recent (last) candle for a fresh retest signal.
+
     Mutates order_blocks in place to mark mitigation so repeated calls across
     scheduled runs don't refire the same zone.
     """

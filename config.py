@@ -45,6 +45,15 @@ DEFAULT_SYMBOLS = (
     "DOT/USDT:USDT,TRX/USDT:USDT,NEAR/USDT:USDT,ATOM/USDT:USDT,APT/USDT:USDT"
 )
 
+# Top-down multi-timeframe cascade, highest timeframe first: the weekly
+# trend sets the bias, then daily, 4h and 1h must each not contradict it
+# (a clear disagreement between any two levels blocks the trade entirely
+# -- see strategy.combine_htf_bias()). The actual entry signal itself
+# still comes from an order-block retest on `timeframe` (15m by default)
+# below. Override with the HTF_TIMEFRAMES repo variable (comma-separated,
+# highest timeframe first) if you want a different cascade.
+DEFAULT_HTF_TIMEFRAMES = "1w,1d,4h,1h"
+
 
 @dataclass
 class Config:
@@ -63,13 +72,21 @@ class Config:
     # --- strategy ---
     fractal_n: int = field(default_factory=lambda: int(_env("FRACTAL_N", "2")))
     reward_risk_ratio: float = field(default_factory=lambda: float(_env("REWARD_RISK_RATIO", "2")))
+    # Hard rule, not just a default: take-profit is always exactly this
+    # multiple of the stop-loss distance. load_config() below forces
+    # reward_risk_ratio to this value even if REWARD_RISK_RATIO is set to
+    # something else in the environment.
+    required_reward_risk_ratio: float = 2.0
 
-    # --- higher-timeframe trend filter ---
-    # Entries are only vetoed when they clearly go against the 4h trend
-    # (e.g. a LONG signal while the 4h trend is bearish) -- an unclear/
-    # neutral 4h trend does not block a trade.
+    # --- top-down higher-timeframe trend filter ---
+    # Weekly -> daily -> 4h -> 1h, highest timeframe first (see
+    # DEFAULT_HTF_TIMEFRAMES above and bot.analyze_higher_timeframes()).
+    # A signal is only vetoed when one level's trend clearly contradicts
+    # another level's, or contradicts the signal's own direction -- an
+    # unclear/neutral trend at any single level does not block a trade
+    # by itself.
     trend_filter_enabled: bool = field(default_factory=lambda: _bool("TREND_FILTER_ENABLED", True))
-    trend_timeframe: str = field(default_factory=lambda: _env("TREND_TIMEFRAME", "4h"))
+    htf_timeframes: list = field(default_factory=lambda: _env_list("HTF_TIMEFRAMES", DEFAULT_HTF_TIMEFRAMES))
     trend_ema_period: int = field(default_factory=lambda: int(_env("TREND_EMA_PERIOD", "50")))
     trend_candle_limit: int = field(default_factory=lambda: int(_env("TREND_CANDLE_LIMIT", "150")))
 
@@ -77,6 +94,10 @@ class Config:
     risk_pct_per_trade: float = field(
         default_factory=lambda: float(_env("RISK_PCT_PER_TRADE", "0.5")) / 100
     )
+    # Hard ceiling enforced in code regardless of what RISK_PCT_PER_TRADE
+    # env var says: the stop-loss on any single trade may never risk more
+    # than 3% of total account equity.
+    max_risk_pct_per_trade_hard_cap: float = 0.03
     leverage: int = field(default_factory=lambda: int(_env("LEVERAGE", "3")))
     # Hard ceiling enforced in code regardless of what LEVERAGE env var says.
     max_leverage_hard_cap: int = 10
@@ -107,4 +128,16 @@ def load_config() -> Config:
             f"({cfg.max_leverage_hard_cap}); clamping."
         )
         cfg.leverage = cfg.max_leverage_hard_cap
+    if cfg.risk_pct_per_trade > cfg.max_risk_pct_per_trade_hard_cap:
+        print(
+            f"[config] RISK_PCT_PER_TRADE={cfg.risk_pct_per_trade * 100:.2f}% exceeds hard cap "
+            f"({cfg.max_risk_pct_per_trade_hard_cap * 100:.0f}%); clamping."
+        )
+        cfg.risk_pct_per_trade = cfg.max_risk_pct_per_trade_hard_cap
+    if cfg.reward_risk_ratio != cfg.required_reward_risk_ratio:
+        print(
+            f"[config] REWARD_RISK_RATIO={cfg.reward_risk_ratio} ignored -- this strategy always "
+            f"uses a fixed {cfg.required_reward_risk_ratio}:1 reward:risk ratio."
+        )
+        cfg.reward_risk_ratio = cfg.required_reward_risk_ratio
     return cfg
