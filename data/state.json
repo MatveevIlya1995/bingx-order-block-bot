@@ -16,7 +16,11 @@
       "entry_price": 97.799,
       "stop_loss": 96.4694,
       "take_profit": 100.4581,
-      "trigger": "bullish order block retest: zone 96.5660-96.8810 (formed 2026-08-24 21:15 UTC, break of structure confirmed 2026-08-24 21:45 UTC)"
+      "trigger": "bullish order block retest: zone 96.5660-96.8810 (formed 2026-08-24 21:15 UTC, break of structure confirmed 2026-08-24 21:45 UTC)",
+      "initial_qty": 3.957729,
+      "risk_per_unit": 1.3296000000000134,
+      "partial_tp_price": 99.12860000000002,
+      "partial_taken": false
     },
     {
       "trade_id": "9d5edf4680f1",
@@ -25,11 +29,16 @@
       "symbol": "ATOM/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 617.54043,
+      "qty": 308.770215,
       "entry_price": 1.528,
-      "stop_loss": 1.5195,
+      "stop_loss": 1.528,
       "take_profit": 1.545,
-      "trigger": "bullish order block retest: zone 1.5210-1.5270 (formed 2026-08-25 02:00 UTC, break of structure confirmed 2026-08-25 02:15 UTC)"
+      "trigger": "bullish order block retest: zone 1.5210-1.5270 (formed 2026-08-25 02:00 UTC, break of structure confirmed 2026-08-25 02:15 UTC)",
+      "initial_qty": 617.54043,
+      "risk_per_unit": 0.008499999999999952,
+      "partial_tp_price": 1.5365,
+      "partial_taken": true,
+      "trail_distance": 0.008499999999999952
     },
     {
       "trade_id": "aba8dc3b0c27",
@@ -42,7 +51,11 @@
       "entry_price": 1.532,
       "stop_loss": 1.5155,
       "take_profit": 1.565,
-      "trigger": "bullish order block retest: zone 1.5170-1.5410 (formed 2026-08-25 07:45 UTC, break of structure confirmed 2026-08-25 08:15 UTC)"
+      "trigger": "bullish order block retest: zone 1.5170-1.5410 (formed 2026-08-25 07:45 UTC, break of structure confirmed 2026-08-25 08:15 UTC)",
+      "initial_qty": 318.58461,
+      "risk_per_unit": 0.01649999999999996,
+      "partial_tp_price": 1.5485,
+      "partial_taken": false
     }
   ],
   "dry_run_signaled": {
