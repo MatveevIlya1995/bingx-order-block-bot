@@ -6,43 +6,17 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "5968ffc0914d",
-      "entry_time_utc": "2026-08-25T08:04:31.613400+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ETH/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.455931,
-      "entry_price": 2480.43,
-      "stop_loss": 2468.8886,
-      "take_profit": 2503.5127,
-      "trigger": "bullish order block retest: zone 2471.3600-2481.3200 (formed 2026-08-25 00:15 UTC, break of structure confirmed 2026-08-25 00:30 UTC)"
-    },
-    {
-      "trade_id": "7898b00aaedd",
-      "entry_time_utc": "2026-08-25T08:56:46.447464+00:00",
+      "trade_id": "a8dc72fa7a7f",
+      "entry_time_utc": "2026-08-25T09:58:28.765080+00:00",
       "mode": "DRY_RUN",
       "symbol": "BTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.021104,
-      "entry_price": 79808.6,
-      "stop_loss": 79559.2611,
-      "take_profit": 80307.2778,
-      "trigger": "bullish order block retest: zone 79638.9000-79892.4000 (formed 2026-08-25 01:30 UTC, break of structure confirmed 2026-08-25 02:15 UTC)"
-    },
-    {
-      "trade_id": "3feb238d4fee",
-      "entry_time_utc": "2026-08-25T09:25:43.573095+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ADA/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 5156.356688,
-      "entry_price": 0.2213,
-      "stop_loss": 0.2203,
-      "take_profit": 0.2233,
-      "trigger": "bullish order block retest: zone 0.2205-0.2219 (formed 2026-08-24 23:45 UTC, break of structure confirmed 2026-08-25 00:00 UTC)"
+      "qty": 0.011586,
+      "entry_price": 79055.5,
+      "stop_loss": 78601.32,
+      "take_profit": 79963.86,
+      "trigger": "bullish order block retest: zone 78680.0000-78921.4000 (formed 2026-08-25 00:15 UTC, break of structure confirmed 2026-08-25 00:30 UTC)"
     }
   ],
   "dry_run_signaled": {
@@ -358,6 +332,7 @@
     "APT/USDT:USDT|bullish|0.6063-0.6095": "2026-08-25T07:16:01.323009+00:00",
     "ETH/USDT:USDT|bullish|2471.36-2481.32": "2026-08-25T08:04:31.613623+00:00",
     "BTC/USDT:USDT|bullish|79638.9-79892.4": "2026-08-25T08:56:46.447683+00:00",
-    "ADA/USDT:USDT|bullish|0.2205-0.2219": "2026-08-25T09:25:43.573356+00:00"
+    "ADA/USDT:USDT|bullish|0.2205-0.2219": "2026-08-25T09:25:43.573356+00:00",
+    "BTC/USDT:USDT|bullish|78680.0-78921.4": "2026-08-25T09:58:28.765293+00:00"
   }
 }
