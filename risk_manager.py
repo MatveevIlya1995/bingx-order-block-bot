@@ -54,6 +54,7 @@ class RiskManager:
     def __init__(self, cfg):
         self.cfg = cfg
         self.state = self._load_state()
+        self._migrate_legacy_trades()
 
     def _load_state(self) -> dict:
         if os.path.exists(self.cfg.state_path):
@@ -70,6 +71,32 @@ class RiskManager:
         data.setdefault("traded_zones", {})
         data.setdefault("last_seen_equity", None)
         return data
+
+    def _migrate_legacy_trades(self):
+        """Back-fills the partial-take-profit/trailing-stop bookkeeping
+        fields (initial_qty, risk_per_unit, partial_tp_price,
+        partial_taken -- see _arm_partial_and_trail()) onto any trade
+        that was opened by an OLDER version of this bot, before those
+        fields existed, and is still sitting in state.json from a prior
+        run. Without this, reconcile_dry_run_exits()/reconcile_live_exits()
+        crash with a KeyError the first cycle they see one of these older
+        trades, since they assume every open trade has already been
+        through _arm_partial_and_trail(). Safe to run every time the bot
+        starts: it only touches trades missing the new fields, and is a
+        no-op once every trade has been migrated once."""
+        migrated = False
+        for key in ("open_trades", "open_dry_run_trades"):
+            trades = self.state.get(key, [])
+            for i, trade in enumerate(trades):
+                if "partial_taken" not in trade:
+                    trades[i] = self._arm_partial_and_trail(trade)
+                    migrated = True
+        if migrated:
+            print(
+                "[risk] migrated one or more pre-existing open trade(s), opened before "
+                "partial-take-profit/trailing-stop support was added, to the new schema."
+            )
+            self._save_state()
 
     def _save_state(self):
         os.makedirs(os.path.dirname(self.cfg.state_path) or ".", exist_ok=True)
