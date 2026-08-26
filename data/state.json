@@ -23,20 +23,20 @@
       "partial_taken": false
     },
     {
-      "trade_id": "33c0d4ef7b1d",
-      "entry_time_utc": "2026-08-26T04:53:03.940767+00:00",
+      "trade_id": "fba7261caedc",
+      "entry_time_utc": "2026-08-26T05:22:13.653148+00:00",
       "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
+      "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.25308,
-      "entry_price": 694.23,
-      "stop_loss": 692.8764,
-      "take_profit": 696.9371,
-      "trigger": "bullish order block retest: zone 693.5700-694.8100 (formed 2026-08-23 12:45 UTC, break of structure confirmed 2026-08-23 13:00 UTC) | HTF: 1w*=bullish(8 OB) 1d*=bullish(9 OB) 4h=bullish(10 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.25308,
-      "risk_per_unit": 1.3536000000000286,
-      "partial_tp_price": 695.5836,
+      "qty": 0.071535,
+      "entry_price": 2456.08,
+      "stop_loss": 2450.567,
+      "take_profit": 2467.106,
+      "trigger": "bullish order block retest: zone 2453.0200-2458.1700 (formed 2026-08-26 02:00 UTC, break of structure confirmed 2026-08-26 02:15 UTC) | HTF: 1w*=bullish(12 OB) 1d*=bullish(8 OB) 4h=bullish(6 OB) 1h=bearish(8 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 0.071535,
+      "risk_per_unit": 5.51299999999992,
+      "partial_tp_price": 2461.593,
       "partial_taken": false
     }
   ],
@@ -351,6 +351,7 @@
     "BTC/USDT:USDT|bullish|78077.3-78420.6": "2026-08-26T00:52:25.857826+00:00",
     "ETH/USDT:USDT|bullish|2435.24-2443.78": "2026-08-26T00:52:28.092231+00:00",
     "BNB/USDT:USDT|bullish|695.59-696.61": "2026-08-26T03:29:52.403369+00:00",
-    "BNB/USDT:USDT|bullish|693.57-694.81": "2026-08-26T04:53:03.941013+00:00"
+    "BNB/USDT:USDT|bullish|693.57-694.81": "2026-08-26T04:53:03.941013+00:00",
+    "ETH/USDT:USDT|bullish|2453.02-2458.17": "2026-08-26T05:22:13.653356+00:00"
   }
 }
