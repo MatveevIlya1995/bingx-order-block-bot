@@ -38,24 +38,6 @@
       "risk_per_unit": 9.059499999999957,
       "partial_tp_price": 716.9295,
       "partial_taken": false
-    },
-    {
-      "trade_id": "54ee61fd1387",
-      "entry_time_utc": "2026-08-26T10:58:05.118954+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 1.1e-05,
-      "entry_price": 0.5649,
-      "stop_loss": 0.5649,
-      "take_profit": 0.5582,
-      "trigger": "bearish order block retest: zone 0.5653-0.5677 (formed 2026-08-26 08:30 UTC, break of structure confirmed 2026-08-26 08:45 UTC) | HTF: 1w*=bearish(11 OB) 1d*=bearish(6 OB) 4h=bearish(12 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 2.2e-05,
-      "risk_per_unit": 0.0034000000000000696,
-      "partial_tp_price": 0.5614999999999999,
-      "partial_taken": true,
-      "trail_distance": 0.0034000000000000696
     }
   ],
   "dry_run_signaled": {
