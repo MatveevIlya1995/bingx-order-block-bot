@@ -32,7 +32,11 @@ level of its weekly -> daily -> 4h -> 1h cascade (see
 bot.analyze_higher_timeframes()), and again on the 15m entry timeframe for
 generate_signal(). combine_htf_bias() folds the cascade's trend readings
 into one overall directional bias that bot.py then requires the entry
-signal not to contradict.
+signal not to contradict -- UNLESS the weekly/daily disagreement override
+applies (see weekly_room_pct() below and bot.analyze_higher_timeframes()):
+when the weekly and daily trends disagree but price still has enough room
+left to run toward the weekly chart's own last confirmed swing high/low,
+the weekly trend is allowed to win instead of blocking the trade outright.
 """
 import pandas as pd
 import numpy as np
@@ -82,7 +86,10 @@ def combine_htf_bias(trends: list) -> str | None:
     - if any two levels disagree (one bullish, one bearish), returns
       "conflict" -- the strategy's rule is to never trade against a
       higher timeframe's trend, so a clear disagreement between levels
-      kills the setup outright rather than picking a side.
+      kills the setup outright rather than picking a side. (bot.py's
+      weekly/daily override can still turn a "conflict" back into a
+      directional bias afterwards -- see
+      bot.analyze_higher_timeframes() and weekly_room_pct() below.)
     - if every level is neutral, returns None: no directional bias,
       both LONG and SHORT entry signals are allowed through unfiltered.
     """
@@ -115,6 +122,64 @@ def find_fractals(df: pd.DataFrame, n: int = 2) -> pd.DataFrame:
     out["swing_high"] = swing_high
     out["swing_low"] = swing_low
     return out
+
+
+def nearest_confirmed_swing_level(df: pd.DataFrame, direction: str, n: int = 2):
+    """The most recently CONFIRMED swing high (direction="bullish") or
+    swing low (direction="bearish") in df -- i.e. the top/bottom of the
+    current range as far as N-bar fractal confirmation can currently
+    tell. A swing point needs n bars to close on both sides before it's
+    confirmed, so this always lags the most extreme price seen so far by
+    up to n bars.
+
+    Returns None if no such point has been confirmed yet (not enough
+    data, or price has only made one-directional swings within the
+    window fetched).
+    """
+    out = find_fractals(df, n=n)
+    if direction == "bullish":
+        matches = out[out["swing_high"]]
+        price_col = "high"
+    elif direction == "bearish":
+        matches = out[out["swing_low"]]
+        price_col = "low"
+    else:
+        return None
+    if matches.empty:
+        return None
+    return float(matches.iloc[-1][price_col])
+
+
+def weekly_room_pct(weekly_df: pd.DataFrame, direction: str, current_price: float, n: int = 2):
+    """% distance from current_price to the current weekly range's
+    boundary in `direction` -- the most recently confirmed weekly swing
+    high (for "bullish") or swing low (for "bearish"). In plain terms:
+    "how much room is left to run" before price reaches a level the
+    weekly chart has already marked as a turning point.
+
+    Used by bot.analyze_higher_timeframes() to decide whether a
+    weekly/daily trend disagreement should still veto a trade: if
+    there's still plenty of room left in the weekly trend's direction,
+    a contradicting daily trend reading is more likely a pullback inside
+    the bigger weekly move than a genuine reversal, so the weekly trend
+    is allowed to win instead of the trade being skipped outright.
+
+    Returns None if no confirmed weekly swing point exists yet in that
+    direction -- callers should treat this conservatively, as "room
+    unknown" (i.e. don't override on it). A negative result means price
+    has already traded through the last confirmed swing level in that
+    direction.
+    """
+    if current_price is None or current_price <= 0:
+        return None
+    level = nearest_confirmed_swing_level(weekly_df, direction, n=n)
+    if level is None:
+        return None
+    if direction == "bullish":
+        return (level - current_price) / current_price * 100.0
+    if direction == "bearish":
+        return (current_price - level) / current_price * 100.0
+    return None
 
 
 def detect_order_blocks(df: pd.DataFrame, n: int = 2) -> list[dict]:

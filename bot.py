@@ -4,55 +4,65 @@ GitHub Actions, systemd timer, etc.) running somewhere with real internet
 access.
 
 Each run:
-1. reads account equity and open positions (across all watched symbols)
-2. reconciles any previously tracked LIVE trades that have since closed
-   on the exchange, logging an EXIT row and updating today's realized P/L
-3. manages every currently-open trade (LIVE or DRY_RUN paper) against its
-   symbol's freshly-fetched candle, in this order:
-     a. DRY_RUN paper trades: simulates stop-loss / partial-take-profit /
-        trailing-stop hits against the candle's high/low and logs the
-        result -- this is the only way a DRY_RUN trade's outcome ever
-        gets recorded (see risk_manager.reconcile_dry_run_exits)
-     b. LIVE trades: checks for a partial-take-profit trigger and, if hit,
-        actually places the partial-close + breakeven-stop orders on the
-        exchange; then ratchets the trailing stop forward for any trade
-        already past its partial (see risk_manager.reconcile_live_exits /
-        trail_live_stops). A full stop-out is still detected the normal
-        way, via reconcile_closed_trades() noticing the exchange position
-        is gone.
-4. checks the daily-loss circuit breaker (account-wide)
-5. scans cfg.symbols in order; for each one not already holding a
-   position (LIVE or DRY_RUN -- see risk.occupied_symbols()), runs a
-   top-down multi-timeframe analysis BEFORE ever looking for an entry
-   (see analyze_higher_timeframes() below):
-     a. weekly trend + weekly order blocks
-     b. daily trend + daily order blocks
-     c. 4h trend + 4h order blocks
-     d. 1h trend + 1h order blocks
-   Only the PRIMARY levels (cfg.primary_htf_timeframes, weekly+daily by
-   default) can veto a trade on disagreement -- the higher timeframe sets
-   the direction. The remaining levels are still analyzed and logged
-   every cycle, but are for entry *timing* context, not a veto: they
-   never block a trade by themselves. This mirrors how top-down
-   multi-timeframe trading is usually practiced -- a lower-timeframe
-   pullback against the primary trend is normal, and is often exactly the
-   retracement this strategy is trying to trade, not a reason to skip it.
-6. looks for a fresh order-block retest signal on the 15m entry
-   timeframe (cfg.timeframe); the signal's direction must match the
-   primary bias from step 5 (an all-neutral primary read imposes no
-   directional constraint at all)
-7. sizes each position by fixed fractional risk, hard-capped at
-   cfg.max_risk_pct_per_trade_hard_cap (3%) of equity, AND separately
-   capped so the position's notional (plus whatever's already open)
-   never requires more margin than cfg.max_margin_utilization_pct of the
-   account's theoretical capacity at the configured leverage -- see
-   risk_manager.position_size() and config.py for why both caps exist.
-8. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
-   this order-block zone before -- the bot only ever takes one trade per
-   zone, regardless of how many times it gets retested or re-detected
-   under a different formed/BOS labelling across cycles
-9. if DRY_RUN=true (the default), logs what it WOULD do and starts
-   tracking it so step 3 can resolve it on a future cycle
+ 1. reads account equity and open positions (across all watched symbols)
+ 2. reconciles any previously tracked LIVE trades that have since closed
+    on the exchange, logging an EXIT row and updating today's realized P/L
+ 3. manages every currently-open trade (LIVE or DRY_RUN paper) against its
+    symbol's freshly-fetched candle, in this order:
+    a. DRY_RUN paper trades: simulates stop-loss / partial-take-profit /
+       trailing-stop hits against the candle's high/low and logs the
+       result -- this is the only way a DRY_RUN trade's outcome ever
+       gets recorded (see risk_manager.reconcile_dry_run_exits)
+    b. LIVE trades: checks for a partial-take-profit trigger and, if hit,
+       actually places the partial-close + breakeven-stop orders on the
+       exchange; then ratchets the trailing stop forward for any trade
+       already past its partial (see risk_manager.reconcile_live_exits /
+       trail_live_stops). A full stop-out is still detected the normal
+       way, via reconcile_closed_trades() noticing the exchange position
+       is gone.
+ 4. checks the daily-loss circuit breaker (account-wide)
+ 5. scans cfg.symbols in order; for each one not already holding a
+    position (LIVE or DRY_RUN -- see risk.occupied_symbols()), runs a
+    top-down multi-timeframe analysis BEFORE ever looking for an entry
+    (see analyze_higher_timeframes() below):
+      a. weekly trend + weekly order blocks
+      b. daily trend + daily order blocks
+      c. 4h trend + 4h order blocks
+      d. 1h trend + 1h order blocks
+    Only the PRIMARY levels (cfg.primary_htf_timeframes, weekly+daily by
+    default) can veto a trade on disagreement -- the higher timeframe sets
+    the direction. The remaining levels are still analyzed and logged
+    every cycle, but are for entry *timing* context, not a veto: they
+    never block a trade by themselves. This mirrors how top-down
+    multi-timeframe trading is usually practiced -- a lower-timeframe
+    pullback against the primary trend is normal, and is often exactly the
+    retracement this strategy is trying to trade, not a reason to skip it.
+
+    A weekly-vs-daily disagreement is a special case: rather than always
+    blocking the trade, analyze_higher_timeframes() first checks how much
+    room price still has left to run toward the weekly chart's own last
+    confirmed swing high/low (see strategy.weekly_room_pct()). If there's
+    still at least cfg.weekly_daily_override_min_room_pct percent of room
+    left in the weekly trend's direction, the weekly trend wins outright
+    and the daily disagreement is overridden -- logged, not vetoed on.
+    Below that threshold, the disagreement still blocks the trade as
+    before.
+ 6. looks for a fresh order-block retest signal on the 15m entry
+    timeframe (cfg.timeframe); the signal's direction must match the
+    primary bias from step 5 (an all-neutral primary read imposes no
+    directional constraint at all)
+ 7. sizes each position by fixed fractional risk, hard-capped at
+    cfg.max_risk_pct_per_trade_hard_cap (3%) of equity, AND separately
+    capped so the position's notional (plus whatever's already open)
+    never requires more margin than cfg.max_margin_utilization_pct of the
+    account's theoretical capacity at the configured leverage -- see
+    risk_manager.position_size() and config.py for why both caps exist.
+ 8. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
+    this order-block zone before -- the bot only ever takes one trade per
+    zone, regardless of how many times it gets retested or re-detected
+    under a different formed/BOS labelling across cycles
+ 9. if DRY_RUN=true (the default), logs what it WOULD do and starts
+    tracking it so step 3 can resolve it on a future cycle
 10. if DRY_RUN=false, sets leverage and submits entry + stop-loss +
     take-profit (take-profit is always cfg.required_reward_risk_ratio
     times the stop distance -- see config.py); a partial-take-profit at
@@ -74,6 +84,7 @@ from strategy import (
     generate_signal,
     detect_trend,
     combine_htf_bias,
+    weekly_room_pct,
 )
 from risk_manager import RiskManager
 
@@ -91,17 +102,36 @@ def analyze_higher_timeframes(client, cfg, symbol):
     analyzed and included in `detail` for visibility, but never
     contribute to `bias` -- they can't veto a trade.
 
+    Weekly/daily disagreement override: if combine_htf_bias() comes back
+    "conflict" and the primary set is exactly weekly+daily, this checks
+    strategy.weekly_room_pct() -- how far price still has to run, in the
+    weekly trend's direction, before it reaches the weekly chart's own
+    last confirmed swing high/low. If there's still at least
+    cfg.weekly_daily_override_min_room_pct percent of room left, the
+    weekly trend is used as the bias instead of blocking the trade: a
+    daily trend that disagrees with a weekly trend that still has plenty
+    of room to run is more likely a pullback inside the bigger move than
+    an actual reversal. Below that room threshold the disagreement still
+    blocks the trade, since there's more reason to think the weekly move
+    itself is running out of room. A differently configured
+    HTF_PRIMARY_TIMEFRAMES (not exactly weekly+daily) skips this override
+    and keeps the original hard-conflict behavior.
+
     Returns (bias, detail):
-      bias   -- "bullish" / "bearish" / None (no primary-timeframe
-                opinion, don't filter) / "conflict" (primary levels
-                disagree -- caller should skip the symbol this cycle)
+      bias -- "bullish" / "bearish" / None (no primary-timeframe
+              opinion, don't filter) / "conflict" (primary levels
+              disagree and the weekly/daily override didn't apply --
+              caller should skip the symbol this cycle)
       detail -- a short human-readable summary of every level's trend and
                 unmitigated order-block count, for logging/the journal
                 (primary levels are marked so it's clear which ones can
-                veto and which are for timing only)
+                veto and which are for timing only), plus a note when the
+                weekly/daily override was evaluated
     """
     primary_trends = []
     detail_parts = []
+    trend_by_tf = {}
+    df_by_tf = {}
     for tf in cfg.htf_timeframes:
         raw = client.fetch_ohlcv(symbol, timeframe=tf, limit=cfg.trend_candle_limit)
         df = ohlcv_to_df(raw)
@@ -111,10 +141,42 @@ def analyze_higher_timeframes(client, cfg, symbol):
         is_primary = tf in cfg.primary_htf_timeframes
         if is_primary:
             primary_trends.append(trend)
+        trend_by_tf[tf] = trend
+        df_by_tf[tf] = df
         tag = "*" if is_primary else ""
         detail_parts.append(f"{tf}{tag}={trend}({unmitigated} OB)")
+
     bias = combine_htf_bias(primary_trends)
-    return bias, " ".join(detail_parts) + " (*=primary/directional, rest=timing only)"
+    note = ""
+
+    if (
+        bias == "conflict"
+        and set(cfg.primary_htf_timeframes) == {"1w", "1d"}
+        and "1w" in trend_by_tf
+        and "1d" in trend_by_tf
+    ):
+        weekly_trend = trend_by_tf["1w"]
+        daily_trend = trend_by_tf["1d"]
+        if weekly_trend in ("bullish", "bearish") and daily_trend in ("bullish", "bearish"):
+            current_price = float(df_by_tf["1d"].iloc[-1]["close"])
+            room = weekly_room_pct(df_by_tf["1w"], weekly_trend, current_price, n=cfg.fractal_n)
+            threshold = cfg.weekly_daily_override_min_room_pct
+            if room is not None and room >= threshold:
+                bias = weekly_trend
+                note = (
+                    f" | OVERRIDE: weekly={weekly_trend} vs daily={daily_trend} disagreed, but "
+                    f"{room:.2f}% room left to the weekly "
+                    f"{'high' if weekly_trend == 'bullish' else 'low'} "
+                    f"(>= {threshold:.2f}% threshold) -- trading with the weekly trend."
+                )
+            else:
+                room_desc = f"{room:.2f}%" if room is not None else "no confirmed weekly swing yet"
+                note = (
+                    f" | weekly={weekly_trend} vs daily={daily_trend} disagreement NOT overridden "
+                    f"(room={room_desc}, need >= {threshold:.2f}%) -- no trade."
+                )
+
+    return bias, " ".join(detail_parts) + " (*=primary/directional, rest=timing only)" + note
 
 
 def _manage_open_trades(client, risk, cfg, symbol):

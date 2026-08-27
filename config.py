@@ -54,10 +54,11 @@ DEFAULT_HTF_TIMEFRAMES = "1w,1d,4h,1h"
 # Of the levels above, only these are DIRECTIONAL/AUTHORITATIVE: they set
 # the trade's allowed bias, and a disagreement between them blocks the
 # trade outright (see strategy.combine_htf_bias() and
-# bot.analyze_higher_timeframes()). The remaining HTF_TIMEFRAMES levels
-# are "refinement" levels -- still fetched, analyzed and logged every
-# cycle, but purely informational: they never veto a trade. This mirrors
-# how most top-down multi-timeframe traders actually work -- the higher
+# bot.analyze_higher_timeframes()) -- unless the weekly/daily room
+# override below kicks in. The remaining HTF_TIMEFRAMES levels are
+# "refinement" levels -- still fetched, analyzed and logged every cycle,
+# but purely informational: they never veto a trade. This mirrors how
+# most top-down multi-timeframe traders actually work -- the higher
 # timeframe sets direction, lower ones are for timing entries, not for
 # overruling the primary trend on every small pullback. Override with the
 # HTF_PRIMARY_TIMEFRAMES repo variable if you want a different split (e.g.
@@ -107,6 +108,29 @@ class Config:
     )
     trend_ema_period: int = field(default_factory=lambda: int(_env("TREND_EMA_PERIOD", "50")))
     trend_candle_limit: int = field(default_factory=lambda: int(_env("TREND_CANDLE_LIMIT", "150")))
+
+    # If the weekly and daily primary trends disagree, the default
+    # behavior (see strategy.combine_htf_bias()) is to treat that as a
+    # hard "conflict" and skip the symbol for the cycle entirely. This
+    # setting relaxes that specifically for weekly vs. daily:
+    # bot.analyze_higher_timeframes() locates the most recently
+    # CONFIRMED weekly swing high/low (the top/bottom of the weekly
+    # range as far as N-bar fractal confirmation can currently tell --
+    # see strategy.weekly_room_pct()), and if price still has at least
+    # this much room (%) left to run toward that level in the WEEKLY
+    # trend's direction, the weekly trend wins outright and the daily
+    # disagreement is overridden (still logged, just not vetoed on).
+    # Below this room threshold -- price is already close to the
+    # weekly range's edge -- a weekly/daily disagreement still blocks
+    # the trade as before, since there's more reason to think the
+    # weekly move itself is running out of room. Only ever applies
+    # when HTF_PRIMARY_TIMEFRAMES is exactly weekly+daily (the default);
+    # a differently configured primary set falls back to the original
+    # hard-conflict behavior. Set to a very large number (e.g. 999) to
+    # disable the override entirely.
+    weekly_daily_override_min_room_pct: float = field(
+        default_factory=lambda: float(_env("WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT", "3"))
+    )
 
     # --- risk management ---
     risk_pct_per_trade: float = field(
@@ -226,4 +250,10 @@ def load_config() -> Config:
             f"HTF_TIMEFRAMES={cfg.htf_timeframes}; adding them so they still get analyzed."
         )
         cfg.htf_timeframes = cfg.htf_timeframes + missing_primary
+    if cfg.weekly_daily_override_min_room_pct < 0:
+        print(
+            f"[config] WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT="
+            f"{cfg.weekly_daily_override_min_room_pct} is negative; clamping to 0."
+        )
+        cfg.weekly_daily_override_min_room_pct = 0.0
     return cfg
