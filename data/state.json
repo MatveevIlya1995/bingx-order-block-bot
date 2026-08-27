@@ -1,28 +1,10 @@
 {
-  "date": "2026-08-26",
-  "day_start_equity": 195.1066,
+  "date": "2026-08-27",
+  "day_start_equity": 265.3742,
   "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
-  "open_dry_run_trades": [
-    {
-      "trade_id": "556fe119ca62",
-      "entry_time_utc": "2026-08-26T23:48:34.726122+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "LINK/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 57.138532,
-      "entry_price": 11.611,
-      "stop_loss": 11.5375,
-      "take_profit": 11.7581,
-      "trigger": "bullish order block retest: zone 11.5490-11.6270 (formed 2026-08-24 23:00 UTC, break of structure confirmed 2026-08-25 00:15 UTC) | HTF: 1w*=bullish(10 OB) 1d*=bullish(10 OB) 4h=bullish(8 OB) 1h=bullish(8 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 57.138532,
-      "risk_per_unit": 0.07350000000000101,
-      "partial_tp_price": 11.684500000000002,
-      "partial_taken": false
-    }
-  ],
+  "open_dry_run_trades": [],
   "dry_run_signaled": {
     "BTC/USDT:USDT|bullish order block retest: zone 63204.2000-63362.4000 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 20:00 UTC)": "2026-08-13T19:41:47.282751+00:00",
     "ETH/USDT:USDT|bearish order block retest: zone 1886.0300-1890.7000 (formed 2026-08-12 18:30 UTC, break of structure confirmed 2026-08-12 19:00 UTC)": "2026-08-13T19:41:47.547834+00:00",
