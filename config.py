@@ -132,6 +132,24 @@ class Config:
         default_factory=lambda: float(_env("WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT", "3"))
     )
 
+    # Position-sizing safety floor. risk_manager.position_size() can
+    # legitimately return a small-but-nonzero quantity once the
+    # margin-utilization cap bites (see max_margin_utilization_pct
+    # below) -- e.g. when MAX_CONCURRENT_POSITIONS lets several
+    # positions compete for the same shared margin budget and an
+    # earlier symbol in the scan already claimed most of it. Before
+    # this floor existed, bot.py's only guard was `qty <= 0`, so a
+    # trade sized down to a few millionths of a coin (~$0 notional)
+    # still went through: it can't meaningfully win or lose, yet it
+    # still burns that order-block zone's one-trade-per-zone allowance
+    # and one of the max_concurrent_positions slots for nothing. If the
+    # computed notional (qty * entry price) is below this many USDT,
+    # bot.py skips the trade entirely instead of opening it. Set to 0
+    # to disable this floor.
+    min_notional_usdt: float = field(
+        default_factory=lambda: float(_env("MIN_NOTIONAL_USDT", "10"))
+    )
+
     # --- risk management ---
     risk_pct_per_trade: float = field(
         default_factory=lambda: float(_env("RISK_PCT_PER_TRADE", "0.5")) / 100
@@ -256,4 +274,9 @@ def load_config() -> Config:
             f"{cfg.weekly_daily_override_min_room_pct} is negative; clamping to 0."
         )
         cfg.weekly_daily_override_min_room_pct = 0.0
+    if cfg.min_notional_usdt < 0:
+        print(
+            f"[config] MIN_NOTIONAL_USDT={cfg.min_notional_usdt} is negative; clamping to 0."
+        )
+        cfg.min_notional_usdt = 0.0
     return cfg
