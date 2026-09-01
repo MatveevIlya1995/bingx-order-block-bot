@@ -6,23 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "4401981001eb",
-      "entry_time_utc": "2026-09-01T16:35:43.560236+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 241.975198,
-      "entry_price": 1.976,
-      "stop_loss": 1.965,
-      "take_profit": 1.9979,
-      "trigger": "bullish order block retest: zone 1.9670-1.9770 (formed 2026-09-01 12:45 UTC, break of structure confirmed 2026-09-01 13:45 UTC) | HTF: 1w*=bullish(7 OB) 1d*=bullish(10 OB) 4h=bullish(11 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 241.975198,
-      "risk_per_unit": 0.010999999999999899,
-      "partial_tp_price": 1.9869999999999999,
-      "partial_taken": false
-    },
-    {
       "trade_id": "a3f77eb6d10a",
       "entry_time_utc": "2026-09-01T16:35:43.561748+00:00",
       "mode": "DRY_RUN",
@@ -37,6 +20,40 @@
       "initial_qty": 2256.637544,
       "risk_per_unit": 0.00019999999999999185,
       "partial_tp_price": 0.08190000000000001,
+      "partial_taken": false
+    },
+    {
+      "trade_id": "541a6eddae2b",
+      "entry_time_utc": "2026-09-01T19:34:19.759201+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "LINK/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 38.372717,
+      "entry_price": 11.215,
+      "stop_loss": 11.1458,
+      "take_profit": 11.3533,
+      "trigger": "bullish order block retest: zone 11.1570-11.2170 (formed 2026-08-31 14:00 UTC, break of structure confirmed 2026-08-31 14:30 UTC) | HTF: 1w*=bullish(9 OB) 1d*=bullish(10 OB) 4h=bearish(8 OB) 1h=bearish(8 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 38.372717,
+      "risk_per_unit": 0.06920000000000037,
+      "partial_tp_price": 11.2842,
+      "partial_taken": false
+    },
+    {
+      "trade_id": "d78dc0dea00f",
+      "entry_time_utc": "2026-09-01T19:34:19.761273+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "AVAX/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 6.612576,
+      "entry_price": 7.231,
+      "stop_loss": 7.2963,
+      "take_profit": 7.1004,
+      "trigger": "bearish order block retest: zone 7.2420-7.2890 (formed 2026-09-01 17:15 UTC, break of structure confirmed 2026-09-01 18:15 UTC) | HTF: 1w*=bearish(11 OB) 1d*=bullish(7 OB) 4h=bearish(7 OB) 1h=bearish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 16.53% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
+      "initial_qty": 6.612576,
+      "risk_per_unit": 0.06529999999999969,
+      "partial_tp_price": 7.1657,
       "partial_taken": false
     }
   ],
@@ -219,6 +236,8 @@
     "BTC/USDT:USDT|bullish|78243.2-78650.0": "2026-08-31T23:22:15.357183+00:00",
     "BNB/USDT:USDT|bullish|685.26-686.58": "2026-09-01T12:10:56.251848+00:00",
     "NEAR/USDT:USDT|bullish|1.967-1.977": "2026-09-01T16:35:43.560430+00:00",
-    "DOGE/USDT:USDT|bearish|0.08176-0.0822": "2026-09-01T16:35:43.561906+00:00"
+    "DOGE/USDT:USDT|bearish|0.08176-0.0822": "2026-09-01T16:35:43.561906+00:00",
+    "LINK/USDT:USDT|bullish|11.157-11.217": "2026-09-01T19:34:19.759402+00:00",
+    "AVAX/USDT:USDT|bearish|7.242-7.289": "2026-09-01T19:34:19.761430+00:00"
   }
 }
