@@ -12,15 +12,16 @@
       "symbol": "DOGE/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 2256.637544,
+      "qty": 1128.318772,
       "entry_price": 0.0821,
-      "stop_loss": 0.0823,
+      "stop_loss": 0.0821,
       "take_profit": 0.0818,
       "trigger": "bearish order block retest: zone 0.0818-0.0822 (formed 2026-08-31 01:15 UTC, break of structure confirmed 2026-08-31 01:45 UTC) | HTF: 1w*=bearish(7 OB) 1d*=bullish(7 OB) 4h=bearish(4 OB) 1h=bearish(12 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 17.68% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 2256.637544,
       "risk_per_unit": 0.00019999999999999185,
       "partial_tp_price": 0.08190000000000001,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.00019999999999999185
     },
     {
       "trade_id": "541a6eddae2b",
