@@ -23,20 +23,20 @@
       "partial_taken": false
     },
     {
-      "trade_id": "dab32ba4cfdc",
-      "entry_time_utc": "2026-09-02T18:49:41.259020+00:00",
+      "trade_id": "5296e721cb14",
+      "entry_time_utc": "2026-09-02T23:25:46.122436+00:00",
       "mode": "DRY_RUN",
       "symbol": "BTC/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.005725,
-      "entry_price": 77375.0,
-      "stop_loss": 77100.9219,
-      "take_profit": 77923.1562,
-      "trigger": "bullish order block retest: zone 77178.1000-77292.3000 (formed 2026-09-01 23:00 UTC, break of structure confirmed 2026-09-01 23:15 UTC) | HTF: 1w*=bullish(10 OB) 1d*=bullish(9 OB) 4h=bearish(7 OB) 1h=bearish(7 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.005725,
-      "risk_per_unit": 274.0780999999988,
-      "partial_tp_price": 77649.0781,
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 0.005744,
+      "entry_price": 77120.9,
+      "stop_loss": 77423.5462,
+      "take_profit": 76515.6076,
+      "trigger": "bearish order block retest: zone 77118.3000-77346.2000 (formed 2026-09-02 01:00 UTC, break of structure confirmed 2026-09-02 01:30 UTC) | HTF: 1w*=bearish(10 OB) 1d*=bullish(9 OB) 4h=bearish(7 OB) 1h=bearish(6 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 25.09% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
+      "initial_qty": 0.005744,
+      "risk_per_unit": 302.64620000000286,
+      "partial_tp_price": 76818.25379999999,
       "partial_taken": false
     }
   ],
@@ -212,6 +212,7 @@
     "AVAX/USDT:USDT|bearish|7.242-7.289": "2026-09-01T19:34:19.761430+00:00",
     "ATOM/USDT:USDT|bearish|1.456-1.467": "2026-09-02T01:40:06.126199+00:00",
     "SOL/USDT:USDT|bearish|99.518-100.103": "2026-09-02T06:25:34.703549+00:00",
-    "BTC/USDT:USDT|bullish|77178.1-77292.3": "2026-09-02T18:49:41.259187+00:00"
+    "BTC/USDT:USDT|bullish|77178.1-77292.3": "2026-09-02T18:49:41.259187+00:00",
+    "BTC/USDT:USDT|bearish|77118.3-77346.2": "2026-09-02T23:25:46.122656+00:00"
   }
 }
