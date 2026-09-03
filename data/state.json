@@ -21,23 +21,6 @@
       "risk_per_unit": 0.01749999999999985,
       "partial_tp_price": 1.4335000000000002,
       "partial_taken": false
-    },
-    {
-      "trade_id": "5296e721cb14",
-      "entry_time_utc": "2026-09-02T23:25:46.122436+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 0.005744,
-      "entry_price": 77120.9,
-      "stop_loss": 77423.5462,
-      "take_profit": 76515.6076,
-      "trigger": "bearish order block retest: zone 77118.3000-77346.2000 (formed 2026-09-02 01:00 UTC, break of structure confirmed 2026-09-02 01:30 UTC) | HTF: 1w*=bearish(10 OB) 1d*=bullish(9 OB) 4h=bearish(7 OB) 1h=bearish(6 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 25.09% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
-      "initial_qty": 0.005744,
-      "risk_per_unit": 302.64620000000286,
-      "partial_tp_price": 76818.25379999999,
-      "partial_taken": false
     }
   ],
   "dry_run_signaled": {
