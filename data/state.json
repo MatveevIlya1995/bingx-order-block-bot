@@ -47,15 +47,16 @@
       "symbol": "APT/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 324.353119,
+      "qty": 162.1765595,
       "entry_price": 0.5849,
-      "stop_loss": 0.5865,
+      "stop_loss": 0.5849,
       "take_profit": 0.5817,
       "trigger": "bearish order block retest: zone 0.5828-0.5859 (formed 2026-09-02 23:45 UTC, break of structure confirmed 2026-09-03 00:15 UTC) | HTF: 1w*=bearish(12 OB) 1d*=bearish(6 OB) 4h=bullish(9 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 324.353119,
       "risk_per_unit": 0.0016000000000000458,
       "partial_tp_price": 0.5832999999999999,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.0016000000000000458
     }
   ],
   "dry_run_signaled": {
