@@ -24,24 +24,6 @@
       "trail_distance": 0.012199999999999989
     },
     {
-      "trade_id": "a0e3fcd6cb1b",
-      "entry_time_utc": "2026-09-04T13:46:21.096645+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ATOM/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 126.22441,
-      "entry_price": 1.503,
-      "stop_loss": 1.503,
-      "take_profit": 1.482,
-      "trigger": "bearish order block retest: zone 1.5030-1.5120 (formed 2026-09-04 00:30 UTC, break of structure confirmed 2026-09-04 00:45 UTC) | HTF: 1w*=bearish(8 OB) 1d*=bullish(7 OB) 4h=bullish(9 OB) 1h=bullish(7 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 19.49% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
-      "initial_qty": 252.44882,
-      "risk_per_unit": 0.010500000000000176,
-      "partial_tp_price": 1.4924999999999997,
-      "partial_taken": true,
-      "trail_distance": 0.010500000000000176
-    },
-    {
       "trade_id": "f525057a620b",
       "entry_time_utc": "2026-09-04T17:13:21.519817+00:00",
       "mode": "DRY_RUN",
@@ -56,6 +38,23 @@
       "initial_qty": 0.180741,
       "risk_per_unit": 7.259200000000419,
       "partial_tp_price": 2461.2692000000006,
+      "partial_taken": false
+    },
+    {
+      "trade_id": "a735e1c3fe12",
+      "entry_time_utc": "2026-09-04T19:34:32.542690+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "APT/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 324.353119,
+      "entry_price": 0.5849,
+      "stop_loss": 0.5865,
+      "take_profit": 0.5817,
+      "trigger": "bearish order block retest: zone 0.5828-0.5859 (formed 2026-09-02 23:45 UTC, break of structure confirmed 2026-09-03 00:15 UTC) | HTF: 1w*=bearish(12 OB) 1d*=bearish(6 OB) 4h=bullish(9 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 324.353119,
+      "risk_per_unit": 0.0016000000000000458,
+      "partial_tp_price": 0.5832999999999999,
       "partial_taken": false
     }
   ],
@@ -236,6 +235,7 @@
     "XRP/USDT:USDT|bearish|1.4447-1.4584": "2026-09-04T05:04:34.410037+00:00",
     "BNB/USDT:USDT|bullish|718.5-720.05": "2026-09-04T09:35:15.935935+00:00",
     "ATOM/USDT:USDT|bearish|1.503-1.512": "2026-09-04T13:46:21.096850+00:00",
-    "ETH/USDT:USDT|bullish|2449.2-2453.65": "2026-09-04T17:13:21.520039+00:00"
+    "ETH/USDT:USDT|bullish|2449.2-2453.65": "2026-09-04T17:13:21.520039+00:00",
+    "APT/USDT:USDT|bearish|0.5828-0.5859": "2026-09-04T19:34:32.542903+00:00"
   }
 }
