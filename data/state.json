@@ -6,24 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "f0cabd872f77",
-      "entry_time_utc": "2026-09-06T06:29:17.645656+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 1705.6940545,
-      "entry_price": 0.0912,
-      "stop_loss": 0.08971,
-      "take_profit": 0.0902,
-      "trigger": "bearish order block retest: zone 0.0908-0.0917 (formed 2026-09-06 03:30 UTC, break of structure confirmed 2026-09-06 04:15 UTC) | HTF: 1w*=bearish(7 OB) 1d*=bullish(7 OB) 4h=bullish(3 OB) 1h=bullish(8 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 25.92% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
-      "initial_qty": 3411.388109,
-      "risk_per_unit": 0.0006000000000000033,
-      "partial_tp_price": 0.0906,
-      "partial_taken": true,
-      "trail_distance": 0.0006000000000000033
-    },
-    {
       "trade_id": "dee81f79d783",
       "entry_time_utc": "2026-09-06T14:09:59.715827+00:00",
       "mode": "DRY_RUN",
@@ -32,7 +14,7 @@
       "position_side": "LONG",
       "qty": 0.0025405,
       "entry_price": 79732.4,
-      "stop_loss": 79732.4,
+      "stop_loss": 79764.36,
       "take_profit": 80076.48,
       "trigger": "bullish order block retest: zone 79640.0000-79743.0000 (formed 2026-09-05 15:15 UTC, break of structure confirmed 2026-09-05 15:45 UTC) | HTF: 1w*=bullish(10 OB) 1d*=bullish(9 OB) 4h=bullish(6 OB) 1h=bearish(7 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.005081,
@@ -50,7 +32,7 @@
       "position_side": "LONG",
       "qty": 0.020686,
       "entry_price": 2483.71,
-      "stop_loss": 2483.71,
+      "stop_loss": 2491.2219999999998,
       "take_profit": 2500.086,
       "trigger": "bullish order block retest: zone 2478.0000-2482.1600 (formed 2026-09-05 23:45 UTC, break of structure confirmed 2026-09-06 00:15 UTC) | HTF: 1w*=bullish(12 OB) 1d*=bullish(7 OB) 4h=bullish(6 OB) 1h=bullish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.041372,
@@ -58,6 +40,23 @@
       "partial_tp_price": 2491.898,
       "partial_taken": true,
       "trail_distance": 8.188000000000102
+    },
+    {
+      "trade_id": "7e08adf68ca4",
+      "entry_time_utc": "2026-09-06T20:54:43.747051+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "BNB/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 0.514599,
+      "entry_price": 751.32,
+      "stop_loss": 746.1631,
+      "take_profit": 761.6338,
+      "trigger": "bullish order block retest: zone 746.9100-752.6400 (formed 2026-09-05 11:30 UTC, break of structure confirmed 2026-09-05 12:30 UTC) | HTF: 1w*=bullish(9 OB) 1d*=bullish(9 OB) 4h=bullish(8 OB) 1h=bullish(12 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 0.514599,
+      "risk_per_unit": 5.156900000000064,
+      "partial_tp_price": 756.4769000000001,
+      "partial_taken": false
     }
   ],
   "dry_run_signaled": {
@@ -195,8 +194,6 @@
   },
   "last_seen_equity": 265.3742,
   "traded_zones": {
-    "BTC/USDT:USDT|bullish|78747.9-78868.2": "2026-08-30T19:32:38.868210+00:00",
-    "ETH/USDT:USDT|bullish|2504.6-2512.38": "2026-08-30T19:32:40.739821+00:00",
     "ETH/USDT:USDT|bullish|2480.94-2489.53": "2026-08-30T22:03:20.855527+00:00",
     "SOL/USDT:USDT|bearish|104.668-104.854": "2026-08-30T22:03:22.374740+00:00",
     "BNB/USDT:USDT|bullish|696.55-698.8": "2026-08-30T22:03:23.656923+00:00",
@@ -238,6 +235,7 @@
     "BTC/USDT:USDT|bullish|79823.0-79902.7": "2026-09-06T01:34:13.055048+00:00",
     "DOGE/USDT:USDT|bearish|0.09077-0.09166": "2026-09-06T06:29:17.645848+00:00",
     "BTC/USDT:USDT|bullish|79640.0-79743.0": "2026-09-06T14:09:59.716012+00:00",
-    "ETH/USDT:USDT|bullish|2478.0-2482.16": "2026-09-06T17:00:03.285374+00:00"
+    "ETH/USDT:USDT|bullish|2478.0-2482.16": "2026-09-06T17:00:03.285374+00:00",
+    "BNB/USDT:USDT|bullish|746.91-752.64": "2026-09-06T20:54:43.747266+00:00"
   }
 }
