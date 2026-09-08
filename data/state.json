@@ -14,7 +14,7 @@
       "position_side": "LONG",
       "qty": 993.732213,
       "entry_price": 0.3338,
-      "stop_loss": 0.33387,
+      "stop_loss": 0.3343,
       "take_profit": 0.3347,
       "trigger": "bullish order block retest: zone 0.3337-0.3340 (formed 2026-09-05 20:15 UTC, break of structure confirmed 2026-09-05 20:30 UTC) | HTF: 1w*=bullish(6 OB) 1d*=bullish(11 OB) 4h=bullish(9 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 1987.464426,
@@ -24,20 +24,20 @@
       "trail_distance": 0.00040000000000001146
     },
     {
-      "trade_id": "84a0dc74e776",
-      "entry_time_utc": "2026-09-07T21:59:53.566445+00:00",
+      "trade_id": "2dcca5e70a9e",
+      "entry_time_utc": "2026-09-08T03:18:43.050520+00:00",
       "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
+      "symbol": "NEAR/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.448693,
-      "entry_price": 739.32,
-      "stop_loss": 738.281,
-      "take_profit": 741.398,
-      "trigger": "bullish order block retest: zone 739.0200-739.6100 (formed 2026-09-07 19:00 UTC, break of structure confirmed 2026-09-07 19:30 UTC) | HTF: 1w*=bullish(9 OB) 1d*=bullish(9 OB) 4h=bullish(7 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.448693,
-      "risk_per_unit": 1.039000000000101,
-      "partial_tp_price": 740.3590000000002,
+      "qty": 143.916567,
+      "entry_price": 2.305,
+      "stop_loss": 2.2987,
+      "take_profit": 2.3176,
+      "trigger": "bullish order block retest: zone 2.3010-2.3200 (formed 2026-09-07 20:00 UTC, break of structure confirmed 2026-09-07 20:30 UTC) | HTF: 1w*=bullish(7 OB) 1d*=bullish(9 OB) 4h=bullish(10 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 143.916567,
+      "risk_per_unit": 0.006299999999999972,
+      "partial_tp_price": 2.3113,
       "partial_taken": false
     }
   ],
@@ -176,7 +176,6 @@
   },
   "last_seen_equity": 265.3742,
   "traded_zones": {
-    "BTC/USDT:USDT|bullish|78243.2-78650.0": "2026-08-31T23:22:15.357183+00:00",
     "BNB/USDT:USDT|bullish|685.26-686.58": "2026-09-01T12:10:56.251848+00:00",
     "NEAR/USDT:USDT|bullish|1.967-1.977": "2026-09-01T16:35:43.560430+00:00",
     "DOGE/USDT:USDT|bearish|0.08176-0.0822": "2026-09-01T16:35:43.561906+00:00",
@@ -211,6 +210,7 @@
     "SOL/USDT:USDT|bullish|104.958-105.15": "2026-09-07T04:34:52.068018+00:00",
     "BNB/USDT:USDT|bullish|744.42-745.28": "2026-09-07T09:42:25.029755+00:00",
     "TRX/USDT:USDT|bullish|0.33371-0.33403": "2026-09-07T15:15:15.961941+00:00",
-    "BNB/USDT:USDT|bullish|739.02-739.61": "2026-09-07T21:59:53.566653+00:00"
+    "BNB/USDT:USDT|bullish|739.02-739.61": "2026-09-07T21:59:53.566653+00:00",
+    "NEAR/USDT:USDT|bullish|2.301-2.32": "2026-09-08T03:18:43.050728+00:00"
   }
 }
