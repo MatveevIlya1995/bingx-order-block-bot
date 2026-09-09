@@ -40,20 +40,20 @@
       "partial_taken": false
     },
     {
-      "trade_id": "3e3b8bca3521",
-      "entry_time_utc": "2026-09-09T19:53:37.921240+00:00",
+      "trade_id": "72e700962c7f",
+      "entry_time_utc": "2026-09-09T22:04:01.386152+00:00",
       "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 10.918304,
-      "entry_price": 2.511,
-      "stop_loss": 2.4925,
-      "take_profit": 2.548,
-      "trigger": "bullish order block retest: zone 2.4950-2.5440 (formed 2026-09-09 11:00 UTC, break of structure confirmed 2026-09-09 11:30 UTC) | HTF: 1w*=bullish(7 OB) 1d*=bullish(10 OB) 4h=bullish(10 OB) 1h=bullish(11 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 10.918304,
-      "risk_per_unit": 0.01849999999999996,
-      "partial_tp_price": 2.5295,
+      "symbol": "XRP/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 19.691059,
+      "entry_price": 1.3923,
+      "stop_loss": 1.3973,
+      "take_profit": 1.3823,
+      "trigger": "bearish order block retest: zone 1.3890-1.3959 (formed 2026-09-08 05:15 UTC, break of structure confirmed 2026-09-08 05:45 UTC) | HTF: 1w*=bearish(3 OB) 1d*=bullish(8 OB) 4h=bearish(8 OB) 1h=bearish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 29.23% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
+      "initial_qty": 19.691059,
+      "risk_per_unit": 0.004999999999999893,
+      "partial_tp_price": 1.3873000000000002,
       "partial_taken": false
     }
   ],
@@ -231,6 +231,7 @@
     "ETH/USDT:USDT|bullish|2494.42-2507.38": "2026-09-09T17:17:02.606587+00:00",
     "BTC/USDT:USDT|bullish|77659.1-78343.9": "2026-09-09T19:53:37.918895+00:00",
     "ETH/USDT:USDT|bullish|2440.39-2468.93": "2026-09-09T19:53:37.920175+00:00",
-    "NEAR/USDT:USDT|bullish|2.495-2.544": "2026-09-09T19:53:37.921350+00:00"
+    "NEAR/USDT:USDT|bullish|2.495-2.544": "2026-09-09T19:53:37.921350+00:00",
+    "XRP/USDT:USDT|bearish|1.389-1.3959": "2026-09-09T22:04:01.386379+00:00"
   }
 }
