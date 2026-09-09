@@ -29,15 +29,16 @@
       "symbol": "NEAR/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 43.332767,
+      "qty": 21.6663835,
       "entry_price": 2.3,
-      "stop_loss": 2.2388,
+      "stop_loss": 2.3,
       "take_profit": 2.4225,
       "trigger": "bullish order block retest: zone 2.2410-2.2940 (formed 2026-09-08 13:30 UTC, break of structure confirmed 2026-09-08 14:00 UTC) | HTF: 1w*=bullish(7 OB) 1d*=bullish(9 OB) 4h=bullish(10 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 43.332767,
       "risk_per_unit": 0.06119999999999992,
       "partial_tp_price": 2.3611999999999997,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.06119999999999992
     },
     {
       "trade_id": "35e763629b73",
@@ -46,15 +47,16 @@
       "symbol": "BNB/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.554669,
+      "qty": 0.2773345,
       "entry_price": 752.2,
-      "stop_loss": 751.1081,
+      "stop_loss": 752.2,
       "take_profit": 754.3837,
       "trigger": "bullish order block retest: zone 751.8600-753.3800 (formed 2026-09-06 23:15 UTC, break of structure confirmed 2026-09-06 23:30 UTC) | HTF: 1w*=bullish(9 OB) 1d*=bullish(9 OB) 4h=bullish(7 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.554669,
       "risk_per_unit": 1.0919000000000096,
       "partial_tp_price": 753.2919,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 1.0919000000000096
     }
   ],
   "dry_run_signaled": {
