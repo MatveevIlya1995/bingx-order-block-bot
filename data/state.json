@@ -14,7 +14,7 @@
       "position_side": "LONG",
       "qty": 21.6663835,
       "entry_price": 2.3,
-      "stop_loss": 2.5388,
+      "stop_loss": 2.5838,
       "take_profit": 2.4225,
       "trigger": "bullish order block retest: zone 2.2410-2.2940 (formed 2026-09-08 13:30 UTC, break of structure confirmed 2026-09-08 14:00 UTC) | HTF: 1w*=bullish(7 OB) 1d*=bullish(9 OB) 4h=bullish(10 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 43.332767,
@@ -24,20 +24,20 @@
       "trail_distance": 0.06119999999999992
     },
     {
-      "trade_id": "f603af235a81",
-      "entry_time_utc": "2026-09-09T13:41:43.438657+00:00",
+      "trade_id": "06a2c13b6992",
+      "entry_time_utc": "2026-09-09T17:17:02.606338+00:00",
       "mode": "DRY_RUN",
-      "symbol": "BTC/USDT:USDT",
+      "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.007725,
-      "entry_price": 79427.2,
-      "stop_loss": 79342.1784,
-      "take_profit": 79597.2432,
-      "trigger": "bullish order block retest: zone 79421.6000-79492.0000 (formed 2026-09-07 12:30 UTC, break of structure confirmed 2026-09-07 12:45 UTC) | HTF: 1w*=bullish(10 OB) 1d*=bullish(9 OB) 4h=bullish(6 OB) 1h=bullish(10 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.007725,
-      "risk_per_unit": 85.02159999999276,
-      "partial_tp_price": 79512.22159999999,
+      "qty": 0.245826,
+      "entry_price": 2496.09,
+      "stop_loss": 2491.9256,
+      "take_profit": 2504.4188,
+      "trigger": "bullish order block retest: zone 2494.4200-2507.3800 (formed 2026-09-06 22:00 UTC, break of structure confirmed 2026-09-06 23:30 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(7 OB) 4h=bullish(5 OB) 1h=bullish(8 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 0.245826,
+      "risk_per_unit": 4.164400000000114,
+      "partial_tp_price": 2500.2544000000003,
       "partial_taken": false
     }
   ],
@@ -212,6 +212,7 @@
     "LINK/USDT:USDT|bullish|12.282-12.473": "2026-09-08T22:01:36.771611+00:00",
     "NEAR/USDT:USDT|bullish|2.241-2.294": "2026-09-08T22:01:36.772926+00:00",
     "BNB/USDT:USDT|bullish|751.86-753.38": "2026-09-09T04:35:48.201781+00:00",
-    "BTC/USDT:USDT|bullish|79421.6-79492.0": "2026-09-09T13:41:43.438847+00:00"
+    "BTC/USDT:USDT|bullish|79421.6-79492.0": "2026-09-09T13:41:43.438847+00:00",
+    "ETH/USDT:USDT|bullish|2494.42-2507.38": "2026-09-09T17:17:02.606587+00:00"
   }
 }
