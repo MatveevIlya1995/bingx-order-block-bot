@@ -6,24 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "824933132d65",
-      "entry_time_utc": "2026-09-08T19:38:55.830671+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.347345,
-      "entry_price": 749.38,
-      "stop_loss": 753.1613000000001,
-      "take_profit": 752.1974,
-      "trigger": "bullish order block retest: zone 748.7200-749.3800 (formed 2026-09-06 19:30 UTC, break of structure confirmed 2026-09-06 20:15 UTC) | HTF: 1w*=bullish(9 OB) 1d*=bullish(9 OB) 4h=bullish(7 OB) 1h=bullish(10 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.69469,
-      "risk_per_unit": 1.4086999999999534,
-      "partial_tp_price": 750.7887,
-      "partial_taken": true,
-      "trail_distance": 1.4086999999999534
-    },
-    {
       "trade_id": "89db2da3b499",
       "entry_time_utc": "2026-09-08T22:01:36.771413+00:00",
       "mode": "DRY_RUN",
@@ -55,6 +37,23 @@
       "initial_qty": 43.332767,
       "risk_per_unit": 0.06119999999999992,
       "partial_tp_price": 2.3611999999999997,
+      "partial_taken": false
+    },
+    {
+      "trade_id": "35e763629b73",
+      "entry_time_utc": "2026-09-09T04:35:48.201591+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "BNB/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 0.554669,
+      "entry_price": 752.2,
+      "stop_loss": 751.1081,
+      "take_profit": 754.3837,
+      "trigger": "bullish order block retest: zone 751.8600-753.3800 (formed 2026-09-06 23:15 UTC, break of structure confirmed 2026-09-06 23:30 UTC) | HTF: 1w*=bullish(9 OB) 1d*=bullish(9 OB) 4h=bullish(7 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 0.554669,
+      "risk_per_unit": 1.0919000000000096,
+      "partial_tp_price": 753.2919,
       "partial_taken": false
     }
   ],
@@ -193,7 +192,6 @@
   },
   "last_seen_equity": 265.3742,
   "traded_zones": {
-    "ATOM/USDT:USDT|bearish|1.456-1.467": "2026-09-02T01:40:06.126199+00:00",
     "SOL/USDT:USDT|bearish|99.518-100.103": "2026-09-02T06:25:34.703549+00:00",
     "BTC/USDT:USDT|bullish|77178.1-77292.3": "2026-09-02T18:49:41.259187+00:00",
     "BTC/USDT:USDT|bearish|77118.3-77346.2": "2026-09-02T23:25:46.122656+00:00",
@@ -229,6 +227,7 @@
     "BTC/USDT:USDT|bullish|78310.5-78477.3": "2026-09-08T12:52:21.237970+00:00",
     "BNB/USDT:USDT|bullish|748.72-749.38": "2026-09-08T19:38:55.830865+00:00",
     "LINK/USDT:USDT|bullish|12.282-12.473": "2026-09-08T22:01:36.771611+00:00",
-    "NEAR/USDT:USDT|bullish|2.241-2.294": "2026-09-08T22:01:36.772926+00:00"
+    "NEAR/USDT:USDT|bullish|2.241-2.294": "2026-09-08T22:01:36.772926+00:00",
+    "BNB/USDT:USDT|bullish|751.86-753.38": "2026-09-09T04:35:48.201781+00:00"
   }
 }
