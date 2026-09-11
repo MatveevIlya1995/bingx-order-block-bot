@@ -64,18 +64,24 @@ Each run:
    timeframe (cfg.timeframe); the signal's direction must match the
    primary bias from step 5 (an all-neutral primary read imposes no
    directional constraint at all)
-7. sizes each position by fixed fractional risk, hard-capped at
-   cfg.max_risk_pct_per_trade_hard_cap (3%) of equity, AND separately
-   capped so the position's notional (plus whatever's already open)
-   never requires more margin than cfg.max_margin_utilization_pct of the
-   account's theoretical capacity at the configured leverage -- see
-   risk_manager.position_size() and config.py for why both caps exist.
-   If the resulting size is still non-zero but its notional falls below
-   cfg.min_notional_usdt (this happens when the margin cap above bites
-   hard, e.g. several concurrent positions have already claimed most of
-   the shared margin budget), the signal is skipped entirely rather than
-   opening a token-sized position that can't meaningfully win or lose --
-   see the note on min_notional_usdt in config.py for why that matters.
+7. sizes each position with a FIXED margin (cfg.margin_per_trade_usd,
+   $50 by default) and a per-trade LEVERAGE solved from the stop-loss
+   distance so the trade's dollar risk hits cfg.risk_pct_per_trade of
+   equity, hard-capped at cfg.max_risk_pct_per_trade_hard_cap (3%)
+   regardless of what RISK_PCT_PER_TRADE is set to, and never exceeding
+   the leverage ceiling (min(cfg.leverage, the 10x hard cap)) -- a very
+   tight stop-loss then risks LESS than the 3% target instead of using
+   more leverage than allowed. Separately, the combined notional of
+   every open position (plus this one) is still capped at
+   cfg.max_margin_utilization_pct of the account's theoretical capacity
+   at the 10x hard-cap leverage -- see risk_manager.position_size() and
+   config.py for why both caps exist. If the resulting size is still
+   non-zero but its notional falls below cfg.min_notional_usdt (this
+   happens when the margin-utilization cap above bites hard, e.g.
+   several concurrent positions have already claimed most of the shared
+   margin budget), the signal is skipped entirely rather than opening a
+   token-sized position that can't meaningfully win or lose -- see the
+   note on min_notional_usdt in config.py for why that matters.
 8. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
    this order-block zone before -- the bot only ever takes one trade per
    zone, regardless of how many times it gets retested or re-detected
@@ -289,11 +295,10 @@ def _try_open_candidate(client, risk, cfg, candidate, equity):
     df = candidate["df"]
     signal = candidate["signal"]
 
-    leverage = risk.safe_leverage()
     existing_notional = risk.total_open_notional()
-    qty = risk.position_size(
+    qty, leverage = risk.position_size(
         equity, signal["entry"], signal["stop_loss"],
-        leverage=leverage, existing_notional=existing_notional,
+        existing_notional=existing_notional,
     )
     if qty <= 0:
         print(f"[bot] {symbol}: computed position size was zero (risk-based size or margin cap) -- skipping.")
