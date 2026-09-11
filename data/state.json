@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 89.91512,
       "entry_price": 1.3902,
-      "stop_loss": 1.3628,
+      "stop_loss": 1.3511,
       "take_profit": 1.3848,
       "trigger": "bearish order block retest: zone 1.3893-1.3915 (formed 2026-09-10 05:45 UTC, break of structure confirmed 2026-09-10 06:00 UTC) | HTF: 1w*=bearish(3 OB) 1d*=bullish(9 OB) 4h=bullish(8 OB) 1h=bullish(8 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 29.13% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 179.83024,
@@ -32,7 +32,7 @@
       "position_side": "SHORT",
       "qty": 16.246426,
       "entry_price": 7.694,
-      "stop_loss": 7.4947,
+      "stop_loss": 7.4567,
       "take_profit": 7.5865,
       "trigger": "bearish order block retest: zone 7.7060-7.7400 (formed 2026-09-10 10:30 UTC, break of structure confirmed 2026-09-10 10:45 UTC) | HTF: 1w*=bearish(11 OB) 1d*=bullish(7 OB) 4h=bullish(8 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 21.55% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 32.492852,
@@ -40,6 +40,23 @@
       "partial_tp_price": 7.6403,
       "partial_taken": true,
       "trail_distance": 0.05370000000000008
+    },
+    {
+      "trade_id": "6abe21d813bf",
+      "entry_time_utc": "2026-09-11T23:13:55.618902+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ETH/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 0.099498,
+      "entry_price": 2512.62,
+      "stop_loss": 2505.2323,
+      "take_profit": 2527.3955,
+      "trigger": "bullish order block retest: zone 2507.7400-2511.3100 (formed 2026-09-09 07:45 UTC, break of structure confirmed 2026-09-09 08:15 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(7 OB) 4h=bullish(5 OB) 1h=bullish(7 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 0.099498,
+      "risk_per_unit": 7.387699999999768,
+      "partial_tp_price": 2520.0076999999997,
+      "partial_taken": false
     }
   ],
   "dry_run_signaled": {
@@ -177,8 +194,6 @@
   },
   "last_seen_equity": 265.3742,
   "traded_zones": {
-    "ETH/USDT:USDT|bullish|2449.2-2453.65": "2026-09-04T17:13:21.520039+00:00",
-    "APT/USDT:USDT|bearish|0.5828-0.5859": "2026-09-04T19:34:32.542903+00:00",
     "DOGE/USDT:USDT|bearish|0.0844-0.08481": "2026-09-05T01:15:17.647356+00:00",
     "ADA/USDT:USDT|bearish|0.2135-0.215": "2026-09-05T09:33:21.578805+00:00",
     "XRP/USDT:USDT|bearish|1.4085-1.4214": "2026-09-05T13:02:09.796845+00:00",
@@ -215,6 +230,7 @@
     "LTC/USDT:USDT|bearish|52.58-52.9": "2026-09-11T01:20:16.244420+00:00",
     "DOGE/USDT:USDT|bearish|0.0839-0.08414": "2026-09-11T06:11:40.186188+00:00",
     "XRP/USDT:USDT|bearish|1.3893-1.3915": "2026-09-11T15:01:58.820711+00:00",
-    "AVAX/USDT:USDT|bearish|7.706-7.74": "2026-09-11T15:01:58.821765+00:00"
+    "AVAX/USDT:USDT|bearish|7.706-7.74": "2026-09-11T15:01:58.821765+00:00",
+    "ETH/USDT:USDT|bullish|2507.74-2511.31": "2026-09-11T23:13:55.619136+00:00"
   }
 }
