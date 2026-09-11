@@ -1,6 +1,7 @@
 """
-Risk management: position sizing (with a margin/notional cap), leverage
-cap, a daily-loss circuit breaker, partial take-profit + trailing-stop
+Risk management: fixed-margin position sizing with per-trade leverage
+solved from the stop-loss distance (see position_size()), a margin/
+notional cap as a backstop on total exposure, a daily-loss circuit breaker, partial take-profit + trailing-stop
 management for open trades, and a CSV trade journal that tracks entries,
 partial exits, and full exits (so duration and realized P/L per trade can
 be reported later).
@@ -31,6 +32,7 @@ it (see the README).
 """
 import csv
 import json
+import math
 import os
 import uuid
 import datetime
@@ -629,31 +631,66 @@ class RiskManager:
 
     def position_size(
         self, equity: float, entry: float, stop_loss: float,
-        leverage: int | None = None, existing_notional: float = 0.0,
-    ) -> float:
-        """Size the position so a stop-out loses roughly risk_pct_per_trade
-        of equity, THEN cap that size so the position's notional (plus
-        whatever's already open) doesn't require more margin than
-        max_margin_utilization_pct of the account's theoretical capacity
-        at the given leverage. A tight stop-loss on its own can otherwise
-        make risk_amount / stop_distance far larger than the account can
-        actually margin -- this second cap is what keeps that in check.
-        Caller is still responsible for rounding to the exchange's amount
-        precision/step size before submitting."""
-        risk_amount = equity * self.cfg.risk_pct_per_trade
-        stop_distance = abs(entry - stop_loss)
-        if stop_distance <= 0:
-            return 0.0
-        qty = risk_amount / stop_distance
+        existing_notional: float = 0.0,
+    ) -> tuple[float, int]:
+        """Fixed-margin sizing: every trade commits cfg.margin_per_trade_usd
+        of margin (not a fraction of equity), and LEVERAGE IS SOLVED FOR
+        per trade from the stop-loss distance so the trade's dollar risk
+        hits cfg.risk_pct_per_trade of equity (hard-capped at 3% by
+        max_risk_pct_per_trade_hard_cap regardless of what
+        RISK_PCT_PER_TRADE is set to) -- a tighter stop (smaller
+        stop_distance_pct) gets MORE leverage to reach that risk target, a
+        wider stop gets LESS. Leverage is floored to an integer (so actual
+        risk never exceeds the target, only ever falls a bit short of it)
+        and clamped to [1, safe_leverage()] -- the lesser of LEVERAGE and
+        the 10x hard cap -- so an extremely tight stop can't demand more
+        leverage than the account is allowed to use; the trade simply
+        risks less than the target in that case.
 
-        lev = leverage if leverage else self.safe_leverage()
-        max_total_notional = equity * lev * self.cfg.max_margin_utilization_pct
+        The margin-utilization cap from before is kept as an independent
+        backstop on TOTAL exposure across every open position combined
+        (LIVE + DRY_RUN): even though each trade's own margin is fixed at
+        cfg.margin_per_trade_usd, this still caps the combined notional of
+        every open position so several concurrent trades (when
+        MAX_CONCURRENT_POSITIONS > 1) can't collectively demand more
+        margin than max_margin_utilization_pct of the account's
+        theoretical capacity at the 10x hard-cap leverage.
+
+        Returns (qty, leverage) -- caller must call exchange_client.
+        set_leverage(symbol, leverage) with the leverage this method
+        picked before submitting the order, since it's chosen per trade,
+        not read from a fixed config value. Caller is still responsible
+        for rounding qty to the exchange's amount precision/step size
+        before submitting."""
+        stop_distance = abs(entry - stop_loss)
+        if stop_distance <= 0 or entry <= 0 or equity <= 0:
+            return 0.0, 1
+        stop_distance_pct = stop_distance / entry
+        if stop_distance_pct <= 0:
+            return 0.0, 1
+
+        margin = self.cfg.margin_per_trade_usd
+        target_risk_dollars = equity * self.cfg.risk_pct_per_trade
+        leverage_ceiling = self.safe_leverage()
+        required_leverage = target_risk_dollars / (margin * stop_distance_pct)
+        leverage = max(1, min(leverage_ceiling, math.floor(required_leverage)))
+
+        qty = (margin * leverage) / entry
+
+        max_total_notional = (
+            equity * self.cfg.max_leverage_hard_cap * self.cfg.max_margin_utilization_pct
+        )
         available_notional = max(max_total_notional - existing_notional, 0.0)
-        if entry > 0:
-            qty = min(qty, available_notional / entry)
-        return max(qty, 0.0)
+        qty = min(qty, available_notional / entry)
+        return max(qty, 0.0), leverage
 
     def safe_leverage(self) -> int:
+        """Leverage CEILING: the auto-sizer in position_size() never
+        exceeds this -- min(LEVERAGE, the 10x hard cap). Kept as a knob
+        so you can dial back how much leverage the auto-sizer is allowed
+        to reach for, even though the exact leverage used per trade is
+        now computed from each trade's own stop-loss distance rather
+        than applied directly."""
         return min(self.cfg.leverage, self.cfg.max_leverage_hard_cap)
 
     @staticmethod
