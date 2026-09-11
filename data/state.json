@@ -12,15 +12,16 @@
       "symbol": "XRP/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 179.83024,
+      "qty": 89.91512,
       "entry_price": 1.3902,
-      "stop_loss": 1.3929,
+      "stop_loss": 1.3902,
       "take_profit": 1.3848,
       "trigger": "bearish order block retest: zone 1.3893-1.3915 (formed 2026-09-10 05:45 UTC, break of structure confirmed 2026-09-10 06:00 UTC) | HTF: 1w*=bearish(3 OB) 1d*=bullish(9 OB) 4h=bullish(8 OB) 1h=bullish(8 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 29.13% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 179.83024,
       "risk_per_unit": 0.0026999999999999247,
       "partial_tp_price": 1.3875000000000002,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.0026999999999999247
     },
     {
       "trade_id": "cbc6720eb99e",
@@ -29,15 +30,16 @@
       "symbol": "AVAX/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 32.492852,
+      "qty": 16.246426,
       "entry_price": 7.694,
-      "stop_loss": 7.7477,
+      "stop_loss": 7.694,
       "take_profit": 7.5865,
       "trigger": "bearish order block retest: zone 7.7060-7.7400 (formed 2026-09-10 10:30 UTC, break of structure confirmed 2026-09-10 10:45 UTC) | HTF: 1w*=bearish(11 OB) 1d*=bullish(7 OB) 4h=bullish(8 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 21.55% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 32.492852,
       "risk_per_unit": 0.05370000000000008,
       "partial_tp_price": 7.6403,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.05370000000000008
     }
   ],
   "dry_run_signaled": {
