@@ -30,6 +30,7 @@ jobs:
           BINGX_API_SECRET: ${{ secrets.BINGX_API_SECRET }}
           SYMBOLS: ${{ vars.SYMBOLS }}
           TIMEFRAME: ${{ vars.TIMEFRAME }}
+          MARGIN_PER_TRADE_USD: ${{ vars.MARGIN_PER_TRADE_USD }}
           RISK_PCT_PER_TRADE: ${{ vars.RISK_PCT_PER_TRADE }}
           LEVERAGE: ${{ vars.LEVERAGE }}
           MAX_MARGIN_UTILIZATION_PCT: ${{ vars.MAX_MARGIN_UTILIZATION_PCT }}
