@@ -1,28 +1,10 @@
 {
-  "date": "2026-09-10",
+  "date": "2026-09-11",
   "day_start_equity": 265.3742,
   "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
-    {
-      "trade_id": "72e700962c7f",
-      "entry_time_utc": "2026-09-09T22:04:01.386152+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "XRP/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 9.8455295,
-      "entry_price": 1.3923,
-      "stop_loss": 1.3336999999999999,
-      "take_profit": 1.3823,
-      "trigger": "bearish order block retest: zone 1.3890-1.3959 (formed 2026-09-08 05:15 UTC, break of structure confirmed 2026-09-08 05:45 UTC) | HTF: 1w*=bearish(3 OB) 1d*=bullish(8 OB) 4h=bearish(8 OB) 1h=bearish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 29.23% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
-      "initial_qty": 19.691059,
-      "risk_per_unit": 0.004999999999999893,
-      "partial_tp_price": 1.3873000000000002,
-      "partial_taken": true,
-      "trail_distance": 0.004999999999999893
-    },
     {
       "trade_id": "88b68467d910",
       "entry_time_utc": "2026-09-10T13:34:08.171841+00:00",
@@ -32,7 +14,7 @@
       "position_side": "LONG",
       "qty": 961.1070225,
       "entry_price": 0.338,
-      "stop_loss": 0.33944,
+      "stop_loss": 0.34041,
       "take_profit": 0.339,
       "trigger": "bullish order block retest: zone 0.3378-0.3383 (formed 2026-09-09 15:45 UTC, break of structure confirmed 2026-09-09 16:00 UTC) | HTF: 1w*=bullish(6 OB) 1d*=bullish(10 OB) 4h=bullish(8 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 1922.214045,
@@ -50,7 +32,7 @@
       "position_side": "SHORT",
       "qty": 776.466051,
       "entry_price": 0.2092,
-      "stop_loss": 0.2092,
+      "stop_loss": 0.2077,
       "take_profit": 0.2062,
       "trigger": "bearish order block retest: zone 0.2089-0.2105 (formed 2026-09-10 15:30 UTC, break of structure confirmed 2026-09-10 16:00 UTC) | HTF: 1w*=bearish(4 OB) 1d*=bullish(9 OB) 4h=bearish(9 OB) 1h=bearish(11 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 18.21% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 1552.932102,
@@ -58,6 +40,23 @@
       "partial_tp_price": 0.2077,
       "partial_taken": true,
       "trail_distance": 0.0015000000000000013
+    },
+    {
+      "trade_id": "06e9cfeefa73",
+      "entry_time_utc": "2026-09-11T01:20:16.244256+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "LTC/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 3.338602,
+      "entry_price": 52.76,
+      "stop_loss": 52.9529,
+      "take_profit": 52.3742,
+      "trigger": "bearish order block retest: zone 52.5800-52.9000 (formed 2026-09-10 06:45 UTC, break of structure confirmed 2026-09-10 07:15 UTC) | HTF: 1w*=bearish(6 OB) 1d*=bullish(7 OB) 4h=bearish(9 OB) 1h=bearish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 17.77% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
+      "initial_qty": 3.338602,
+      "risk_per_unit": 0.19290000000000163,
+      "partial_tp_price": 52.567099999999996,
+      "partial_taken": false
     }
   ],
   "dry_run_signaled": {
@@ -195,9 +194,6 @@
   },
   "last_seen_equity": 265.3742,
   "traded_zones": {
-    "BNB/USDT:USDT|bullish|721.43-724.23": "2026-09-03T20:59:10.934290+00:00",
-    "NEAR/USDT:USDT|bullish|1.948-1.962": "2026-09-03T22:57:17.049700+00:00",
-    "LINK/USDT:USDT|bullish|11.856-11.899": "2026-09-04T00:34:17.572964+00:00",
     "XRP/USDT:USDT|bearish|1.4447-1.4584": "2026-09-04T05:04:34.410037+00:00",
     "BNB/USDT:USDT|bullish|718.5-720.05": "2026-09-04T09:35:15.935935+00:00",
     "ATOM/USDT:USDT|bearish|1.503-1.512": "2026-09-04T13:46:21.096850+00:00",
@@ -235,6 +231,7 @@
     "XRP/USDT:USDT|bearish|1.389-1.3959": "2026-09-09T22:04:01.386379+00:00",
     "TRX/USDT:USDT|bullish|0.33785-0.33827": "2026-09-10T13:34:08.172051+00:00",
     "DOGE/USDT:USDT|bearish|0.08343-0.08376": "2026-09-10T17:11:52.372823+00:00",
-    "ADA/USDT:USDT|bearish|0.2089-0.2105": "2026-09-10T19:39:41.413298+00:00"
+    "ADA/USDT:USDT|bearish|0.2089-0.2105": "2026-09-10T19:39:41.413298+00:00",
+    "LTC/USDT:USDT|bearish|52.58-52.9": "2026-09-11T01:20:16.244420+00:00"
   }
 }
