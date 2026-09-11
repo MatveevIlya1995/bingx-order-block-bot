@@ -151,13 +151,32 @@ class Config:
     )
 
     # --- risk management ---
+    # Fixed margin committed per trade, in USDT -- position_size() no
+    # longer sizes off a fraction of equity directly; instead it solves
+    # for the LEVERAGE that turns this fixed margin into a position whose
+    # stop-out loses risk_pct_per_trade of equity (see risk_manager.
+    # position_size()). A tighter stop-loss (closer to entry) gets more
+    # leverage to reach that risk target; a wider stop gets less.
+    margin_per_trade_usd: float = field(
+        default_factory=lambda: float(_env("MARGIN_PER_TRADE_USD", "50"))
+    )
+    # Target risk, as a % of equity, that position_size() solves the
+    # per-trade leverage for. Defaults to the hard cap itself (3%) --
+    # i.e. every trade targets the maximum allowed risk given its own
+    # stop-loss distance, backing off only when the required leverage
+    # would exceed the leverage ceiling (see risk_manager.safe_leverage()).
+    # Lower this if you want trades to risk less than the 3% ceiling.
     risk_pct_per_trade: float = field(
-        default_factory=lambda: float(_env("RISK_PCT_PER_TRADE", "0.5")) / 100
+        default_factory=lambda: float(_env("RISK_PCT_PER_TRADE", "3")) / 100
     )
     # Hard ceiling enforced in code regardless of what RISK_PCT_PER_TRADE
     # env var says: the stop-loss on any single trade may never risk more
     # than 3% of total account equity.
     max_risk_pct_per_trade_hard_cap: float = 0.03
+    # Leverage CEILING for the auto-sizer in risk_manager.position_size():
+    # the leverage it solves for, per trade, from the stop-loss distance
+    # never exceeds this (or the 10x hard cap below, whichever is lower).
+    # It is no longer applied directly as a fixed leverage on every trade.
     leverage: int = field(default_factory=lambda: int(_env("LEVERAGE", "3")))
     # Hard ceiling enforced in code regardless of what LEVERAGE env var says.
     max_leverage_hard_cap: int = 10
@@ -279,4 +298,10 @@ def load_config() -> Config:
             f"[config] MIN_NOTIONAL_USDT={cfg.min_notional_usdt} is negative; clamping to 0."
         )
         cfg.min_notional_usdt = 0.0
+    if cfg.margin_per_trade_usd <= 0:
+        print(
+            f"[config] MARGIN_PER_TRADE_USD={cfg.margin_per_trade_usd} must be positive; "
+            f"clamping to 50."
+        )
+        cfg.margin_per_trade_usd = 50.0
     return cfg
