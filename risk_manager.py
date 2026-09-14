@@ -642,10 +642,14 @@ class RiskManager:
         stop_distance_pct) gets MORE leverage to reach that risk target, a
         wider stop gets LESS. Leverage is floored to an integer (so actual
         risk never exceeds the target, only ever falls a bit short of it)
-        and clamped to [1, safe_leverage()] -- the lesser of LEVERAGE and
+        and clamped to at most safe_leverage() -- the lesser of LEVERAGE and
         the 10x hard cap -- so an extremely tight stop can't demand more
         leverage than the account is allowed to use; the trade simply
-        risks less than the target in that case.
+        risks less than the target in that case. If even 1x leverage on
+        the fixed margin would already risk more than the target (a very
+        wide stop relative to the margin), the trade is skipped entirely
+        (returns qty=0) rather than forcing 1x leverage and exceeding the
+        risk cap.
 
         The margin-utilization cap from before is kept as an independent
         backstop on TOTAL exposure across every open position combined
@@ -673,7 +677,13 @@ class RiskManager:
         target_risk_dollars = equity * self.cfg.risk_pct_per_trade
         leverage_ceiling = self.safe_leverage()
         required_leverage = target_risk_dollars / (margin * stop_distance_pct)
-        leverage = max(1, min(leverage_ceiling, math.floor(required_leverage)))
+        leverage = min(leverage_ceiling, math.floor(required_leverage))
+        if leverage < 1:
+            # Even 1x leverage on the fixed margin would already risk more
+            # than the target -- skip the trade rather than silently
+            # accepting more risk than the cap allows (forcing leverage up
+            # to 1 here would violate the 3% hard cap for a wide stop).
+            return 0.0, 1
 
         qty = (margin * leverage) / entry
 
