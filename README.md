@@ -36,15 +36,19 @@ breaker halts new entries if losses get too large for the day.
    read imposes no directional constraint at all.
 6. **Stop-loss & take-profit** -- the stop-loss sits just beyond the 15m
    order block that produced the signal (below it for a LONG, above it
-   for a SHORT). Position size is chosen two ways at once and the
-   smaller wins: (a) so that stop-out risk is never more than 3% of
-   account equity, regardless of what `RISK_PCT_PER_TRADE` is set to,
-   and (b) so the position's notional -- combined with whatever's
-   already open -- never requires more margin than
-   `MAX_MARGIN_UTILIZATION_PCT` of the account's theoretical capacity at
-   the configured leverage. (a) alone can size a position far larger
-   than the account can actually margin whenever the stop is tight
-   relative to price; (b) is what keeps that in check.
+   for a SHORT). Every trade commits a FIXED margin
+   (`MARGIN_PER_TRADE_USD`, $50 by default); the LEVERAGE is then
+   solved per trade from the stop-loss distance so the trade's dollar
+   risk hits `RISK_PCT_PER_TRADE` of equity (hard-capped at 3%
+   regardless of what `RISK_PCT_PER_TRADE` is set to) -- a tighter stop
+   gets more leverage to reach that risk target, a wider stop gets
+   less, and leverage never exceeds the `LEVERAGE` ceiling (itself
+   hard-capped at 10x). Separately, the combined notional of every open
+   position -- this one plus whatever's already open -- never requires
+   more margin than `MAX_MARGIN_UTILIZATION_PCT` of the account's
+   theoretical capacity at the 10x hard-cap leverage, as a backstop
+   against several concurrent positions collectively over-margining the
+   account.
 7. **Partial take-profit + trailing stop** -- at `PARTIAL_TP_R_MULTIPLE`
    times the initial risk (1R by default), `PARTIAL_TP_FRACTION` of the
    position (50% by default) closes and the stop for the remainder moves
@@ -149,8 +153,9 @@ Or use the included `.github/workflows/bot.yml` (runs every 15 minutes via GitHu
 | `HTF_PRIMARY_TIMEFRAMES` | `1w,1d` | Which of the levels above can actually veto a trade on disagreement; the rest are timing-only context |
 | `TREND_EMA_PERIOD` | `50` | EMA period used for the trend read at every cascade level |
 | `TREND_CANDLE_LIMIT` | `150` | How many candles to fetch per cascade level |
-| `RISK_PCT_PER_TRADE` | `0.5` | % of account equity risked per trade (via stop distance); hard-capped at 3% regardless of this value |
-| `LEVERAGE` | `3` | Requested leverage; hard-capped at 10x in code regardless of this value |
+| `MARGIN_PER_TRADE_USD` | `50` | Fixed margin (USDT) committed to every trade; leverage is solved per trade from the stop-loss distance to hit `RISK_PCT_PER_TRADE` (see `risk_manager.position_size()`) |
+| `RISK_PCT_PER_TRADE` | `3` | Target % of account equity risked per trade, used to solve each trade's leverage; hard-capped at 3% regardless of this value (defaults to that same ceiling) |
+| `LEVERAGE` | `3` | Leverage CEILING for the auto-sizer above -- the leverage it solves for per trade never exceeds this (or the 10x hard cap, whichever is lower) |
 | `MAX_MARGIN_UTILIZATION_PCT` | `50` | Open positions combined may never require more than this % of equity*leverage in margin, regardless of what the risk-based size alone would compute |
 | `MAX_DAILY_LOSS_PCT` | `3` | Daily realized-loss % that halts new entries for the rest of the UTC day |
 | `MAX_CONCURRENT_POSITIONS` | `1` | Won't open a new position while this many are already open -- now counts DRY_RUN paper trades the same as LIVE positions, so paper-trading behavior is a faithful preview of live behavior |
