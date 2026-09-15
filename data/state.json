@@ -6,24 +6,6 @@
   "open_trades": [],
   "open_dry_run_trades": [
     {
-      "trade_id": "0bffb66470c9",
-      "entry_time_utc": "2026-09-15T14:59:49.242834+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.1746105,
-      "entry_price": 715.88,
-      "stop_loss": 715.88,
-      "take_profit": 722.7463,
-      "trigger": "bullish order block retest: zone 713.1600-715.7400 (formed 2026-09-13 13:15 UTC, break of structure confirmed 2026-09-13 13:45 UTC) | HTF: 1w*=bullish(8 OB) 1d*=bullish(9 OB) 4h=bearish(5 OB) 1h=bearish(6 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.349221,
-      "risk_per_unit": 3.4331999999999425,
-      "partial_tp_price": 719.3131999999999,
-      "partial_taken": true,
-      "trail_distance": 3.4331999999999425
-    },
-    {
       "trade_id": "5c39d9e46c14",
       "entry_time_utc": "2026-09-15T18:43:08.811011+00:00",
       "mode": "DRY_RUN",
