@@ -40,22 +40,21 @@
       "partial_taken": false
     },
     {
-      "trade_id": "b23a29cfaf67",
-      "entry_time_utc": "2026-09-15T23:47:59.934193+00:00",
+      "trade_id": "4d14caa3d069",
+      "entry_time_utc": "2026-09-16T07:10:25.592615+00:00",
       "mode": "DRY_RUN",
-      "symbol": "ADA/USDT:USDT",
+      "symbol": "DOGE/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 639.7134085,
-      "entry_price": 0.1954,
-      "stop_loss": 0.1954,
-      "take_profit": 0.194,
-      "trigger": "bearish order block retest: zone 0.1948-0.1959 (formed 2026-09-15 21:30 UTC, break of structure confirmed 2026-09-15 21:45 UTC) | HTF: 1w*=bearish(4 OB) 1d*=bearish(10 OB) 4h=bearish(9 OB) 1h=bearish(6 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 1279.426817,
-      "risk_per_unit": 0.0007000000000000062,
-      "partial_tp_price": 0.19469999999999998,
-      "partial_taken": true,
-      "trail_distance": 0.0007000000000000062
+      "qty": 3121.488326,
+      "entry_price": 0.0801,
+      "stop_loss": 0.0803,
+      "take_profit": 0.0796,
+      "trigger": "bearish order block retest: zone 0.0799-0.0802 (formed 2026-09-16 01:15 UTC, break of structure confirmed 2026-09-16 01:30 UTC) | HTF: 1w*=bearish(6 OB) 1d*=bearish(7 OB) 4h=bearish(5 OB) 1h=bearish(7 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 3121.488326,
+      "risk_per_unit": 0.00019999999999999185,
+      "partial_tp_price": 0.07990000000000001,
+      "partial_taken": false
     }
   ],
   "dry_run_signaled": {
@@ -193,7 +192,6 @@
   },
   "last_seen_equity": 265.3742,
   "traded_zones": {
-    "BNB/USDT:USDT|bullish|751.86-753.38": "2026-09-09T04:35:48.201781+00:00",
     "BTC/USDT:USDT|bullish|79421.6-79492.0": "2026-09-09T13:41:43.438847+00:00",
     "ETH/USDT:USDT|bullish|2494.42-2507.38": "2026-09-09T17:17:02.606587+00:00",
     "BTC/USDT:USDT|bullish|77659.1-78343.9": "2026-09-09T19:53:37.918895+00:00",
@@ -234,6 +232,7 @@
     "AVAX/USDT:USDT|bearish|7.408-7.419": "2026-09-15T14:59:49.244426+00:00",
     "ATOM/USDT:USDT|bearish|1.554-1.563": "2026-09-15T18:43:08.811224+00:00",
     "BTC/USDT:USDT|bearish|76754.7-76862.2": "2026-09-15T18:43:08.812602+00:00",
-    "ADA/USDT:USDT|bearish|0.1948-0.1959": "2026-09-15T23:47:59.934429+00:00"
+    "ADA/USDT:USDT|bearish|0.1948-0.1959": "2026-09-15T23:47:59.934429+00:00",
+    "DOGE/USDT:USDT|bearish|0.07995-0.08024": "2026-09-16T07:10:25.592815+00:00"
   }
 }
