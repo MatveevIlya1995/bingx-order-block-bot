@@ -40,20 +40,20 @@
       "partial_taken": false
     },
     {
-      "trade_id": "107b5307e855",
-      "entry_time_utc": "2026-09-17T11:41:47.631021+00:00",
+      "trade_id": "d928145bab72",
+      "entry_time_utc": "2026-09-17T15:39:31.072548+00:00",
       "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 436.910171,
-      "entry_price": 0.5722,
-      "stop_loss": 0.5751,
-      "take_profit": 0.5665,
-      "trigger": "bearish order block retest: zone 0.5723-0.5745 (formed 2026-09-15 14:15 UTC, break of structure confirmed 2026-09-15 14:30 UTC) | HTF: 1w*=bearish(11 OB) 1d*=bearish(6 OB) 4h=bearish(9 OB) 1h=bullish(11 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 436.910171,
-      "risk_per_unit": 0.0028999999999999027,
-      "partial_tp_price": 0.5693000000000001,
+      "symbol": "ETH/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 0.060857,
+      "entry_price": 2464.8,
+      "stop_loss": 2429.1884,
+      "take_profit": 2536.0232,
+      "trigger": "bullish order block retest: zone 2431.6200-2454.6500 (formed 2026-09-17 13:30 UTC, break of structure confirmed 2026-09-17 14:00 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(7 OB) 4h=bullish(4 OB) 1h=bullish(6 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 0.060857,
+      "risk_per_unit": 35.61160000000018,
+      "partial_tp_price": 2500.4116000000004,
       "partial_taken": false
     }
   ],
@@ -192,7 +192,6 @@
   },
   "last_seen_equity": 265.3742,
   "traded_zones": {
-    "TRX/USDT:USDT|bullish|0.33785-0.33827": "2026-09-10T13:34:08.172051+00:00",
     "DOGE/USDT:USDT|bearish|0.08343-0.08376": "2026-09-10T17:11:52.372823+00:00",
     "ADA/USDT:USDT|bearish|0.2089-0.2105": "2026-09-10T19:39:41.413298+00:00",
     "LTC/USDT:USDT|bearish|52.58-52.9": "2026-09-11T01:20:16.244420+00:00",
@@ -230,6 +229,7 @@
     "DOGE/USDT:USDT|bearish|0.07995-0.08024": "2026-09-16T07:10:25.592815+00:00",
     "ETH/USDT:USDT|bullish|2403.3-2409.86": "2026-09-16T20:16:38.455602+00:00",
     "BNB/USDT:USDT|bullish|718.1-719.22": "2026-09-16T23:04:04.169397+00:00",
-    "APT/USDT:USDT|bearish|0.5723-0.5745": "2026-09-17T11:41:47.631251+00:00"
+    "APT/USDT:USDT|bearish|0.5723-0.5745": "2026-09-17T11:41:47.631251+00:00",
+    "ETH/USDT:USDT|bullish|2431.62-2454.65": "2026-09-17T15:39:31.072748+00:00"
   }
 }
