@@ -40,22 +40,21 @@
       "partial_taken": false
     },
     {
-      "trade_id": "5980fc6f0d47",
-      "entry_time_utc": "2026-09-16T23:04:04.169176+00:00",
+      "trade_id": "107b5307e855",
+      "entry_time_utc": "2026-09-17T11:41:47.631021+00:00",
       "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.1738915,
-      "entry_price": 718.84,
-      "stop_loss": 724.7819,
-      "take_profit": 721.7562,
-      "trigger": "bullish order block retest: zone 718.1000-719.2200 (formed 2026-09-15 12:00 UTC, break of structure confirmed 2026-09-15 12:45 UTC) | HTF: 1w*=bullish(8 OB) 1d*=bullish(9 OB) 4h=bearish(5 OB) 1h=bullish(8 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.347783,
-      "risk_per_unit": 1.4581000000000586,
-      "partial_tp_price": 720.2981000000001,
-      "partial_taken": true,
-      "trail_distance": 1.4581000000000586
+      "symbol": "APT/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 436.910171,
+      "entry_price": 0.5722,
+      "stop_loss": 0.5751,
+      "take_profit": 0.5665,
+      "trigger": "bearish order block retest: zone 0.5723-0.5745 (formed 2026-09-15 14:15 UTC, break of structure confirmed 2026-09-15 14:30 UTC) | HTF: 1w*=bearish(11 OB) 1d*=bearish(6 OB) 4h=bearish(9 OB) 1h=bullish(11 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 436.910171,
+      "risk_per_unit": 0.0028999999999999027,
+      "partial_tp_price": 0.5693000000000001,
+      "partial_taken": false
     }
   ],
   "dry_run_signaled": {
@@ -230,6 +229,7 @@
     "ADA/USDT:USDT|bearish|0.1948-0.1959": "2026-09-15T23:47:59.934429+00:00",
     "DOGE/USDT:USDT|bearish|0.07995-0.08024": "2026-09-16T07:10:25.592815+00:00",
     "ETH/USDT:USDT|bullish|2403.3-2409.86": "2026-09-16T20:16:38.455602+00:00",
-    "BNB/USDT:USDT|bullish|718.1-719.22": "2026-09-16T23:04:04.169397+00:00"
+    "BNB/USDT:USDT|bullish|718.1-719.22": "2026-09-16T23:04:04.169397+00:00",
+    "APT/USDT:USDT|bearish|0.5723-0.5745": "2026-09-17T11:41:47.631251+00:00"
   }
 }
