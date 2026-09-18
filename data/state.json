@@ -14,7 +14,7 @@
       "position_side": "LONG",
       "qty": 0.0304285,
       "entry_price": 2464.8,
-      "stop_loss": 2464.8,
+      "stop_loss": 2474.6484,
       "take_profit": 2536.0232,
       "trigger": "bullish order block retest: zone 2431.6200-2454.6500 (formed 2026-09-17 13:30 UTC, break of structure confirmed 2026-09-17 14:00 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(7 OB) 4h=bullish(4 OB) 1h=bullish(6 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.060857,
@@ -32,7 +32,7 @@
       "position_side": "LONG",
       "qty": 373.334926,
       "entry_price": 0.3348,
-      "stop_loss": 0.3348,
+      "stop_loss": 0.33701000000000003,
       "take_profit": 0.3373,
       "trigger": "bullish order block retest: zone 0.3339-0.3349 (formed 2026-09-16 10:15 UTC, break of structure confirmed 2026-09-16 11:15 UTC) | HTF: 1w*=bullish(6 OB) 1d*=bullish(10 OB) 4h=bearish(10 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 746.669852,
@@ -48,15 +48,16 @@
       "symbol": "NEAR/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 14.430014,
+      "qty": 7.215007,
       "entry_price": 3.465,
-      "stop_loss": 3.3756,
+      "stop_loss": 3.465,
       "take_profit": 3.6438,
       "trigger": "bullish order block retest: zone 3.3790-3.4320 (formed 2026-09-18 03:30 UTC, break of structure confirmed 2026-09-18 03:45 UTC) | HTF: 1w*=bullish(8 OB) 1d*=bullish(9 OB) 4h=bullish(9 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 14.430014,
       "risk_per_unit": 0.08939999999999992,
       "partial_tp_price": 3.5544,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.08939999999999992
     }
   ],
   "dry_run_signaled": {
@@ -192,7 +193,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 215.6664,
+  "last_seen_equity": 249.2049,
   "traded_zones": {
     "DOGE/USDT:USDT|bearish|0.0839-0.08414": "2026-09-11T06:11:40.186188+00:00",
     "XRP/USDT:USDT|bearish|1.3893-1.3915": "2026-09-11T15:01:58.820711+00:00",
