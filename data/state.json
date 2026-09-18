@@ -12,15 +12,16 @@
       "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.060857,
+      "qty": 0.0304285,
       "entry_price": 2464.8,
-      "stop_loss": 2429.1884,
+      "stop_loss": 2464.8,
       "take_profit": 2536.0232,
       "trigger": "bullish order block retest: zone 2431.6200-2454.6500 (formed 2026-09-17 13:30 UTC, break of structure confirmed 2026-09-17 14:00 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(7 OB) 4h=bullish(4 OB) 1h=bullish(6 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.060857,
       "risk_per_unit": 35.61160000000018,
       "partial_tp_price": 2500.4116000000004,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 35.61160000000018
     },
     {
       "trade_id": "7cc588474d2c",
@@ -29,15 +30,16 @@
       "symbol": "TRX/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 746.669852,
+      "qty": 373.334926,
       "entry_price": 0.3348,
-      "stop_loss": 0.3336,
+      "stop_loss": 0.3348,
       "take_profit": 0.3373,
       "trigger": "bullish order block retest: zone 0.3339-0.3349 (formed 2026-09-16 10:15 UTC, break of structure confirmed 2026-09-16 11:15 UTC) | HTF: 1w*=bullish(6 OB) 1d*=bullish(10 OB) 4h=bearish(10 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 746.669852,
       "risk_per_unit": 0.0011999999999999789,
       "partial_tp_price": 0.33599999999999997,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.0011999999999999789
     },
     {
       "trade_id": "e6ad82dca519",
