@@ -12,15 +12,16 @@
       "symbol": "TRX/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 729.969633,
+      "qty": 364.9848165,
       "entry_price": 0.3425,
-      "stop_loss": 0.3416,
+      "stop_loss": 0.3425,
       "take_profit": 0.3442,
       "trigger": "bullish order block retest: zone 0.3419-0.3424 (formed 2026-09-20 13:15 UTC, break of structure confirmed 2026-09-20 13:30 UTC) | HTF: 1w*=bullish(6 OB) 1d*=bullish(10 OB) 4h=bullish(10 OB) 1h=bullish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 729.969633,
       "risk_per_unit": 0.0009000000000000119,
       "partial_tp_price": 0.34340000000000004,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.0009000000000000119
     },
     {
       "trade_id": "c50ca9f3840c",
@@ -29,15 +30,16 @@
       "symbol": "BNB/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.32365,
+      "qty": 0.161825,
       "entry_price": 772.44,
-      "stop_loss": 770.7585,
+      "stop_loss": 772.44,
       "take_profit": 775.8031,
       "trigger": "bullish order block retest: zone 771.5300-773.2900 (formed 2026-09-20 23:45 UTC, break of structure confirmed 2026-09-21 00:00 UTC) | HTF: 1w*=bullish(8 OB) 1d*=bullish(9 OB) 4h=bullish(8 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.32365,
       "risk_per_unit": 1.6815000000000282,
       "partial_tp_price": 774.1215000000001,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 1.6815000000000282
     },
     {
       "trade_id": "dac6b9e38a99",
@@ -46,15 +48,16 @@
       "symbol": "LINK/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 19.899705,
+      "qty": 9.9498525,
       "entry_price": 12.563,
-      "stop_loss": 12.5015,
+      "stop_loss": 12.563,
       "take_profit": 12.686,
       "trigger": "bullish order block retest: zone 12.5140-12.5670 (formed 2026-09-19 14:45 UTC, break of structure confirmed 2026-09-19 15:00 UTC) | HTF: 1w*=bullish(10 OB) 1d*=bullish(12 OB) 4h=bullish(9 OB) 1h=bullish(12 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 19.899705,
       "risk_per_unit": 0.061500000000000554,
       "partial_tp_price": 12.624500000000001,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.061500000000000554
     }
   ],
   "dry_run_signaled": {
