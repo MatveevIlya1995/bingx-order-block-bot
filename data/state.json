@@ -14,7 +14,7 @@
       "position_side": "LONG",
       "qty": 0.1594955,
       "entry_price": 783.72,
-      "stop_loss": 783.72,
+      "stop_loss": 785.8073999999999,
       "take_profit": 787.6251,
       "trigger": "bullish order block retest: zone 782.5500-784.6000 (formed 2026-09-21 10:30 UTC, break of structure confirmed 2026-09-21 11:00 UTC) | HTF: 1w*=bullish(9 OB) 1d*=bullish(10 OB) 4h=bullish(8 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.318991,
@@ -30,15 +30,16 @@
       "symbol": "BTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.002906,
+      "qty": 0.001453,
       "entry_price": 86020.6,
-      "stop_loss": 85856.6574,
+      "stop_loss": 86020.6,
       "take_profit": 86348.4852,
       "trigger": "bullish order block retest: zone 85942.6000-86039.8000 (formed 2026-09-21 19:00 UTC, break of structure confirmed 2026-09-21 19:15 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(9 OB) 4h=bullish(7 OB) 1h=bullish(12 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.002906,
       "risk_per_unit": 163.9426000000094,
       "partial_tp_price": 86184.54260000002,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 163.9426000000094
     },
     {
       "trade_id": "f571056eab34",
