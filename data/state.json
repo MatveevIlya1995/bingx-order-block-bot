@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 108.000691,
       "entry_price": 1.1574,
-      "stop_loss": 1.1053,
+      "stop_loss": 1.1029,
       "take_profit": 1.1369,
       "trigger": "bearish order block retest: zone 1.1549-1.1665 (formed 2026-09-22 07:00 UTC, break of structure confirmed 2026-09-22 07:15 UTC) | HTF: 1w*=bearish(7 OB) 1d*=bullish(6 OB) 4h=bullish(8 OB) 1h=bearish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 37.64% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 216.001382,
@@ -48,15 +48,16 @@
       "symbol": "BTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.002969,
+      "qty": 0.0014845,
       "entry_price": 84208.8,
-      "stop_loss": 84017.4984,
+      "stop_loss": 84208.8,
       "take_profit": 84591.4032,
       "trigger": "bullish order block retest: zone 84101.6000-84435.6000 (formed 2026-09-21 10:30 UTC, break of structure confirmed 2026-09-21 12:45 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(9 OB) 4h=bullish(7 OB) 1h=bearish(13 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.002969,
       "risk_per_unit": 191.30160000000615,
       "partial_tp_price": 84400.10160000001,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 191.30160000000615
     }
   ],
   "dry_run_signaled": {
