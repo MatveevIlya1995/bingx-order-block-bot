@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-25",
+  "date": "2026-09-26",
   "day_start_equity": 249.2049,
   "realized_pnl_today": 0.0,
   "trades": [],
@@ -14,7 +14,7 @@
       "position_side": "LONG",
       "qty": 0.0467205,
       "entry_price": 2675.48,
-      "stop_loss": 2679.6965,
+      "stop_loss": 2680.4565,
       "take_profit": 2704.6871,
       "trigger": "bullish order block retest: zone 2663.5400-2672.0700 (formed 2026-09-24 14:00 UTC, break of structure confirmed 2026-09-24 14:15 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(8 OB) 4h=bullish(6 OB) 1h=bearish(6 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.093441,
