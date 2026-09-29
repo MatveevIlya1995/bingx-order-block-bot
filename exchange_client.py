@@ -66,6 +66,17 @@ class ExchangeClient:
         except Exception as e:
             print(f"[exchange] {symbol}: could not set leverage: {e}")
 
+    @staticmethod
+    def _close_params(position_side: str) -> dict:
+        """Order params for anything that reduces/closes a position.
+        BingX hedge mode (positionSide LONG/SHORT) rejects the reduceOnly
+        field -- positionSide alone marks the order as a close there.
+        One-way mode (positionSide BOTH) needs reduceOnly instead."""
+        ps = (position_side or "BOTH").upper()
+        if ps in ("LONG", "SHORT"):
+            return {"positionSide": ps}
+        return {"positionSide": "BOTH", "reduceOnly": True}
+
     def amount_to_precision(self, symbol: str, amount: float) -> float:
         return float(self.exchange.amount_to_precision(symbol, amount))
 
@@ -87,11 +98,25 @@ class ExchangeClient:
         order = self.exchange.create_order(symbol, "market", side, amount, None, entry_params)
 
         opposite = "sell" if side == "buy" else "buy"
-        sl_params = {"positionSide": position_side, "stopPrice": stop_loss_price, "reduceOnly": True}
-        tp_params = {"positionSide": position_side, "stopPrice": take_profit_price, "reduceOnly": True}
+        sl_params = {**self._close_params(position_side), "stopPrice": stop_loss_price}
+        tp_params = {**self._close_params(position_side), "stopPrice": take_profit_price}
 
-        self.exchange.create_order(symbol, "STOP_MARKET", opposite, amount, None, sl_params)
-        self.exchange.create_order(symbol, "TAKE_PROFIT_MARKET", opposite, amount, None, tp_params)
+        try:
+            self.exchange.create_order(symbol, "STOP_MARKET", opposite, amount, None, sl_params)
+        except Exception as e:
+            # Never leave a position without a stop: flatten it right away.
+            print(f"[exchange] {symbol}: STOP-LOSS placement FAILED ({e}) -- closing the new position at market")
+            try:
+                self.exchange.create_order(
+                    symbol, "market", opposite, amount, None, self._close_params(position_side)
+                )
+            except Exception as e2:
+                print(f"[exchange] {symbol}: EMERGENCY CLOSE ALSO FAILED ({e2}) -- CLOSE THIS POSITION MANUALLY ON BINGX NOW")
+            raise
+        try:
+            self.exchange.create_order(symbol, "TAKE_PROFIT_MARKET", opposite, amount, None, tp_params)
+        except Exception as e:
+            print(f"[exchange] {symbol}: take-profit order failed ({e}); stop-loss is in place, trade continues")
         return order
 
     def close_partial_position(self, symbol: str, side: str, amount: float, position_side: str):
@@ -104,30 +129,28 @@ class ExchangeClient:
         confirm the resulting position size matches expectations the
         first time this fires on a real account (see the README)."""
         amount = self.amount_to_precision(symbol, amount)
-        params = {"positionSide": position_side, "reduceOnly": True}
+        params = self._close_params(position_side)
         return self.exchange.create_order(symbol, "market", side, amount, None, params)
 
     def replace_stop_order(
         self, symbol: str, side: str, amount: float, new_stop_price: float, position_side: str,
     ):
-        """Cancels this symbol/position_side's existing STOP_MARKET
-        reduce-only order (if any) and places a new one at
-        new_stop_price -- used to move the stop to breakeven right after
-        a partial take-profit, and again on each trailing-stop step.
-
-        NOTE: like fetch_trade_exit(), how to identify "the" existing
-        stop order among fetch_open_orders() results is unverified
-        against live BingX data -- confirm this cancels the correct order
-        (and not, say, the take-profit order) before relying on it with
-        real money (see the README's Step 3)."""
+        """Moves a position's stop-loss: places the NEW stop first, then
+        cancels the old stop order(s) for that position side (the
+        take-profit is left alone). Placing first means the position is
+        never without a stop -- if the new order fails, the old one stays."""
         amount = self.amount_to_precision(symbol, amount)
         try:
-            open_orders = self.exchange.fetch_open_orders(symbol)
+            old_orders = self.exchange.fetch_open_orders(symbol)
         except Exception as e:
             print(f"[exchange] {symbol}: could not fetch open orders to replace stop: {e}")
-            open_orders = []
-
-        for o in open_orders:
+            old_orders = []
+        params = {**self._close_params(position_side), "stopPrice": new_stop_price}
+        new_order = self.exchange.create_order(symbol, "STOP_MARKET", side, amount, None, params)
+        new_id = (new_order or {}).get("id")
+        for o in old_orders:
+            if new_id and o.get("id") == new_id:
+                continue
             o_type = (o.get("type") or "").upper()
             o_info = o.get("info", {}) or {}
             o_side = str(o_info.get("positionSide", "")).upper()
@@ -137,10 +160,8 @@ class ExchangeClient:
                 try:
                     self.exchange.cancel_order(o["id"], symbol)
                 except Exception as e:
-                    print(f"[exchange] {symbol}: could not cancel existing stop order {o.get('id')}: {e}")
-
-        params = {"positionSide": position_side, "stopPrice": new_stop_price, "reduceOnly": True}
-        return self.exchange.create_order(symbol, "STOP_MARKET", side, amount, None, params)
+                    print(f"[exchange] {symbol}: could not cancel old stop order {o.get('id')}: {e}")
+        return new_order
 
     def fetch_trade_exit(self, symbol: str, position_side: str, since_iso: str):
         """Looks up the fill that closed a previously-tracked position, so
