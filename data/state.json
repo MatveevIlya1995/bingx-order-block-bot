@@ -1,7 +1,7 @@
 {
   "date": "2026-09-29",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": -2.314201664324722,
+  "realized_pnl_today": -3.03054984567136,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -40,20 +40,20 @@
       "partial_taken": false
     },
     {
-      "trade_id": "c7da369ace9e",
-      "entry_time_utc": "2026-09-29T19:59:24.745685+00:00",
+      "trade_id": "9800492be4be",
+      "entry_time_utc": "2026-09-29T21:31:08.286565+00:00",
       "mode": "DRY_RUN",
       "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.093013,
-      "entry_price": 2688.2,
-      "stop_loss": 2683.1841,
-      "take_profit": 2698.2317,
-      "trigger": "bullish order block retest: zone 2685.8700-2688.6300 (formed 2026-09-26 22:30 UTC, break of structure confirmed 2026-09-26 23:00 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(8 OB) 4h=bullish(8 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.093013,
-      "risk_per_unit": 5.015899999999874,
-      "partial_tp_price": 2693.2158999999997,
+      "qty": 0.093357,
+      "entry_price": 2678.28,
+      "stop_loss": 2663.6037,
+      "take_profit": 2707.6325,
+      "trigger": "bullish order block retest: zone 2666.2700-2683.1600 (formed 2026-09-26 20:30 UTC, break of structure confirmed 2026-09-26 21:15 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(8 OB) 4h=bullish(8 OB) 1h=bearish(9 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 0.093357,
+      "risk_per_unit": 14.676300000000083,
+      "partial_tp_price": 2692.9563000000003,
       "partial_taken": false
     }
   ],
@@ -231,7 +231,8 @@
     "AVAX/USDT:USDT|bullish|11.32-11.386": "2026-09-29T19:42:10.054830+00:00",
     "XRP/USDT:USDT|bearish|1.4955-1.5026": "2026-09-29T19:42:10.056279+00:00",
     "BTC/USDT:USDT|bullish|83278.8-83555.3": "2026-09-29T19:59:24.744071+00:00",
-    "ETH/USDT:USDT|bullish|2685.87-2688.63": "2026-09-29T19:59:24.745850+00:00"
+    "ETH/USDT:USDT|bullish|2685.87-2688.63": "2026-09-29T19:59:24.745850+00:00",
+    "ETH/USDT:USDT|bullish|2666.27-2683.16": "2026-09-29T21:31:08.286715+00:00"
   },
   "realized_pnl_date": "2026-09-29"
 }
