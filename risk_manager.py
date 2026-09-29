@@ -110,8 +110,23 @@ class RiskManager:
         if self.state.get("date") != today:
             self.state["date"] = today
             self.state["day_start_equity"] = equity
-            self.state["realized_pnl_today"] = 0.0
+            # Only reset realized P/L if it wasn't already recorded for
+            # today -- exits reconciled earlier this cycle (before the
+            # circuit-breaker check) already belong to the new day.
+            if self.state.get("realized_pnl_date") != today:
+                self.state["realized_pnl_date"] = today
+                self.state["realized_pnl_today"] = 0.0
             self._save_state()
+
+    def _record_realized_pnl(self, pnl: float):
+        """Adds a closed (or partially closed) trade's P/L -- LIVE or
+        DRY_RUN -- to today's realized total, starting a fresh total if
+        the stored one belongs to a previous UTC day."""
+        today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+        if self.state.get("realized_pnl_date") != today:
+            self.state["realized_pnl_date"] = today
+            self.state["realized_pnl_today"] = 0.0
+        self.state["realized_pnl_today"] = self.state.get("realized_pnl_today", 0.0) + pnl
 
     def circuit_breaker_tripped(self, equity: float) -> bool:
         """True if account equity has dropped too much vs. the start of
@@ -122,6 +137,17 @@ class RiskManager:
         if start <= 0:
             return False
         loss_pct = (start - equity) / start
+        if self.cfg.dry_run:
+            # Paper trades never move the real account balance, so the
+            # equity comparison above can't see them. Use today's
+            # simulated realized P/L as well, so DRY_RUN trips the breaker
+            # exactly when LIVE would.
+            today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+            realized = (
+                self.state.get("realized_pnl_today", 0.0)
+                if self.state.get("realized_pnl_date") == today else 0.0
+            )
+            loss_pct = max(loss_pct, -realized / start)
         return loss_pct >= self.cfg.max_daily_loss_pct
 
     def check_equity_jump(self, equity: float, threshold_pct: float = 0.15) -> str | None:
@@ -328,7 +354,7 @@ class RiskManager:
             duration_minutes = round((exit_time - entry_time).total_seconds() / 60, 1)
 
             if pnl is not None:
-                self.state["realized_pnl_today"] = self.state.get("realized_pnl_today", 0.0) + pnl
+                self._record_realized_pnl(pnl)
                 self._save_state()
 
             self._write_journal_row({
@@ -488,6 +514,7 @@ class RiskManager:
         gross_pnl = (exit_price - trade["entry_price"]) * direction * qty
         fee = self._estimate_round_trip_fee(qty, trade["entry_price"], exit_price)
         pnl = gross_pnl - fee
+        self._record_realized_pnl(pnl)
         exit_time = datetime.datetime.now(datetime.timezone.utc)
         entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
         duration_minutes = round((exit_time - entry_time).total_seconds() / 60, 1)
@@ -517,6 +544,7 @@ class RiskManager:
         gross_pnl = (exit_price - trade["entry_price"]) * direction * partial_qty
         fee = self._estimate_round_trip_fee(partial_qty, trade["entry_price"], exit_price)
         pnl = gross_pnl - fee
+        self._record_realized_pnl(pnl)
         now = datetime.datetime.now(datetime.timezone.utc)
         entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
         self._write_journal_row({
