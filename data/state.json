@@ -1,7 +1,7 @@
 {
   "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": 11.2180045841952,
+  "realized_pnl_today": 12.248788181035634,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -31,7 +31,7 @@
       "position_side": "SHORT",
       "qty": 200.4008015,
       "entry_price": 1.2475,
-      "stop_loss": 1.2374,
+      "stop_loss": 1.2291,
       "take_profit": 1.2392,
       "trigger": "bearish order block retest: zone 1.2403-1.2504 (formed 2026-09-28 04:45 UTC, break of structure confirmed 2026-09-28 05:15 UTC) | HTF: 1w*=bearish(8 OB) 1d*=bullish(6 OB) 4h=bullish(10 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 42.15% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 400.801603,
@@ -47,15 +47,16 @@
       "symbol": "ATOM/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 172.229994,
+      "qty": 86.114997,
       "entry_price": 1.737,
-      "stop_loss": 1.7507,
+      "stop_loss": 1.737,
       "take_profit": 1.7095,
       "trigger": "bearish order block retest: zone 1.7320-1.7490 (formed 2026-09-28 13:45 UTC, break of structure confirmed 2026-09-28 14:15 UTC) | HTF: 1w*=bearish(7 OB) 1d*=bullish(7 OB) 4h=bearish(10 OB) 1h=bearish(7 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 30.34% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 172.229994,
       "risk_per_unit": 0.013699999999999823,
       "partial_tp_price": 1.7233000000000003,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.013699999999999823
     }
   ],
   "dry_run_signaled": {
