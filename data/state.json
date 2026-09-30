@@ -1,7 +1,7 @@
 {
   "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": -4.720581953983577,
+  "realized_pnl_today": -3.854844383881269,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -12,15 +12,16 @@
       "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.187698,
+      "qty": 0.093849,
       "entry_price": 2663.86,
-      "stop_loss": 2651.9654,
+      "stop_loss": 2663.86,
       "take_profit": 2687.6492,
       "trigger": "bullish order block retest: zone 2654.6200-2671.2400 (formed 2026-09-29 05:30 UTC, break of structure confirmed 2026-09-29 05:45 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(8 OB) 4h=bearish(8 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.187698,
       "risk_per_unit": 11.894600000000082,
       "partial_tp_price": 2675.7546,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 11.894600000000082
     },
     {
       "trade_id": "8ea2e70694d0",
