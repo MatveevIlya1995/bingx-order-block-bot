@@ -1,7 +1,7 @@
 {
   "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": 10.904033634078427,
+  "realized_pnl_today": 11.33846225231401,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -12,15 +12,16 @@
       "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.186992,
+      "qty": 0.093496,
       "entry_price": 2673.91,
-      "stop_loss": 2665.7516,
+      "stop_loss": 2673.91,
       "take_profit": 2690.2268,
       "trigger": "bullish order block retest: zone 2668.4200-2675.2300 (formed 2026-09-29 17:45 UTC, break of structure confirmed 2026-09-29 18:00 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(8 OB) 4h=bullish(8 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.186992,
       "risk_per_unit": 8.158399999999801,
       "partial_tp_price": 2682.0683999999997,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 8.158399999999801
     },
     {
       "trade_id": "218b72231748",
@@ -40,22 +41,21 @@
       "partial_taken": false
     },
     {
-      "trade_id": "788908eafaf3",
-      "entry_time_utc": "2026-09-30T15:17:06.805980+00:00",
+      "trade_id": "05dd266bd453",
+      "entry_time_utc": "2026-09-30T15:46:11.178712+00:00",
       "mode": "DRY_RUN",
-      "symbol": "ADA/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 317.976631,
-      "entry_price": 0.2452,
-      "stop_loss": 0.2452,
-      "take_profit": 0.2419,
-      "trigger": "bearish order block retest: zone 0.2450-0.2466 (formed 2026-09-28 06:30 UTC, break of structure confirmed 2026-09-28 07:15 UTC) | HTF: 1w*=bearish(4 OB) 1d*=bullish(10 OB) 4h=bullish(10 OB) 1h=bearish(8 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 22.43% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
-      "initial_qty": 635.953262,
-      "risk_per_unit": 0.0015999999999999903,
-      "partial_tp_price": 0.2436,
-      "partial_taken": true,
-      "trail_distance": 0.0015999999999999903
+      "symbol": "LTC/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 6.059645,
+      "entry_price": 66.99,
+      "stop_loss": 66.8631,
+      "take_profit": 67.2439,
+      "trigger": "bullish order block retest: zone 66.9300-67.5100 (formed 2026-09-30 12:15 UTC, break of structure confirmed 2026-09-30 12:30 UTC) | HTF: 1w*=bullish(7 OB) 1d*=bullish(8 OB) 4h=bearish(7 OB) 1h=bearish(8 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 6.059645,
+      "risk_per_unit": 0.12689999999999202,
+      "partial_tp_price": 67.11689999999999,
+      "partial_taken": false
     }
   ],
   "dry_run_signaled": {
@@ -246,7 +246,8 @@
     "ETH/USDT:USDT|bullish|2679.5-2689.88": "2026-09-30T14:31:16.380278+00:00",
     "ETH/USDT:USDT|bullish|2668.42-2675.23": "2026-09-30T14:46:07.030479+00:00",
     "BNB/USDT:USDT|bullish|766.28-767.65": "2026-09-30T15:01:30.074974+00:00",
-    "ADA/USDT:USDT|bearish|0.245-0.2466": "2026-09-30T15:17:06.806184+00:00"
+    "ADA/USDT:USDT|bearish|0.245-0.2466": "2026-09-30T15:17:06.806184+00:00",
+    "LTC/USDT:USDT|bullish|66.93-67.51": "2026-09-30T15:46:11.178902+00:00"
   },
   "realized_pnl_date": "2026-09-30"
 }
