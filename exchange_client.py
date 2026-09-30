@@ -113,10 +113,11 @@ class ExchangeClient:
             except Exception as e2:
                 print(f"[exchange] {symbol}: EMERGENCY CLOSE ALSO FAILED ({e2}) -- CLOSE THIS POSITION MANUALLY ON BINGX NOW")
             raise
-        try:
-            self.exchange.create_order(symbol, "TAKE_PROFIT_MARKET", opposite, amount, None, tp_params)
-        except Exception as e:
-            print(f"[exchange] {symbol}: take-profit order failed ({e}); stop-loss is in place, trade continues")
+        if take_profit_price is not None:
+            try:
+                self.exchange.create_order(symbol, "TAKE_PROFIT_MARKET", opposite, amount, None, tp_params)
+            except Exception as e:
+                print(f"[exchange] {symbol}: take-profit order failed ({e}); stop-loss is in place, trade continues")
         return order
 
     def close_partial_position(self, symbol: str, side: str, amount: float, position_side: str):
