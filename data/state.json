@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 1326.615656,
       "entry_price": 0.0939,
-      "stop_loss": 0.0939,
+      "stop_loss": 0.09358000000000001,
       "take_profit": 0.0924,
       "trigger": "bearish order block retest: zone 0.0937-0.0945 (formed 2026-09-28 13:30 UTC, break of structure confirmed 2026-09-28 14:15 UTC) | HTF: 1w*=bearish(6 OB) 1d*=bullish(7 OB) 4h=bearish(12 OB) 1h=bearish(5 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 16.65% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 2653.231312,
