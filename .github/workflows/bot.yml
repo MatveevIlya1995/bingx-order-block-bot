@@ -47,6 +47,8 @@ jobs:
           PARTIAL_TP_R_MULTIPLE: ${{ vars.PARTIAL_TP_R_MULTIPLE }}
           PARTIAL_TP_FRACTION: ${{ vars.PARTIAL_TP_FRACTION }}
           TRAIL_R_MULTIPLE: ${{ vars.TRAIL_R_MULTIPLE }}
+          TP2_FRACTION: ${{ vars.TP2_FRACTION }}
+          TP2_FALLBACK_R_MULTIPLE: ${{ vars.TP2_FALLBACK_R_MULTIPLE }}
           DRY_RUN_FEE_PCT_PER_SIDE: ${{ vars.DRY_RUN_FEE_PCT_PER_SIDE }}
           DRY_RUN: ${{ vars.DRY_RUN }}
         run: python3 bot.py
