@@ -227,6 +227,22 @@ class Config:
         default_factory=lambda: float(_env("TRAIL_R_MULTIPLE", "1.0"))
     )
 
+    # --- second take-profit (TP2) ---
+    # After TP1, TP2_FRACTION of the ORIGINAL position closes at the next
+    # swing high (LONG) / swing low (SHORT) beyond TP1 on the entry
+    # timeframe (FRACTAL_N fractals on the fetched candles). If there is no
+    # such swing, TP2 sits at TP2_FALLBACK_R_MULTIPLE x the initial risk
+    # instead. The stop stays at breakeven between TP1 and TP2; the
+    # trailing stop (TRAIL_R_MULTIPLE) only arms for what's left after TP2.
+    # Defaults: TP1 50%, TP2 30%, runner 20%. Set TP2_FRACTION to 0 to skip
+    # TP2 and start trailing right after TP1 (the previous behavior).
+    tp2_fraction: float = field(
+        default_factory=lambda: float(_env("TP2_FRACTION", "0.3"))
+    )
+    tp2_fallback_r_multiple: float = field(
+        default_factory=lambda: float(_env("TP2_FALLBACK_R_MULTIPLE", "2.0"))
+    )
+
     # --- cost modeling ---
     # DRY_RUN's simulated exits previously assumed a fill at the exact
     # stop/take-profit price with no trading fees at all, which makes
