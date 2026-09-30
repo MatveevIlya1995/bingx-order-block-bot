@@ -1,7 +1,7 @@
 {
   "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": -3.833996366658093,
+  "realized_pnl_today": -3.797145345464341,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -14,7 +14,7 @@
       "position_side": "LONG",
       "qty": 0.093849,
       "entry_price": 2663.86,
-      "stop_loss": 2704.8954,
+      "stop_loss": 2722.1854,
       "take_profit": 2687.6492,
       "trigger": "bullish order block retest: zone 2654.6200-2671.2400 (formed 2026-09-29 05:30 UTC, break of structure confirmed 2026-09-29 05:45 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(8 OB) 4h=bearish(8 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 0.187698,
@@ -32,7 +32,7 @@
       "position_side": "LONG",
       "qty": 8.742927,
       "entry_price": 14.248,
-      "stop_loss": 14.420900000000001,
+      "stop_loss": 14.549900000000001,
       "take_profit": 14.5023,
       "trigger": "bullish order block retest: zone 14.1350-14.3120 (formed 2026-09-28 15:00 UTC, break of structure confirmed 2026-09-28 16:15 UTC) | HTF: 1w*=bullish(10 OB) 1d*=bullish(11 OB) 4h=bullish(13 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 17.485854,
@@ -48,15 +48,16 @@
       "symbol": "LTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 7.40631,
+      "qty": 3.703155,
       "entry_price": 67.51,
-      "stop_loss": 67.4325,
+      "stop_loss": 67.51,
       "take_profit": 67.665,
       "trigger": "bullish order block retest: zone 67.5000-68.0700 (formed 2026-09-29 05:30 UTC, break of structure confirmed 2026-09-29 06:00 UTC) | HTF: 1w*=bullish(7 OB) 1d*=bullish(8 OB) 4h=bullish(7 OB) 1h=bearish(8 OB) (*=primary/directional, rest=timing only)",
       "initial_qty": 7.40631,
       "risk_per_unit": 0.07750000000000057,
       "partial_tp_price": 67.5875,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.07750000000000057
     }
   ],
   "dry_run_signaled": {
