@@ -74,7 +74,7 @@
       "position_side": "LONG",
       "qty": 0.6799406,
       "entry_price": 117.42,
-      "stop_loss": 117.524,
+      "stop_loss": 117.717,
       "take_profit": 118.484,
       "trigger": "bullish order block retest: zone 117.0050-117.9940 (formed 2026-09-29 05:30 UTC, break of structure confirmed 2026-09-29 05:45 UTC) | HTF: 1w*=bullish(10 OB) 1d*=bullish(6 OB) 4h=bearish(12 OB) 1h=bearish(9 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 118.063 (next swing high (1.21R)), runner trails after TP2",
       "tp2_price": 118.063,
