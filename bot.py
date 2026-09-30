@@ -110,6 +110,7 @@ from strategy import (
     detect_trend,
     combine_htf_bias,
     weekly_room_pct,
+    next_swing_beyond,
 )
 from risk_manager import RiskManager
 
@@ -225,7 +226,7 @@ def _manage_open_trades(client, risk, cfg, symbol):
 
     partial_live = risk.reconcile_live_exits(symbol, high=high, low=low, exchange_client=client)
     if partial_live:
-        print(f"[bot] {symbol}: took partial take-profit on {len(partial_live)} LIVE trade(s), stop moved to breakeven.")
+        print(f"[bot] {symbol}: advanced TP1/TP2 on {len(partial_live)} LIVE trade(s) (stop at breakeven after TP1, trailing after TP2).")
     risk.trail_live_stops(symbol, high=high, low=low, exchange_client=client)
 
     return df
@@ -284,6 +285,25 @@ def _find_candidate(client, cfg, symbol, df_cache):
     }
 
 
+def _find_tp2_level(df, signal, cfg):
+    """TP2 = the next swing high (LONG) / swing low (SHORT) beyond TP1 on
+    the entry timeframe. Returns (price, description), or (None, None) when
+    there's no such swing -- RiskManager then falls back to
+    TP2_FALLBACK_R_MULTIPLE x risk."""
+    entry = signal["entry"]
+    risk_per_unit = abs(entry - signal["stop_loss"])
+    if risk_per_unit <= 0:
+        return None, None
+    is_long = signal["position_side"].upper() == "LONG"
+    direction = 1 if is_long else -1
+    tp1 = entry + direction * risk_per_unit * cfg.partial_tp_r_multiple
+    level = next_swing_beyond(df, "bullish" if is_long else "bearish", tp1, n=cfg.fractal_n)
+    if level is None:
+        return None, None
+    r_multiple = abs(level - entry) / risk_per_unit
+    return level, f"next swing {'high' if is_long else 'low'} ({r_multiple:.2f}R)"
+
+
 def _try_open_candidate(client, risk, cfg, candidate, equity):
     """Sizes, journals and (if not DRY_RUN) submits one candidate's trade.
     Returns True if a position was actually opened (so the caller can
@@ -332,6 +352,12 @@ def _try_open_candidate(client, risk, cfg, candidate, equity):
         return False
 
     trade_id = risk.new_trade_id()
+    tp2_price, tp2_source = _find_tp2_level(df, signal, cfg)
+    trigger += (
+        f" | exits: TP1 {cfg.partial_tp_r_multiple:g}R (mirror of SL), TP2 "
+        + (f"{tp2_price:.6g} ({tp2_source})" if tp2_price is not None else "fallback (no swing beyond TP1)")
+        + ", runner trails after TP2"
+    )
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     journal_row = {
@@ -364,6 +390,8 @@ def _try_open_candidate(client, risk, cfg, candidate, equity):
             "stop_loss": round(signal["stop_loss"], 4),
             "take_profit": round(signal["take_profit"], 4),
             "trigger": trigger,
+            "tp2_price": tp2_price,
+            "tp2_source": tp2_source,
         })
         print(f"[bot] {symbol}: DRY_RUN is on -- no order sent (logged to trade journal).")
         return True
@@ -374,7 +402,10 @@ def _try_open_candidate(client, risk, cfg, candidate, equity):
         side=signal["side"],
         amount=qty,
         stop_loss_price=signal["stop_loss"],
-        take_profit_price=signal["take_profit"],
+        # With partial exits on (TP1/TP2/trailing, managed by RiskManager) no
+        # full-size exchange take-profit is placed -- it would close the whole
+        # position at a fixed target before TP2 and the trailing runner.
+        take_profit_price=None if cfg.partial_tp_fraction > 0 else signal["take_profit"],
         position_side=signal["position_side"],
     )
     risk.log_trade(journal_row)
@@ -391,6 +422,8 @@ def _try_open_candidate(client, risk, cfg, candidate, equity):
         "stop_loss": round(signal["stop_loss"], 4),
         "take_profit": round(signal["take_profit"], 4),
         "trigger": trigger,
+        "tp2_price": tp2_price,
+        "tp2_source": tp2_source,
     })
     print(f"[bot] {symbol}: order submitted with attached stop-loss/take-profit, logged.")
     return True
