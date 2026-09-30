@@ -21,7 +21,8 @@
       "risk_per_unit": 0.004600000000000021,
       "partial_tp_price": 0.24269999999999997,
       "partial_taken": true,
-      "trail_distance": 0.004600000000000021
+      "trail_distance": 0.004600000000000021,
+      "tp2_taken": true
     },
     {
       "trade_id": "957ae5a9e136",
@@ -39,7 +40,8 @@
       "risk_per_unit": 0.013699999999999823,
       "partial_tp_price": 1.7233000000000003,
       "partial_taken": true,
-      "trail_distance": 0.013699999999999823
+      "trail_distance": 0.013699999999999823,
+      "tp2_taken": true
     },
     {
       "trade_id": "8b98f49c071e",
@@ -56,7 +58,10 @@
       "initial_qty": 1481.393695,
       "risk_per_unit": 0.0008000000000000229,
       "partial_tp_price": 0.33830000000000005,
-      "partial_taken": false
+      "partial_taken": false,
+      "tp2_price": 0.33910000000000007,
+      "tp2_source": "2R fallback (trade opened before TP2 support)",
+      "tp2_taken": false
     }
   ],
   "dry_run_signaled": {
