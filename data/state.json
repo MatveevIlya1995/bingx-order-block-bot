@@ -1,7 +1,7 @@
 {
   "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": 10.625900376083303,
+  "realized_pnl_today": 11.2180045841952,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -29,15 +29,16 @@
       "symbol": "DOT/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 400.801603,
+      "qty": 200.4008015,
       "entry_price": 1.2475,
-      "stop_loss": 1.2517,
+      "stop_loss": 1.2475,
       "take_profit": 1.2392,
       "trigger": "bearish order block retest: zone 1.2403-1.2504 (formed 2026-09-28 04:45 UTC, break of structure confirmed 2026-09-28 05:15 UTC) | HTF: 1w*=bearish(8 OB) 1d*=bullish(6 OB) 4h=bullish(10 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 42.15% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
       "initial_qty": 400.801603,
       "risk_per_unit": 0.0041999999999999815,
       "partial_tp_price": 1.2433,
-      "partial_taken": false
+      "partial_taken": true,
+      "trail_distance": 0.0041999999999999815
     },
     {
       "trade_id": "957ae5a9e136",
