@@ -1,28 +1,10 @@
 {
   "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": -1.8541230616830866,
+  "realized_pnl_today": 1.884110485470086,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
-    {
-      "trade_id": "8d957af3088f",
-      "entry_time_utc": "2026-09-30T06:31:15.739454+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "ETH/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 0.093849,
-      "entry_price": 2663.86,
-      "stop_loss": 2722.1854,
-      "take_profit": 2687.6492,
-      "trigger": "bullish order block retest: zone 2654.6200-2671.2400 (formed 2026-09-29 05:30 UTC, break of structure confirmed 2026-09-29 05:45 UTC) | HTF: 1w*=bullish(11 OB) 1d*=bullish(8 OB) 4h=bearish(8 OB) 1h=bearish(10 OB) (*=primary/directional, rest=timing only)",
-      "initial_qty": 0.187698,
-      "risk_per_unit": 11.894600000000082,
-      "partial_tp_price": 2675.7546,
-      "partial_taken": true,
-      "trail_distance": 11.894600000000082
-    },
     {
       "trade_id": "7c9c8042d7c7",
       "entry_time_utc": "2026-09-30T08:31:13.410513+00:00",
@@ -42,20 +24,37 @@
       "trail_distance": 0.12709999999999866
     },
     {
-      "trade_id": "7cf14ce0b267",
-      "entry_time_utc": "2026-09-30T13:16:12.738445+00:00",
+      "trade_id": "315103319685",
+      "entry_time_utc": "2026-09-30T13:31:26.688798+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "BNB/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 0.645103,
+      "entry_price": 775.07,
+      "stop_loss": 773.4158,
+      "take_profit": 778.3784,
+      "trigger": "bullish order block retest: zone 774.1900-775.6400 (formed 2026-09-27 16:15 UTC, break of structure confirmed 2026-09-27 17:00 UTC) | HTF: 1w*=bullish(8 OB) 1d*=bullish(9 OB) 4h=bullish(12 OB) 1h=bullish(11 OB) (*=primary/directional, rest=timing only)",
+      "initial_qty": 0.645103,
+      "risk_per_unit": 1.6542000000000598,
+      "partial_tp_price": 776.7242000000001,
+      "partial_taken": false
+    },
+    {
+      "trade_id": "352f2e22b866",
+      "entry_time_utc": "2026-09-30T13:31:26.690509+00:00",
       "mode": "DRY_RUN",
       "symbol": "ADA/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 1964.636542,
-      "entry_price": 0.2545,
-      "stop_loss": 0.255,
-      "take_profit": 0.2536,
-      "trigger": "bearish order block retest: zone 0.2531-0.2547 (formed 2026-09-27 14:30 UTC, break of structure confirmed 2026-09-27 14:45 UTC) | HTF: 1w*=bearish(4 OB) 1d*=bullish(10 OB) 4h=bullish(10 OB) 1h=bullish(8 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 25.27% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
-      "initial_qty": 1964.636542,
-      "risk_per_unit": 0.0005000000000000004,
-      "partial_tp_price": 0.254,
+      "qty": 1468.421379,
+      "entry_price": 0.2551,
+      "stop_loss": 0.2565,
+      "take_profit": 0.2524,
+      "trigger": "bearish order block retest: zone 0.2545-0.2562 (formed 2026-09-27 21:45 UTC, break of structure confirmed 2026-09-27 22:00 UTC) | HTF: 1w*=bearish(4 OB) 1d*=bullish(10 OB) 4h=bullish(11 OB) 1h=bullish(8 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 25.56% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
+      "initial_qty": 1468.421379,
+      "risk_per_unit": 0.0014000000000000123,
+      "partial_tp_price": 0.2537,
       "partial_taken": false
     }
   ],
@@ -239,7 +238,9 @@
     "LINK/USDT:USDT|bullish|14.135-14.312": "2026-09-30T08:31:13.410736+00:00",
     "XRP/USDT:USDT|bearish|1.5065-1.5156": "2026-09-30T12:16:11.811572+00:00",
     "LTC/USDT:USDT|bullish|67.5-68.07": "2026-09-30T12:31:24.062544+00:00",
-    "ADA/USDT:USDT|bearish|0.2531-0.2547": "2026-09-30T13:16:12.738689+00:00"
+    "ADA/USDT:USDT|bearish|0.2531-0.2547": "2026-09-30T13:16:12.738689+00:00",
+    "BNB/USDT:USDT|bullish|774.19-775.64": "2026-09-30T13:31:26.688983+00:00",
+    "ADA/USDT:USDT|bearish|0.2545-0.2562": "2026-09-30T13:31:26.690628+00:00"
   },
   "realized_pnl_date": "2026-09-30"
 }
