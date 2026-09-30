@@ -1,28 +1,10 @@
 {
   "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": -4.7874416569613905,
+  "realized_pnl_today": -4.487281598634848,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
-    {
-      "trade_id": "43354b26d50b",
-      "entry_time_utc": "2026-09-30T01:16:17.736974+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 1326.615656,
-      "entry_price": 0.0939,
-      "stop_loss": 0.09358000000000001,
-      "take_profit": 0.0924,
-      "trigger": "bearish order block retest: zone 0.0937-0.0945 (formed 2026-09-28 13:30 UTC, break of structure confirmed 2026-09-28 14:15 UTC) | HTF: 1w*=bearish(6 OB) 1d*=bullish(7 OB) 4h=bearish(12 OB) 1h=bearish(5 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 16.65% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
-      "initial_qty": 2653.231312,
-      "risk_per_unit": 0.0007000000000000062,
-      "partial_tp_price": 0.09319999999999999,
-      "partial_taken": true,
-      "trail_distance": 0.0007000000000000062
-    },
     {
       "trade_id": "8d957af3088f",
       "entry_time_utc": "2026-09-30T06:31:15.739454+00:00",
@@ -55,6 +37,23 @@
       "initial_qty": 3.74736,
       "risk_per_unit": 0.3165000000000049,
       "partial_tp_price": 67.0365,
+      "partial_taken": false
+    },
+    {
+      "trade_id": "10d957fa1385",
+      "entry_time_utc": "2026-09-30T07:31:22.056348+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "DOT/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 207.356177,
+      "entry_price": 1.2015,
+      "stop_loss": 1.2047,
+      "take_profit": 1.1951,
+      "trigger": "bearish order block retest: zone 1.1837-1.2035 (formed 2026-09-28 18:00 UTC, break of structure confirmed 2026-09-28 19:00 UTC) | HTF: 1w*=bearish(8 OB) 1d*=bullish(6 OB) 4h=bullish(9 OB) 1h=bullish(9 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 39.93% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend.",
+      "initial_qty": 207.356177,
+      "risk_per_unit": 0.0032000000000000917,
+      "partial_tp_price": 1.1983,
       "partial_taken": false
     }
   ],
@@ -235,7 +234,8 @@
     "BNB/USDT:USDT|bullish|762.38-763.39": "2026-09-30T05:01:23.711444+00:00",
     "NEAR/USDT:USDT|bullish|4.914-5.011": "2026-09-30T06:16:05.457722+00:00",
     "ETH/USDT:USDT|bullish|2654.62-2671.24": "2026-09-30T06:31:15.739639+00:00",
-    "LTC/USDT:USDT|bullish|66.47-66.84": "2026-09-30T06:31:15.740937+00:00"
+    "LTC/USDT:USDT|bullish|66.47-66.84": "2026-09-30T06:31:15.740937+00:00",
+    "DOT/USDT:USDT|bearish|1.1837-1.2035": "2026-09-30T07:31:22.056551+00:00"
   },
   "realized_pnl_date": "2026-09-30"
 }
