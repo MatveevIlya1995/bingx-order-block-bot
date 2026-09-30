@@ -7,10 +7,9 @@ allowed direction, then it looks for an order-block retest on the 15m
 chart in that direction, using the 4h and 1h trend as entry-timing
 context rather than a veto. Every entry gets an automatic stop-loss
 (hard-capped at 3% of equity) sized so it also never asks for more
-margin than the account can actually support. At 1R (the same distance
-as the initial risk) half the position takes profit and the stop for the
-rest moves to breakeven; the remainder then trails with no fixed cap
-instead of being capped at a fixed 2R target. A daily-loss circuit
+margin than the account can actually support. At 1R (the stop-loss mirrored) half the position takes profit and the
+stop for the rest moves to breakeven; 30% more closes at the next swing
+high/low (TP2), and the last 20% trails with no fixed cap. A daily-loss circuit
 breaker halts new entries if losses get too large for the day.
 
 ## How a trade gets taken
@@ -49,14 +48,22 @@ breaker halts new entries if losses get too large for the day.
    theoretical capacity at the 10x hard-cap leverage, as a backstop
    against several concurrent positions collectively over-margining the
    account.
-7. **Partial take-profit + trailing stop** -- at `PARTIAL_TP_R_MULTIPLE`
-   times the initial risk (1R by default), `PARTIAL_TP_FRACTION` of the
-   position (50% by default) closes and the stop for the remainder moves
-   to breakeven (the entry price). From there the remainder trails
-   `TRAIL_R_MULTIPLE` behind the best price reached so far, with no fixed
-   take-profit cap -- a strong trend can pay out well beyond the fixed 2R
-   the trade would otherwise be capped at. Set `PARTIAL_TP_FRACTION=0` to
-   disable this and fall back to a fixed-2R-take-profit-only exit.
+7. **TP1 / TP2 / trailing runner** -- three exits per trade:
+   - **TP1** is the stop-loss mirrored to the other side of the entry
+     (`PARTIAL_TP_R_MULTIPLE` x the initial risk, 1R by default: a stop
+     $5 below entry puts TP1 $5 above it). `PARTIAL_TP_FRACTION` of the
+     position (50%) closes there and the stop for the rest moves to
+     breakeven.
+   - **TP2** is the next swing high (LONG) / swing low (SHORT) beyond TP1
+     on the entry timeframe (or `TP2_FALLBACK_R_MULTIPLE`, 2R, if there
+     is none). `TP2_FRACTION` of the original position (30%) closes
+     there. The stop stays at breakeven between TP1 and TP2.
+   - **Runner** -- the remaining 20% trails `TRAIL_R_MULTIPLE` behind the
+     best price reached, with no fixed take-profit cap, starting after TP2.
+   In LIVE mode no full-size exchange take-profit is placed at entry (it
+   would close everything at a fixed target); the stop-loss is always on
+   the exchange. Set `PARTIAL_TP_FRACTION=0` to disable all of this and
+   fall back to a fixed-2R-take-profit-only exit.
 
 See `strategy.combine_htf_bias()` and `bot.analyze_higher_timeframes()`
 for the primary/timing cascade logic, `risk_manager.position_size()` for
@@ -162,6 +169,8 @@ Or use the included `.github/workflows/bot.yml` (runs every 15 minutes via GitHu
 | `PARTIAL_TP_R_MULTIPLE` | `1.0` | R-multiple at which the partial take-profit fires |
 | `PARTIAL_TP_FRACTION` | `0.5` | Fraction of the position closed at the partial take-profit; set to `0` to disable partial-TP/trailing entirely |
 | `TRAIL_R_MULTIPLE` | `1.0` | How many R behind the best price reached so far the trailing stop sits, once armed |
+| `TP2_FRACTION` | `0.3` | Fraction of the ORIGINAL position closed at TP2 -- the next swing high (LONG) / swing low (SHORT) beyond TP1 on the entry timeframe. The trailing stop only arms for what is left after TP2 (20% by default). Set to 0 to skip TP2 and trail right after TP1 |
+| `TP2_FALLBACK_R_MULTIPLE` | `2.0` | Where TP2 goes, in multiples of the initial risk, when there is no swing beyond TP1 in the fetched candles |
 | `DRY_RUN_FEE_PCT_PER_SIDE` | `0.05` (%) | Round-trip taker-fee estimate subtracted from DRY_RUN's simulated P/L only -- does not affect LIVE P/L, which comes from BingX's own realized-PnL field |
 | `DRY_RUN` | `true` | Logs signals only (and simulates their outcome); set `false` to place real orders |
 
