@@ -313,3 +313,21 @@ def generate_signal(df: pd.DataFrame, order_blocks: list[dict], reward_risk_rati
                 }
 
     return None
+
+def next_swing_beyond(df: pd.DataFrame, direction: str, beyond_price: float, n: int = 2):
+    """The closest confirmed swing high ABOVE beyond_price (direction=
+    "bullish", i.e. a LONG's next resistance) or swing low BELOW it
+    (direction="bearish", a SHORT's next support) in df, or None if the
+    fetched candles contain no such swing. Used to place TP2 at the next
+    swing level past TP1.
+    """
+    out = find_fractals(df, n=n)
+    if direction == "bullish":
+        levels = out.loc[out["swing_high"], "high"]
+        levels = levels[levels > beyond_price]
+        return float(levels.min()) if not levels.empty else None
+    if direction == "bearish":
+        levels = out.loc[out["swing_low"], "low"]
+        levels = levels[levels < beyond_price]
+        return float(levels.max()) if not levels.empty else None
+    return None
