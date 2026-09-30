@@ -1,7 +1,7 @@
 {
-  "date": "2026-09-29",
+  "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": -3.03054984567136,
+  "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -234,5 +234,5 @@
     "ETH/USDT:USDT|bullish|2685.87-2688.63": "2026-09-29T19:59:24.745850+00:00",
     "ETH/USDT:USDT|bullish|2666.27-2683.16": "2026-09-29T21:31:08.286715+00:00"
   },
-  "realized_pnl_date": "2026-09-29"
+  "realized_pnl_date": "2026-09-30"
 }
