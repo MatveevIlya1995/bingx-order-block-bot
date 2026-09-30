@@ -75,17 +75,18 @@ class RiskManager:
         return data
 
     def _migrate_legacy_trades(self):
-        """Back-fills the partial-take-profit/trailing-stop bookkeeping
-        fields (initial_qty, risk_per_unit, partial_tp_price,
-        partial_taken -- see _arm_partial_and_trail()) onto any trade
-        that was opened by an OLDER version of this bot, before those
-        fields existed, and is still sitting in state.json from a prior
-        run. Without this, reconcile_dry_run_exits()/reconcile_live_exits()
-        crash with a KeyError the first cycle they see one of these older
-        trades, since they assume every open trade has already been
-        through _arm_partial_and_trail(). Safe to run every time the bot
-        starts: it only touches trades missing the new fields, and is a
-        no-op once every trade has been migrated once."""
+        """Bring open trades saved by older versions of the bot up to the
+        current exit-plan schema, so a deploy never strands an open trade.
+
+        - Trades opened before partial-take-profit support existed (no
+          "partial_taken" key) get the full TP1/TP2/trailing plan armed.
+        - Trades opened before TP2 support existed (no "tp2_taken" key):
+          if their TP1 already fired they were already trailing under the
+          old rules, so they keep trailing (tp2_taken=True); otherwise they
+          get a TP2 at the TP2_FALLBACK_R_MULTIPLE fallback, since the
+          candles they were opened on are no longer available to find the
+          swing level they would have used.
+        """
         migrated = False
         for key in ("open_trades", "open_dry_run_trades"):
             trades = self.state.get(key, [])
@@ -93,10 +94,20 @@ class RiskManager:
                 if "partial_taken" not in trade:
                     trades[i] = self._arm_partial_and_trail(trade)
                     migrated = True
+                elif "tp2_taken" not in trade:
+                    if trade.get("partial_taken"):
+                        trade["tp2_taken"] = True
+                    else:
+                        trade["tp2_price"] = self._fallback_tp2_price(trade)
+                        trade["tp2_source"] = (
+                            f"{self._tp2_fallback_r():g}R fallback (trade opened before TP2 support)"
+                        )
+                        trade["tp2_taken"] = False
+                    migrated = True
         if migrated:
             print(
-                "[risk] migrated one or more pre-existing open trade(s), opened before "
-                "partial-take-profit/trailing-stop support was added, to the new schema."
+                "[risk] migrated one or more pre-existing open trade(s) to the "
+                "TP1 / TP2 / trailing-stop exit schema."
             )
             self._save_state()
 
@@ -267,23 +278,72 @@ class RiskManager:
         self.state.setdefault("open_trades", []).append(trade)
         self._save_state()
 
-    def _arm_partial_and_trail(self, trade: dict) -> dict:
-        """Attaches the partial-take-profit / trailing-stop bookkeeping
-        fields to a freshly-opened trade record (used for both LIVE and
-        DRY_RUN trades so they're managed identically)."""
+    def _tp2_fallback_r(self) -> float:
+        """R-multiple used for TP2 when no swing level beyond TP1 exists.
+        Always kept strictly beyond TP1 so TP2 can never sit before it."""
+        return max(self.cfg.tp2_fallback_r_multiple, self.cfg.partial_tp_r_multiple + 0.5)
+
+    def _fallback_tp2_price(self, trade: dict) -> float:
         is_long = trade["position_side"].upper() == "LONG"
+        direction = 1 if is_long else -1
+        risk_per_unit = trade.get("risk_per_unit") or abs(trade["entry_price"] - trade["stop_loss"])
+        return trade["entry_price"] + direction * risk_per_unit * self._tp2_fallback_r()
+
+    def _tp_fractions(self) -> tuple:
+        """(TP1 fraction, TP2 fraction) of the ORIGINAL position size. TP2
+        is clamped so TP1 + TP2 never exceeds 100% of the position."""
+        f1 = min(max(self.cfg.partial_tp_fraction, 0.0), 1.0)
+        f2 = min(max(self.cfg.tp2_fraction, 0.0), 1.0 - f1)
+        return f1, f2
+
+    @staticmethod
+    def _trailing_armed(trade: dict) -> bool:
+        """The trailing stop only runs once BOTH take-profits are done.
+        (Trades from before TP2 support have no "tp2_taken" key and were
+        already trailing after TP1, so they count as armed.)"""
+        return bool(trade.get("partial_taken")) and bool(trade.get("tp2_taken", True))
+
+    def _arm_partial_and_trail(self, trade: dict) -> dict:
+        """Attach the three-stage exit plan to a newly opened trade.
+
+        TP1    -- the stop-loss mirrored to the other side of the entry
+                  (PARTIAL_TP_R_MULTIPLE x the initial risk, 1R by default:
+                  a stop $5 below entry means TP1 $5 above it). Closes
+                  PARTIAL_TP_FRACTION of the original position (50%) and
+                  moves the stop for the rest to breakeven.
+        TP2    -- the next swing high (LONG) / swing low (SHORT) beyond TP1
+                  on the entry timeframe, found by bot.py and passed in as
+                  trade["tp2_price"]; TP2_FALLBACK_R_MULTIPLE x risk (2R)
+                  when there is no such swing. Closes TP2_FRACTION of the
+                  original position (30%). The stop stays at breakeven
+                  between TP1 and TP2.
+        Runner -- whatever is left (20%) trails TRAIL_R_MULTIPLE x risk
+                  behind the best price reached, with no fixed cap, and
+                  only starts trailing after TP2.
+        """
+        is_long = trade["position_side"].upper() == "LONG"
+        direction = 1 if is_long else -1
         risk_per_unit = abs(trade["entry_price"] - trade["stop_loss"])
-        partial_tp_price = (
-            trade["entry_price"] + risk_per_unit * self.cfg.partial_tp_r_multiple
-            if is_long else
-            trade["entry_price"] - risk_per_unit * self.cfg.partial_tp_r_multiple
+        partial_tp_price = trade["entry_price"] + direction * risk_per_unit * self.cfg.partial_tp_r_multiple
+
+        tp2_price = trade.get("tp2_price")
+        tp2_source = trade.get("tp2_source")
+        beyond_tp1 = tp2_price is not None and (
+            tp2_price > partial_tp_price if is_long else tp2_price < partial_tp_price
         )
+        if not beyond_tp1:
+            tp2_price = trade["entry_price"] + direction * risk_per_unit * self._tp2_fallback_r()
+            tp2_source = f"{self._tp2_fallback_r():g}R fallback (no swing beyond TP1)"
+
         return {
             **trade,
             "initial_qty": trade["qty"],
             "risk_per_unit": risk_per_unit,
             "partial_tp_price": partial_tp_price,
             "partial_taken": False,
+            "tp2_price": tp2_price,
+            "tp2_source": tp2_source,
+            "tp2_taken": False,
         }
 
     def reconcile_closed_trades(self, open_positions: list, exchange_client) -> list:
@@ -376,95 +436,152 @@ class RiskManager:
 
         return closed
 
-    def reconcile_live_exits(self, symbol: str, high: float, low: float, exchange_client) -> list:
-        """LIVE counterpart of reconcile_dry_run_exits(): checks every
-        tracked open LIVE trade on `symbol` against the latest candle's
-        high/low for a partial-take-profit trigger, and actually executes
-        it on the exchange (a reduce-only partial close, then replacing
-        the stop order at breakeven -- see exchange_client.py). A full
-        stop-out or trailing-stop exit is NOT decided here: it's detected
-        the normal way, by reconcile_closed_trades() noticing the position
-        is no longer open on the exchange (the exchange's own stop order
-        is what actually closes it). This method only ever *adds* the
-        partial-exit order and moves the stop; it never assumes a fill
-        happened without the exchange confirming it.
+    def _journal_partial(self, trade: dict, mode: str, qty: float, price: float,
+                         stop_after: float, trigger: str, pnl=""):
+        now = datetime.datetime.now(datetime.timezone.utc)
+        entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+        self._write_journal_row({
+            "event": "PARTIAL_EXIT",
+            "trade_id": trade["trade_id"],
+            "timestamp_utc": now.isoformat(),
+            "mode": mode,
+            "symbol": trade["symbol"],
+            "side": trade["side"],
+            "position_side": trade["position_side"],
+            "qty": qty,
+            "price": round(price, 6),
+            "stop_loss": stop_after,
+            "take_profit": trade.get("take_profit", ""),
+            "trigger": trigger,
+            "pnl": pnl if pnl == "" else round(pnl, 4),
+            "duration_minutes": round((now - entry_time).total_seconds() / 60, 1),
+        })
 
-        UNVERIFIED against live BingX data, like the rest of this bot's
-        order-submission code -- validate with a small real trade before
-        relying on it (see the README).
+    def _tp1_trigger_text(self, trade: dict) -> str:
+        f1, f2 = self._tp_fractions()
+        if f2 > 0:
+            nxt = f"waiting for TP2 at {trade['tp2_price']:.6g} ({trade.get('tp2_source') or 'swing level'})"
+        else:
+            nxt = "remainder trailing (TP2 disabled)"
+        return (
+            f"TP1: {f1:.0%} of position closed at {self.cfg.partial_tp_r_multiple:g}R "
+            f"(stop-loss mirrored) -- stop moved to breakeven, {nxt}"
+        )
+
+    def _tp2_trigger_text(self, trade: dict) -> str:
+        f1, f2 = self._tp_fractions()
+        runner = max(0.0, 1.0 - f1 - f2)
+        return (
+            f"TP2: {f2:.0%} of position closed at {trade.get('tp2_source') or 'swing level'} -- "
+            f"remaining {runner:.0%} trailing {self.cfg.trail_r_multiple:g}R behind best price"
+        )
+
+    def reconcile_live_exits(self, symbol: str, high: float, low: float, exchange_client) -> list:
+        """LIVE: advance each open trade on symbol through TP1 and TP2
+        using the latest candle's high/low.
+
+        TP1 hit  -> close PARTIAL_TP_FRACTION of the original size at market,
+                    move the exchange stop for the rest to breakeven.
+        TP2 hit  -> close TP2_FRACTION of the original size at market,
+                    re-place the breakeven stop for the smaller remainder,
+                    and arm the trailing stop (trail_live_stops()).
+        A candle that runs through both levels advances both stages.
         """
         open_trades = self.state.get("open_trades", [])
-        touched = [t for t in open_trades if t["symbol"] == symbol and not t.get("partial_taken")]
+        touched = [t for t in open_trades if t["symbol"] == symbol and not self._trailing_armed(t)]
         if not touched:
             return []
 
+        f1, f2 = self._tp_fractions()
         acted = []
         for trade in touched:
             is_long = trade["position_side"].upper() == "LONG"
-            partial_level = trade["partial_tp_price"]
-            hit_partial = (high >= partial_level) if is_long else (low <= partial_level)
-            if not hit_partial:
-                continue
-
-            partial_qty = round(trade["qty"] * self.cfg.partial_tp_fraction, 8)
-            remaining_qty = round(trade["qty"] - partial_qty, 8)
-            if partial_qty <= 0 or remaining_qty <= 0:
-                continue
-
             close_side = "sell" if trade["side"].upper() == "BUY" else "buy"
-            try:
-                exchange_client.close_partial_position(
-                    symbol=symbol, side=close_side, amount=partial_qty,
-                    position_side=trade["position_side"],
-                )
-                exchange_client.replace_stop_order(
-                    symbol=symbol, side=close_side, amount=remaining_qty,
-                    new_stop_price=trade["entry_price"], position_side=trade["position_side"],
-                )
-            except Exception as e:
-                print(f"[risk] {symbol}: partial take-profit order failed, leaving trade untouched: {e}")
-                continue
+            initial_qty = trade.get("initial_qty", trade["qty"])
+            progressed = False
 
-            now = datetime.datetime.now(datetime.timezone.utc)
-            entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
-            self._write_journal_row({
-                "event": "PARTIAL_EXIT",
-                "trade_id": trade["trade_id"],
-                "timestamp_utc": now.isoformat(),
-                "mode": "LIVE",
-                "symbol": symbol,
-                "side": trade["side"],
-                "position_side": trade["position_side"],
-                "qty": partial_qty,
-                "price": round(partial_level, 6),
-                "stop_loss": trade["entry_price"],
-                "take_profit": trade.get("take_profit", ""),
-                "trigger": (
-                    f"partial take-profit ({self.cfg.partial_tp_fraction:.0%} of position) at "
-                    f"{self.cfg.partial_tp_r_multiple:g}R -- stop moved to breakeven, remainder trailing"
-                ),
-                "pnl": "",  # realized P/L for this slice comes from reconcile_closed_trades/exchange
-                "duration_minutes": round((now - entry_time).total_seconds() / 60, 1),
-            })
+            # --- TP1 ---
+            if not trade.get("partial_taken"):
+                tp1 = trade["partial_tp_price"]
+                if not ((high >= tp1) if is_long else (low <= tp1)):
+                    continue
+                tp1_qty = round(min(initial_qty * f1, trade["qty"]), 8)
+                remaining_qty = round(trade["qty"] - tp1_qty, 8)
+                if tp1_qty <= 0 or remaining_qty <= 0:
+                    continue
+                try:
+                    exchange_client.close_partial_position(
+                        symbol=symbol, side=close_side, amount=tp1_qty,
+                        position_side=trade["position_side"],
+                    )
+                    exchange_client.replace_stop_order(
+                        symbol=symbol, side=close_side, amount=remaining_qty,
+                        new_stop_price=trade["entry_price"], position_side=trade["position_side"],
+                    )
+                except Exception as e:
+                    print(f"[risk] {symbol}: TP1 order failed, leaving trade untouched: {e}")
+                    continue
+                self._journal_partial(trade, "LIVE", tp1_qty, tp1, trade["entry_price"],
+                                      self._tp1_trigger_text(trade))
+                trade["qty"] = remaining_qty
+                trade["stop_loss"] = trade["entry_price"]
+                trade["partial_taken"] = True
+                progressed = True
+                if f2 <= 0:
+                    trade["tp2_taken"] = True
+                    trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+                    acted.append(trade)
+                    continue
 
-            trade["qty"] = remaining_qty
-            trade["stop_loss"] = trade["entry_price"]
-            trade["partial_taken"] = True
-            trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
-            acted.append(trade)
+            # --- TP2 ---
+            tp2 = trade["tp2_price"]
+            if (high >= tp2) if is_long else (low <= tp2):
+                tp2_qty = round(min(initial_qty * f2, trade["qty"]), 8)
+                remaining_qty = round(trade["qty"] - tp2_qty, 8)
+                try:
+                    if remaining_qty <= 0:
+                        # TP1 + TP2 fractions add up to the whole position:
+                        # TP2 closes everything that's left.
+                        exchange_client.close_partial_position(
+                            symbol=symbol, side=close_side, amount=trade["qty"],
+                            position_side=trade["position_side"],
+                        )
+                    else:
+                        exchange_client.close_partial_position(
+                            symbol=symbol, side=close_side, amount=tp2_qty,
+                            position_side=trade["position_side"],
+                        )
+                        exchange_client.replace_stop_order(
+                            symbol=symbol, side=close_side, amount=remaining_qty,
+                            new_stop_price=trade["stop_loss"], position_side=trade["position_side"],
+                        )
+                except Exception as e:
+                    print(f"[risk] {symbol}: TP2 order failed, will retry next cycle: {e}")
+                    if progressed:
+                        acted.append(trade)
+                    continue
+                self._journal_partial(trade, "LIVE", min(tp2_qty, trade["qty"]), tp2,
+                                      trade["stop_loss"], self._tp2_trigger_text(trade))
+                trade["qty"] = max(remaining_qty, 0.0)
+                trade["tp2_taken"] = True
+                trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+                progressed = True
+
+            if progressed:
+                acted.append(trade)
 
         if acted:
             self._save_state()
         return acted
 
     def trail_live_stops(self, symbol: str, high: float, low: float, exchange_client):
-        """For LIVE trades already past their partial take-profit (i.e.
-        trailing runners), ratchets the exchange's stop order forward as
-        price makes new favorable extremes -- mirrors the DRY_RUN trailing
-        simulation in reconcile_dry_run_exits(). Never moves the stop
-        backward. UNVERIFIED against live BingX data -- see the README."""
+        """LIVE: ratchet the stop on runners (trades past TP2) to
+        TRAIL_R_MULTIPLE x risk behind the best price seen so far."""
         open_trades = self.state.get("open_trades", [])
-        trailing = [t for t in open_trades if t["symbol"] == symbol and t.get("partial_taken")]
+        trailing = [
+            t for t in open_trades
+            if t["symbol"] == symbol and self._trailing_armed(t) and t.get("qty", 0) > 0
+        ]
         moved = False
         for trade in trailing:
             is_long = trade["position_side"].upper() == "LONG"
@@ -535,65 +652,65 @@ class RiskManager:
             "duration_minutes": duration_minutes,
         })
 
-    def _take_dry_run_partial(self, trade: dict, symbol: str):
-        partial_qty = round(trade["qty"] * self.cfg.partial_tp_fraction, 8)
-        remaining_qty = round(trade["qty"] - partial_qty, 8)
-        exit_price = trade["partial_tp_price"]
+    def _take_dry_run_partial(self, trade: dict, symbol: str, stage: int = 1) -> bool:
+        """Simulate TP1 (stage=1) or TP2 (stage=2) on a DRY_RUN trade at the
+        exact TP price, net of the estimated fee. Returns True if this
+        closed the whole remaining position (only possible at TP2 when
+        TP1 + TP2 fractions add up to 100%)."""
+        f1, f2 = self._tp_fractions()
+        initial_qty = trade.get("initial_qty", trade["qty"])
+        if stage == 1:
+            exit_price = trade["partial_tp_price"]
+            part_qty = round(min(initial_qty * f1, trade["qty"]), 8)
+        else:
+            exit_price = trade["tp2_price"]
+            part_qty = round(min(initial_qty * f2, trade["qty"]), 8)
+        remaining_qty = round(trade["qty"] - part_qty, 8)
+
+        if stage == 2 and remaining_qty <= 0:
+            self._close_dry_run_trade(
+                trade, exit_price=exit_price, qty=trade["qty"],
+                reason=f"TP2 hit ({trade.get('tp2_source') or 'swing level'}) -- position fully closed",
+            )
+            return True
+
         is_long = trade["position_side"].upper() == "LONG"
         direction = 1 if is_long else -1
-        gross_pnl = (exit_price - trade["entry_price"]) * direction * partial_qty
-        fee = self._estimate_round_trip_fee(partial_qty, trade["entry_price"], exit_price)
+        gross_pnl = (exit_price - trade["entry_price"]) * direction * part_qty
+        fee = self._estimate_round_trip_fee(part_qty, trade["entry_price"], exit_price)
         pnl = gross_pnl - fee
         self._record_realized_pnl(pnl)
-        now = datetime.datetime.now(datetime.timezone.utc)
-        entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
-        self._write_journal_row({
-            "event": "PARTIAL_EXIT",
-            "trade_id": trade["trade_id"],
-            "timestamp_utc": now.isoformat(),
-            "mode": "DRY_RUN",
-            "symbol": symbol,
-            "side": trade["side"],
-            "position_side": trade["position_side"],
-            "qty": partial_qty,
-            "price": round(exit_price, 6),
-            "stop_loss": trade["entry_price"],
-            "take_profit": trade.get("take_profit", ""),
-            "trigger": (
-                f"partial take-profit ({self.cfg.partial_tp_fraction:.0%} of position) at "
-                f"{self.cfg.partial_tp_r_multiple:g}R -- stop moved to breakeven, remainder trailing"
-            ),
-            "pnl": round(pnl, 4),
-            "duration_minutes": round((now - entry_time).total_seconds() / 60, 1),
-        })
-        trade["qty"] = remaining_qty
-        trade["stop_loss"] = trade["entry_price"]
-        trade["partial_taken"] = True
-        trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+
+        if stage == 1:
+            self._journal_partial(trade, "DRY_RUN", part_qty, exit_price, trade["entry_price"],
+                                  self._tp1_trigger_text(trade), pnl)
+            trade["qty"] = remaining_qty
+            trade["stop_loss"] = trade["entry_price"]
+            trade["partial_taken"] = True
+            if f2 <= 0:
+                trade["tp2_taken"] = True
+                trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+        else:
+            self._journal_partial(trade, "DRY_RUN", part_qty, exit_price, trade["stop_loss"],
+                                  self._tp2_trigger_text(trade), pnl)
+            trade["qty"] = remaining_qty
+            trade["tp2_taken"] = True
+            trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+        return False
 
     def reconcile_dry_run_exits(self, symbol: str, high: float, low: float) -> list:
-        """Checks every open DRY_RUN paper trade on `symbol` against the
-        high/low of the most recently fetched candle:
+        """DRY_RUN: walk each paper trade on symbol through its exit plan
+        using the latest candle's high/low:
 
-        - Before the partial take-profit: a stop-loss hit closes the
-          whole trade; a partial-take-profit hit closes
-          partial_tp_fraction of it, moves the stop to breakeven for the
-          rest, and arms trailing for the remainder (only one of these
-          two is applied per candle -- if the candle's range covers the
-          stop AND the partial level, the stop is assumed to have been
-          hit first, the same conservative assumption used for
-          simultaneous SL/TP hits, so this never overstates performance).
-        - After the partial take-profit: the trade is a trailing runner.
-          Each candle first checks the CURRENT trailing stop (so a stop
-          that was only just moved can't retroactively claim a hit from
-          this same candle's favorable extreme); only if that isn't hit
-          does the stop then ratchet forward using this candle's high (for
-          a LONG) or low (for a SHORT), for the next candle to check.
+        stage 0 (nothing taken)  -> stop-loss (checked first, conservative)
+                                    or TP1
+        stage 1 (TP1 taken)      -> TP2, or the breakeven stop
+        stage 2 (TP2 taken)      -> trailing stop, ratcheted each cycle
 
-        Must be called every cycle for every symbol right after fetching
-        its candle -- this is the only mechanism that ever resolves a
-        DRY_RUN paper trade; without it, DRY_RUN entries stay open
-        forever and no real win rate can ever be measured.
+        A candle that runs through TP1 and TP2 takes both. The breakeven
+        stop and the trailing stop aren't checked on the same candle that
+        moved/armed them (same as before), since the candle's high/low
+        can't tell which came first.
         """
         open_trades = self.state.get("open_dry_run_trades", [])
         if not open_trades:
@@ -606,9 +723,10 @@ class RiskManager:
             if trade["symbol"] != symbol:
                 remaining.append(trade)
                 continue
-
             is_long = trade["position_side"].upper() == "LONG"
+            stage_changed_this_candle = False
 
+            # --- stage 0: initial stop-loss or TP1 ---
             if not trade.get("partial_taken"):
                 sl = trade["stop_loss"]
                 hit_sl = (low <= sl) if is_long else (high >= sl)
@@ -619,17 +737,50 @@ class RiskManager:
                     closed.append(trade)
                     changed = True
                     continue
+                tp1 = trade["partial_tp_price"]
+                hit_tp1 = (high >= tp1) if is_long else (low <= tp1)
+                if not hit_tp1:
+                    remaining.append(trade)
+                    continue
+                self._take_dry_run_partial(trade, symbol, stage=1)
+                changed = True
+                stage_changed_this_candle = True
 
-                partial_level = trade["partial_tp_price"]
-                hit_partial = (high >= partial_level) if is_long else (low <= partial_level)
-                if hit_partial:
-                    self._take_dry_run_partial(trade, symbol)
+            # --- stage 1: TP2 or breakeven stop ---
+            if not self._trailing_armed(trade):
+                tp2 = trade["tp2_price"]
+                hit_tp2 = (high >= tp2) if is_long else (low <= tp2)
+                if hit_tp2:
+                    fully_closed = self._take_dry_run_partial(trade, symbol, stage=2)
                     changed = True
+                    if fully_closed:
+                        closed.append(trade)
+                    else:
+                        remaining.append(trade)
+                    continue
+                if stage_changed_this_candle:
+                    remaining.append(trade)
+                    continue
+                sl = trade["stop_loss"]
+                hit_sl = (low <= sl) if is_long else (high >= sl)
+                if hit_sl:
+                    self._close_dry_run_trade(
+                        trade, exit_price=sl, qty=trade["qty"],
+                        reason="breakeven stop hit (after TP1, before TP2)",
+                    )
+                    closed.append(trade)
+                    changed = True
+                    continue
                 remaining.append(trade)
                 continue
 
-            # Trailing runner: check the stop as it stood BEFORE this
-            # candle first, then ratchet it forward for next time.
+            if stage_changed_this_candle:
+                # TP2 disabled (TP2_FRACTION=0): trailing armed at TP1 this
+                # candle -- start trailing from the next cycle.
+                remaining.append(trade)
+                continue
+
+            # --- stage 2: trailing runner ---
             sl = trade["stop_loss"]
             hit_sl = (low <= sl) if is_long else (high >= sl)
             if hit_sl:
@@ -640,7 +791,6 @@ class RiskManager:
                 closed.append(trade)
                 changed = True
                 continue
-
             if is_long:
                 candidate = high - trade["trail_distance"]
                 new_stop = max(sl, candidate)
