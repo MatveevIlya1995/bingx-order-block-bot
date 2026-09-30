@@ -1,7 +1,7 @@
 {
   "date": "2026-09-30",
   "day_start_equity": 199.8327,
-  "realized_pnl_today": 18.201879671819245,
+  "realized_pnl_today": 18.737596541286898,
   "trades": [],
   "open_trades": [
     {
@@ -72,7 +72,7 @@
       "symbol": "SOL/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 1.6998515,
+      "qty": 0.6799406,
       "entry_price": 117.42,
       "stop_loss": 117.42,
       "take_profit": 118.484,
@@ -83,7 +83,8 @@
       "risk_per_unit": 0.5319999999999965,
       "partial_tp_price": 117.952,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 0.5319999999999965
     }
   ],
   "dry_run_signaled": {
