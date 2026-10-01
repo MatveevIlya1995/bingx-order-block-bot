@@ -182,78 +182,202 @@ def weekly_room_pct(weekly_df: pd.DataFrame, direction: str, current_price: floa
     return None
 
 
-def detect_order_blocks(df: pd.DataFrame, n: int = 2) -> list[dict]:
+# How many of the most recent candles (the in-progress one plus the one that
+# just closed) still count as the "first touch" of an order block. The bot is
+# run once per 15m candle, a minute or so after it opens, so a retest that
+# happened during the rest of the previous candle would otherwise be seen
+# only after it's already history -- and, with the mitigation filter below,
+# silently burn the zone without ever being evaluated. Anything older than
+# this window counts as a prior mitigation and the zone is skipped.
+FRESH_TOUCH_BARS = 2
+
+
+def _find_order_block(opens, highs, lows, closes, direction, search_from, bos_idx):
+    """Locates the order block that CAUSED a structure break at bos_idx,
+    or returns None if there isn't one that qualifies.
+
+    The candidate is the last opposite-colored candle at or before the
+    extreme of the leg that broke structure (the lowest low for a bullish
+    break, the highest high for a bearish one), searched between the swing
+    that was broken (search_from) and the breaking candle. It is only
+    accepted as the cause of the break if:
+      - no candle between it and the break closed back beyond its far
+        side (the impulse never gave the zone back), and
+      - the breaking candle closed beyond the zone's near side (price
+        actually displaced out of the zone, not just past a swing that
+        happened to sit inside it).
+    """
+    lo = search_from + 1
+    if bos_idx - lo < 1:
+        return None
+    if direction == "bullish":
+        extreme_idx = lo + int(np.argmin(lows[lo:bos_idx]))
+        ob_idx = None
+        for j in range(extreme_idx, search_from, -1):
+            if closes[j] < opens[j]:
+                ob_idx = j
+                break
+        if ob_idx is None:
+            return None
+        top, bottom = float(highs[ob_idx]), float(lows[ob_idx])
+        if (closes[ob_idx + 1 : bos_idx + 1] < bottom).any():
+            return None
+        if closes[bos_idx] <= top:
+            return None
+    else:
+        extreme_idx = lo + int(np.argmax(highs[lo:bos_idx]))
+        ob_idx = None
+        for j in range(extreme_idx, search_from, -1):
+            if closes[j] > opens[j]:
+                ob_idx = j
+                break
+        if ob_idx is None:
+            return None
+        top, bottom = float(highs[ob_idx]), float(lows[ob_idx])
+        if (closes[ob_idx + 1 : bos_idx + 1] > top).any():
+            return None
+        if closes[bos_idx] >= bottom:
+            return None
+    return {"formed_idx": ob_idx, "top": top, "bottom": bottom}
+
+
+def _apply_mitigation(highs, lows, closes, obs, fresh_touch_bars):
+    """Scans every candle after each order block's break of structure and
+    records how price has interacted with the zone since:
+      first_touch_idx -- first candle whose wick traded into the zone
+      invalidated     -- a COMPLETED candle closed all the way through it
+      mitigated       -- invalidated, or first touched BEFORE the last
+                         `fresh_touch_bars` candles (i.e. the zone has
+                         already been retested once and is used up)
+    The in-progress last candle is never used to invalidate a zone (its
+    close isn't final); generate_signal() checks it separately.
+    """
+    last = len(closes) - 1
+    for ob in obs:
+        first_touch = None
+        invalidated = False
+        for j in range(ob["bos_idx"] + 1, last + 1):
+            if ob["type"] == "bullish":
+                touched = lows[j] <= ob["top"]
+                through = closes[j] < ob["bottom"]
+            else:
+                touched = highs[j] >= ob["bottom"]
+                through = closes[j] > ob["top"]
+            if touched and first_touch is None:
+                first_touch = j
+            if through and j < last:
+                invalidated = True
+                break
+        ob["first_touch_idx"] = first_touch
+        ob["invalidated"] = invalidated
+        ob["mitigated"] = invalidated or (
+            first_touch is not None and first_touch < len(closes) - fresh_touch_bars
+        )
+
+
+def detect_order_blocks(df: pd.DataFrame, n: int = 2, fresh_touch_bars: int = FRESH_TOUCH_BARS) -> list[dict]:
     """Returns a list of order block dicts in chronological order:
-    {type, top, bottom, formed_idx, bos_idx, mitigated}
+    {type, top, bottom, formed_idx, bos_idx, structure, broken_level,
+     first_touch_idx, invalidated, mitigated}
+
+    An order block is only recorded when it CAUSED a structure break (see
+    _find_order_block): either a BOS (break in the same direction as the
+    previous break -- trend continuation) or a CHoCH (change of character:
+    the first break against the previous break's direction). The very
+    first break in the lookback window has no prior direction to compare
+    against and is labelled BOS.
+
+    `mitigated` is computed from the full candle history every call (see
+    _apply_mitigation), so a zone that was retested on an earlier candle
+    stays mitigated across scheduled runs instead of looking fresh again
+    each time the order blocks are re-detected.
     """
     df = find_fractals(df, n=n)
+    opens = df["open"].values
+    highs = df["high"].values
+    lows = df["low"].values
+    closes = df["close"].values
+    swing_highs = df["swing_high"].values
+    swing_lows = df["swing_low"].values
     obs: list[dict] = []
 
     last_swing_high = None
     last_swing_high_idx = None
     last_swing_low = None
     last_swing_low_idx = None
+    structure = None  # direction of the most recent break: "bullish" / "bearish"
 
     for i in range(len(df)):
-        row = df.iloc[i]
-
-        if row["swing_high"]:
-            last_swing_high = row["high"]
+        if swing_highs[i]:
+            last_swing_high = highs[i]
             last_swing_high_idx = i
-        if row["swing_low"]:
-            last_swing_low = row["low"]
+        if swing_lows[i]:
+            last_swing_low = lows[i]
             last_swing_low_idx = i
 
-        # Bullish BOS
-        if last_swing_high is not None and row["close"] > last_swing_high:
-            search_from = last_swing_high_idx if last_swing_high_idx is not None else 0
-            ob_idx = None
-            for j in range(i, search_from, -1):
-                if df.iloc[j]["close"] < df.iloc[j]["open"]:
-                    ob_idx = j
-                    break
-            if ob_idx is not None:
+        # Bullish break (BOS if structure was already bullish, CHoCH if it was bearish)
+        if last_swing_high is not None and closes[i] > last_swing_high:
+            kind = "CHoCH" if structure == "bearish" else "BOS"
+            found = _find_order_block(
+                opens, highs, lows, closes, "bullish", last_swing_high_idx, i
+            )
+            if found is not None:
                 obs.append(
                     {
                         "type": "bullish",
-                        "top": float(df.iloc[ob_idx]["high"]),
-                        "bottom": float(df.iloc[ob_idx]["low"]),
-                        "formed_idx": ob_idx,
+                        "top": found["top"],
+                        "bottom": found["bottom"],
+                        "formed_idx": found["formed_idx"],
                         "bos_idx": i,
+                        "structure": kind,
+                        "broken_level": float(last_swing_high),
                         "mitigated": False,
                     }
                 )
+            structure = "bullish"
             last_swing_high = None  # structure broken; wait for the next confirmed swing
 
-        # Bearish BOS
-        if last_swing_low is not None and row["close"] < last_swing_low:
-            search_from = last_swing_low_idx if last_swing_low_idx is not None else 0
-            ob_idx = None
-            for j in range(i, search_from, -1):
-                if df.iloc[j]["close"] > df.iloc[j]["open"]:
-                    ob_idx = j
-                    break
-            if ob_idx is not None:
+        # Bearish break (BOS if structure was already bearish, CHoCH if it was bullish)
+        if last_swing_low is not None and closes[i] < last_swing_low:
+            kind = "CHoCH" if structure == "bullish" else "BOS"
+            found = _find_order_block(
+                opens, highs, lows, closes, "bearish", last_swing_low_idx, i
+            )
+            if found is not None:
                 obs.append(
                     {
                         "type": "bearish",
-                        "top": float(df.iloc[ob_idx]["high"]),
-                        "bottom": float(df.iloc[ob_idx]["low"]),
-                        "formed_idx": ob_idx,
+                        "top": found["top"],
+                        "bottom": found["bottom"],
+                        "formed_idx": found["formed_idx"],
                         "bos_idx": i,
+                        "structure": kind,
+                        "broken_level": float(last_swing_low),
                         "mitigated": False,
                     }
                 )
+            structure = "bearish"
             last_swing_low = None
 
+    _apply_mitigation(highs, lows, closes, obs, fresh_touch_bars)
     return obs
 
 
 def generate_signal(df: pd.DataFrame, order_blocks: list[dict], reward_risk_ratio: float = 2.0):
-    """Evaluate only the most recent (last) candle for a fresh retest signal.
+    """Evaluate the most recent (last) candle for a FIRST retest of a valid,
+    unmitigated order block.
 
-    Mutates order_blocks in place to mark mitigation so repeated calls across
-    scheduled runs don't refire the same zone.
+    Filters, in order:
+      1. the order block must have caused a BOS or CHoCH (only those are
+         ever returned by detect_order_blocks)
+      2. it must not be mitigated: no earlier retest and no completed
+         candle closing through it (see _apply_mitigation)
+      3. its first touch must be happening now -- on the in-progress
+         candle or the one that just closed (FRESH_TOUCH_BARS)
+      4. the current candle must not be closing through the zone
+    Each order block can therefore only ever produce one signal: once its
+    first retest is older than the fresh window it is mitigated for good.
+    risk_manager.zone_already_traded() remains as a second safety net.
     """
     if len(df) < 2:
         return None
@@ -265,54 +389,49 @@ def generate_signal(df: pd.DataFrame, order_blocks: list[dict], reward_risk_rati
             continue
         if ob["bos_idx"] >= i:
             continue  # only consider order blocks confirmed before this candle
+        if ob.get("first_touch_idx") is None:
+            continue  # price hasn't come back to the zone yet
 
         if ob["type"] == "bullish":
-            touched = row["low"] <= ob["top"]
-            closed_through = row["close"] < ob["bottom"]
-            if closed_through:
-                ob["mitigated"] = True
+            if row["close"] < ob["bottom"]:
                 continue
-            if touched and row["close"] > ob["bottom"]:
-                ob["mitigated"] = True
-                entry = float(row["close"])
-                stop = ob["bottom"] * 0.999
-                risk = entry - stop
-                if risk <= 0:
-                    continue
-                target = entry + risk * reward_risk_ratio
-                return {
-                    "side": "buy",
-                    "position_side": "LONG",
-                    "entry": entry,
-                    "stop_loss": stop,
-                    "take_profit": target,
-                    "order_block": ob,
-                }
+            ob["mitigated"] = True
+            entry = float(row["close"])
+            stop = ob["bottom"] * 0.999
+            risk = entry - stop
+            if risk <= 0:
+                continue
+            target = entry + risk * reward_risk_ratio
+            return {
+                "side": "buy",
+                "position_side": "LONG",
+                "entry": entry,
+                "stop_loss": stop,
+                "take_profit": target,
+                "order_block": ob,
+            }
 
         elif ob["type"] == "bearish":
-            touched = row["high"] >= ob["bottom"]
-            closed_through = row["close"] > ob["top"]
-            if closed_through:
-                ob["mitigated"] = True
+            if row["close"] > ob["top"]:
                 continue
-            if touched and row["close"] < ob["top"]:
-                ob["mitigated"] = True
-                entry = float(row["close"])
-                stop = ob["top"] * 1.001
-                risk = stop - entry
-                if risk <= 0:
-                    continue
-                target = entry - risk * reward_risk_ratio
-                return {
-                    "side": "sell",
-                    "position_side": "SHORT",
-                    "entry": entry,
-                    "stop_loss": stop,
-                    "take_profit": target,
-                    "order_block": ob,
-                }
+            ob["mitigated"] = True
+            entry = float(row["close"])
+            stop = ob["top"] * 1.001
+            risk = stop - entry
+            if risk <= 0:
+                continue
+            target = entry - risk * reward_risk_ratio
+            return {
+                "side": "sell",
+                "position_side": "SHORT",
+                "entry": entry,
+                "stop_loss": stop,
+                "take_profit": target,
+                "order_block": ob,
+            }
 
     return None
+
 
 def next_swing_beyond(df: pd.DataFrame, direction: str, beyond_price: float, n: int = 2):
     """The closest confirmed swing high ABOVE beyond_price (direction=
