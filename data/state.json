@@ -3,7 +3,28 @@
   "day_start_equity": 160.0859,
   "realized_pnl_today": -8.041467535984108,
   "trades": [],
-  "open_trades": [],
+  "open_trades": [
+    {
+      "trade_id": "85ee6fc55b5c",
+      "entry_time_utc": "2026-10-01T09:21:43.155036+00:00",
+      "mode": "LIVE",
+      "symbol": "TRX/USDT:USDT",
+      "side": "BUY",
+      "position_side": "LONG",
+      "qty": 1486.369987,
+      "entry_price": 0.3364,
+      "stop_loss": 0.3353,
+      "take_profit": 0.3385,
+      "trigger": "bullish order block retest: zone 0.3357-0.3362 (formed 2026-09-30 03:45 UTC, break of structure confirmed 2026-09-30 05:00 UTC) | HTF: 1w*=bullish(6 OB) 1d*=bullish(10 OB) 4h=bearish(12 OB) 1h=bearish(7 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.33749 (next swing high (1.04R)), runner trails after TP2",
+      "tp2_price": 0.33859999999999996,
+      "tp2_source": "2R fallback (no swing beyond TP1)",
+      "initial_qty": 1486.369987,
+      "risk_per_unit": 0.0010999999999999899,
+      "partial_tp_price": 0.33749999999999997,
+      "partial_taken": false,
+      "tp2_taken": false
+    }
+  ],
   "open_dry_run_trades": [],
   "dry_run_signaled": {
     "BTC/USDT:USDT|bullish order block retest: zone 63204.2000-63362.4000 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 20:00 UTC)": "2026-08-13T19:41:47.282751+00:00",
@@ -207,7 +228,8 @@
     "ADA/USDT:USDT|bearish|0.2511-0.2538": "2026-10-01T06:31:32.299689+00:00",
     "ATOM/USDT:USDT|bearish|1.769-1.784": "2026-10-01T06:31:32.780515+00:00",
     "AVAX/USDT:USDT|bearish|10.967-11.033": "2026-10-01T07:46:36.191928+00:00",
-    "AVAX/USDT:USDT|bearish|11.058-11.122": "2026-10-01T08:46:13.422527+00:00"
+    "AVAX/USDT:USDT|bearish|11.058-11.122": "2026-10-01T08:46:13.422527+00:00",
+    "TRX/USDT:USDT|bullish|0.33567-0.33622": "2026-10-01T09:21:43.907455+00:00"
   },
   "realized_pnl_date": "2026-10-01"
 }
