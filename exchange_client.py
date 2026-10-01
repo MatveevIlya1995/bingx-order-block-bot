@@ -45,13 +45,21 @@ class ExchangeClient:
         )
 
     def fetch_balance_usdt(self) -> float:
+        """Total USDT account equity -- NOT the free/available balance.
+        Resting limit orders and open positions reserve margin, which
+        shrinks "free" without any money being lost; using it made the
+        daily-loss circuit breaker trip on the bot's own orders and
+        undersized every trade. Falls back to free only if BingX/ccxt
+        doesn't report a total."""
         bal = self.exchange.fetch_balance()
-        usdt = bal.get("USDT", {})
+        usdt = bal.get("USDT", {}) or {}
+        total = usdt.get("total")
+        if total is None:
+            total = (bal.get("total", {}) or {}).get("USDT")
+        if total:
+            return float(total)
         free = usdt.get("free")
-        if free:
-            return float(free)
-        total = bal.get("total", {}).get("USDT")
-        return float(total) if total else 0.0
+        return float(free) if free else 0.0
 
     def fetch_open_positions(self):
         """Open positions across every symbol the bot is configured to watch
