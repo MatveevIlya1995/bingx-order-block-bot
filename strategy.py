@@ -182,16 +182,6 @@ def weekly_room_pct(weekly_df: pd.DataFrame, direction: str, current_price: floa
     return None
 
 
-# How many of the most recent candles (the in-progress one plus the one that
-# just closed) still count as the "first touch" of an order block. The bot is
-# run once per 15m candle, a minute or so after it opens, so a retest that
-# happened during the rest of the previous candle would otherwise be seen
-# only after it's already history -- and, with the mitigation filter below,
-# silently burn the zone without ever being evaluated. Anything older than
-# this window counts as a prior mitigation and the zone is skipped.
-FRESH_TOUCH_BARS = 2
-
-
 def _find_order_block(opens, highs, lows, closes, direction, search_from, bos_idx):
     """Locates the order block that CAUSED a structure break at bos_idx,
     or returns None if there isn't one that qualifies.
@@ -241,41 +231,56 @@ def _find_order_block(opens, highs, lows, closes, direction, search_from, bos_id
     return {"formed_idx": ob_idx, "top": top, "bottom": bottom}
 
 
-def _apply_mitigation(highs, lows, closes, obs, fresh_touch_bars):
+def _apply_mitigation(highs, lows, closes, obs):
     """Scans every candle after each order block's break of structure and
     records how price has interacted with the zone since:
+
       first_touch_idx -- first candle whose wick traded into the zone
       invalidated     -- a COMPLETED candle closed all the way through it
-      mitigated       -- invalidated, or first touched BEFORE the last
-                         `fresh_touch_bars` candles (i.e. the zone has
-                         already been retested once and is used up)
-    The in-progress last candle is never used to invalidate a zone (its
-    close isn't final); generate_signal() checks it separately.
+      mitigated       -- invalidated, OR price has touched the zone and is
+                         no longer inside it (it is outside right now, or
+                         a completed candle since the first touch closed
+                         outside the zone). How recently that happened
+                         doesn't matter: once price has visited the zone
+                         and left without a trade, the zone is used up.
+
+    The one case a touched zone stays unmitigated is when price is still
+    inside it right now on its first visit -- a limit order at the zone's
+    near edge would then fill immediately, inside the zone. The
+    in-progress last candle is never used to invalidate a zone (its close
+    isn't final), but its current price does count for "outside right now".
     """
     last = len(closes) - 1
+    price = closes[last]
     for ob in obs:
+        top, bottom = ob["top"], ob["bottom"]
+        bullish = ob["type"] == "bullish"
         first_touch = None
         invalidated = False
+        left_zone = False
         for j in range(ob["bos_idx"] + 1, last + 1):
-            if ob["type"] == "bullish":
-                touched = lows[j] <= ob["top"]
-                through = closes[j] < ob["bottom"]
+            if bullish:
+                touched = lows[j] <= top
+                through = closes[j] < bottom
             else:
-                touched = highs[j] >= ob["bottom"]
-                through = closes[j] > ob["top"]
-            if touched and first_touch is None:
-                first_touch = j
+                touched = highs[j] >= bottom
+                through = closes[j] > top
             if through and j < last:
                 invalidated = True
                 break
+            if first_touch is None and touched:
+                first_touch = j
+            if first_touch is not None and j < last and not (bottom <= closes[j] <= top):
+                left_zone = True  # a completed candle closed back outside the zone
+        inside_now = bottom <= price <= top
         ob["first_touch_idx"] = first_touch
         ob["invalidated"] = invalidated
         ob["mitigated"] = invalidated or (
-            first_touch is not None and first_touch < len(closes) - fresh_touch_bars
+            first_touch is not None and (left_zone or not inside_now)
         )
 
 
-def detect_order_blocks(df: pd.DataFrame, n: int = 2, fresh_touch_bars: int = FRESH_TOUCH_BARS) -> list[dict]:
+def detect_order_blocks(df: pd.DataFrame, n: int = 2) -> list[dict]:
     """Returns a list of order block dicts in chronological order:
     {type, top, bottom, formed_idx, bos_idx, structure, broken_level,
      first_touch_idx, invalidated, mitigated}
@@ -288,9 +293,9 @@ def detect_order_blocks(df: pd.DataFrame, n: int = 2, fresh_touch_bars: int = FR
     against and is labelled BOS.
 
     `mitigated` is computed from the full candle history every call (see
-    _apply_mitigation), so a zone that was retested on an earlier candle
-    stays mitigated across scheduled runs instead of looking fresh again
-    each time the order blocks are re-detected.
+    _apply_mitigation), so a zone that was already visited stays
+    mitigated across scheduled runs instead of looking fresh again each
+    time the order blocks are re-detected.
     """
     df = find_fractals(df, n=n)
     opens = df["open"].values
@@ -359,77 +364,105 @@ def detect_order_blocks(df: pd.DataFrame, n: int = 2, fresh_touch_bars: int = FR
             structure = "bearish"
             last_swing_low = None
 
-    _apply_mitigation(highs, lows, closes, obs, fresh_touch_bars)
+    _apply_mitigation(highs, lows, closes, obs)
     return obs
 
 
-def generate_signal(df: pd.DataFrame, order_blocks: list[dict], reward_risk_ratio: float = 2.0):
-    """Evaluate the most recent (last) candle for a FIRST retest of a valid,
-    unmitigated order block.
+def _setup_from_ob(ob: dict, reward_risk_ratio: float):
+    """Limit-order setup for one order block: entry at the zone edge price
+    reaches first (top of a bullish OB, bottom of a bearish OB), stop just
+    beyond the far edge, fixed reward:risk take-profit. None if the
+    stop distance comes out non-positive."""
+    if ob["type"] == "bullish":
+        entry = float(ob["top"])
+        stop = ob["bottom"] * 0.999
+        risk = entry - stop
+        side, position_side = "buy", "LONG"
+        target = entry + risk * reward_risk_ratio
+    else:
+        entry = float(ob["bottom"])
+        stop = ob["top"] * 1.001
+        risk = stop - entry
+        side, position_side = "sell", "SHORT"
+        target = entry - risk * reward_risk_ratio
+    if risk <= 0:
+        return None
+    return {
+        "side": side,
+        "position_side": position_side,
+        "entry": entry,
+        "stop_loss": stop,
+        "take_profit": target,
+        "order_block": ob,
+    }
 
-    Filters, in order:
-      1. the order block must have caused a BOS or CHoCH (only those are
-         ever returned by detect_order_blocks)
-      2. it must not be mitigated: no earlier retest and no completed
-         candle closing through it (see _apply_mitigation)
-      3. its first touch must be happening now -- on the in-progress
-         candle or the one that just closed (FRESH_TOUCH_BARS)
-      4. the current candle must not be closing through the zone
-    Each order block can therefore only ever produce one signal: once its
-    first retest is older than the fresh window it is mitigated for good.
-    risk_manager.zone_already_traded() remains as a second safety net.
+
+def _zones_overlap(a: dict, b: dict) -> bool:
+    return a["bottom"] <= b["top"] and b["bottom"] <= a["top"]
+
+
+def limit_setups(
+    df: pd.DataFrame,
+    order_blocks: list[dict],
+    max_setups: int = 2,
+    direction: str | None = None,
+    reward_risk_ratio: float = 2.0,
+) -> list[dict]:
+    """The most recent `max_setups` valid, unmitigated order blocks, as
+    resting limit-order setups (newest first).
+
+    - only order blocks that caused a BOS/CHoCH exist at all (see
+      detect_order_blocks)
+    - mitigated / invalidated order blocks are skipped (see
+      _apply_mitigation)
+    - an order block whose break happened on the still-forming last
+      candle is skipped until that candle closes
+    - `direction` ("bullish"/"bearish") keeps only order blocks of that
+      type -- bot.py passes the higher-timeframe bias here; None allows both
+    - a zone overlapping one already picked is skipped, so two orders
+      never sit on the same price area
     """
+    last = len(df) - 1
+    picks: list[dict] = []
+    ordered = sorted(order_blocks, key=lambda o: (o["bos_idx"], o["formed_idx"]), reverse=True)
+    for ob in ordered:
+        if ob["mitigated"] or ob["bos_idx"] >= last:
+            continue
+        if direction in ("bullish", "bearish") and ob["type"] != direction:
+            continue
+        if any(_zones_overlap(ob, p["order_block"]) for p in picks):
+            continue
+        setup = _setup_from_ob(ob, reward_risk_ratio)
+        if setup is None:
+            continue
+        picks.append(setup)
+        if len(picks) >= max_setups:
+            break
+    return picks
+
+
+def generate_signal(df: pd.DataFrame, order_blocks: list[dict], reward_risk_ratio: float = 2.0):
+    """Market-entry variant (no longer used by bot.py, which now rests
+    limit orders via limit_setups()): returns a setup for the first valid
+    order block price is sitting inside right now on its first visit, or
+    None."""
     if len(df) < 2:
         return None
     i = len(df) - 1
-    row = df.iloc[i]
-
+    price = float(df.iloc[i]["close"])
     for ob in order_blocks:
-        if ob["mitigated"]:
+        if ob["mitigated"] or ob["bos_idx"] >= i or ob.get("first_touch_idx") is None:
             continue
-        if ob["bos_idx"] >= i:
-            continue  # only consider order blocks confirmed before this candle
-        if ob.get("first_touch_idx") is None:
-            continue  # price hasn't come back to the zone yet
-
-        if ob["type"] == "bullish":
-            if row["close"] < ob["bottom"]:
-                continue
-            ob["mitigated"] = True
-            entry = float(row["close"])
-            stop = ob["bottom"] * 0.999
-            risk = entry - stop
-            if risk <= 0:
-                continue
-            target = entry + risk * reward_risk_ratio
-            return {
-                "side": "buy",
-                "position_side": "LONG",
-                "entry": entry,
-                "stop_loss": stop,
-                "take_profit": target,
-                "order_block": ob,
-            }
-
-        elif ob["type"] == "bearish":
-            if row["close"] > ob["top"]:
-                continue
-            ob["mitigated"] = True
-            entry = float(row["close"])
-            stop = ob["top"] * 1.001
-            risk = stop - entry
-            if risk <= 0:
-                continue
-            target = entry - risk * reward_risk_ratio
-            return {
-                "side": "sell",
-                "position_side": "SHORT",
-                "entry": entry,
-                "stop_loss": stop,
-                "take_profit": target,
-                "order_block": ob,
-            }
-
+        if not (ob["bottom"] <= price <= ob["top"]):
+            continue
+        setup = _setup_from_ob(ob, reward_risk_ratio)
+        if setup is None:
+            continue
+        risk = abs(price - setup["stop_loss"])
+        direction = 1 if setup["position_side"] == "LONG" else -1
+        setup["entry"] = price
+        setup["take_profit"] = price + direction * risk * reward_risk_ratio
+        return setup
     return None
 
 

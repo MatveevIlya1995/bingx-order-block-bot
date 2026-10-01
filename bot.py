@@ -3,110 +3,66 @@ Entry point. Designed to be invoked ONCE PER CYCLE by a scheduler (cron,
 GitHub Actions, systemd timer, etc.) running somewhere with real internet
 access.
 
+Entries are RESTING LIMIT ORDERS placed inside unmitigated order blocks,
+not market orders fired when a candle happens to touch a zone: the limit
+sits at the zone edge price reaches first (top of a bullish OB, bottom of
+a bearish OB) with the stop-loss attached, so the trade is executed inside
+the order block whenever price gets there -- even between two runs.
+
 Each run:
 1. reads account equity and open positions (across all watched symbols)
-2. reconciles any previously tracked LIVE trades that have since closed
+2. checks every resting limit order the bot is tracking: a filled order
+   becomes a normal open trade (journalled ENTRY, zone remembered as
+   traded) and every other resting order on that symbol is cancelled --
+   one position per symbol; a cancelled/expired order is dropped
+3. reconciles any previously tracked LIVE trades that have since closed
    on the exchange, logging an EXIT row and updating today's realized P/L
-3. manages every currently-open trade (LIVE or DRY_RUN paper) against its
-   symbol's freshly-fetched candle, in this order:
-   a. DRY_RUN paper trades: simulates stop-loss / partial-take-profit /
-      trailing-stop hits against the candle's high/low and logs the
-      result -- this is the only way a DRY_RUN trade's outcome ever
-      gets recorded (see risk_manager.reconcile_dry_run_exits)
-   b. LIVE trades: checks for a partial-take-profit trigger and, if hit,
-      actually places the partial-close + breakeven-stop orders on the
-      exchange; then ratchets the trailing stop forward for any trade
-      already past its partial (see risk_manager.reconcile_live_exits /
-      trail_live_stops). A full stop-out is still detected the normal
-      way, via reconcile_closed_trades() noticing the exchange position
-      is gone.
-4. checks the daily-loss circuit breaker (account-wide)
-5. scans cfg.symbols, running a top-down multi-timeframe analysis on
-   every symbol that isn't already holding a position (LIVE or DRY_RUN --
-   see risk.occupied_symbols()) BEFORE ever looking for an entry (see
-   analyze_higher_timeframes() below):
-   a. weekly trend + weekly order blocks
-   b. daily trend + daily order blocks
-   c. 4h trend + 4h order blocks
-   d. 1h trend + 1h order blocks
-   Only the PRIMARY levels (cfg.primary_htf_timeframes, weekly+daily by
-   default) can veto a trade on disagreement -- the higher timeframe sets
-   the direction. The remaining levels are still analyzed and logged
-   every cycle, but are for entry *timing* context, not a veto: they
-   never block a trade by themselves. This mirrors how top-down
-   multi-timeframe trading is usually practiced -- a lower-timeframe
-   pullback against the primary trend is normal, and is often exactly the
-   retracement this strategy is trying to trade, not a reason to skip it.
-
-   A weekly-vs-daily disagreement is a special case: rather than always
-   blocking the trade, analyze_higher_timeframes() first checks how much
-   room price still has left to run toward the weekly chart's own last
-   confirmed swing high/low (see strategy.weekly_room_pct()). If there's
-   still at least cfg.weekly_daily_override_min_room_pct percent of room
-   left in the weekly trend's direction, the weekly trend wins outright
-   and the daily disagreement is overridden -- logged, not vetoed on.
-   Below that threshold, the disagreement still blocks the trade as
-   before.
-
-   Every symbol that clears the cascade and has a valid entry signal (see
-   step 6) is a "candidate" for this cycle. Candidates are then taken in
-   two passes rather than in cfg.symbols order: first every candidate
-   whose bias did NOT need the weekly/daily override, then -- only with
-   whatever max_concurrent_positions slots and margin remain -- the
-   candidates that only qualified because of the override. A conflicted
-   daily trend overridden by a still-room-to-run weekly trend is a
-   real, but lower-conviction, setup relative to one where every primary
-   level already agreed; when MAX_CONCURRENT_POSITIONS lets several
-   positions share one margin budget, this ordering means the budget
-   goes to the higher-conviction setups first instead of whichever
-   symbol happens to come first in cfg.symbols.
-6. looks for a fresh order-block retest signal on the 15m entry
-   timeframe (cfg.timeframe); the signal's direction must match the
-   primary bias from step 5 (an all-neutral primary read imposes no
-   directional constraint at all)
-7. sizes each position with a FIXED margin (cfg.margin_per_trade_usd,
-   $50 by default) and a per-trade LEVERAGE solved from the stop-loss
-   distance so the trade's dollar risk hits cfg.risk_pct_per_trade of
-   equity, hard-capped at cfg.max_risk_pct_per_trade_hard_cap (3%)
-   regardless of what RISK_PCT_PER_TRADE is set to, and never exceeding
-   the leverage ceiling (min(cfg.leverage, the 10x hard cap)) -- a very
-   tight stop-loss then risks LESS than the 3% target instead of using
-   more leverage than allowed. Separately, the combined notional of
-   every open position (plus this one) is still capped at
-   cfg.max_margin_utilization_pct of the account's theoretical capacity
-   at the 10x hard-cap leverage -- see risk_manager.position_size() and
-   config.py for why both caps exist. If the resulting size is still
-   non-zero but its notional falls below cfg.min_notional_usdt (this
-   happens when the margin-utilization cap above bites hard, e.g.
-   several concurrent positions have already claimed most of the shared
-   margin budget), the signal is skipped entirely rather than opening a
-   token-sized position that can't meaningfully win or lose -- see the
-   note on min_notional_usdt in config.py for why that matters.
-8. skips the signal if a trade (DRY_RUN or LIVE) was already taken in
-   this order-block zone before -- the bot only ever takes one trade per
-   zone, regardless of how many times it gets retested or re-detected
-   under a different formed/BOS labelling across cycles
-9. if DRY_RUN=true (the default), logs what it WOULD do and starts
-   tracking it so step 3 can resolve it on a future cycle
-10. if DRY_RUN=false, sets leverage and submits entry + stop-loss +
-    take-profit (take-profit is always cfg.required_reward_risk_ratio
-    times the stop distance -- see config.py); a partial-take-profit at
-    cfg.partial_tp_r_multiple, breakeven stop and trailing runner then
-    take over from step 3b once the trade is underway.
-11. stops scanning once max_concurrent_positions is reached for the cycle
-    (now counting DRY_RUN paper trades the same as LIVE positions, so
-    paper-trading behavior is a faithful preview of live behavior)
+4. manages every currently-open trade (LIVE or DRY_RUN paper) against its
+   symbol's freshly-fetched candle (stop / TP1 / TP2 / trailing -- see
+   risk_manager.reconcile_dry_run_exits / reconcile_live_exits /
+   trail_live_stops)
+5. checks the daily-loss circuit breaker (account-wide); if tripped, every
+   resting limit order is cancelled and no new ones are placed
+6. for every symbol without an open position, runs the top-down
+   multi-timeframe analysis (see analyze_higher_timeframes(): weekly +
+   daily are primary/directional with the weekly/daily room override,
+   4h + 1h are timing context only) and then picks the setups for this
+   symbol (strategy.limit_setups()): the LAST TWO valid, unmitigated
+   order blocks on the 15m entry timeframe in the primary bias direction.
+   "Valid" = the order block caused a BOS or CHoCH; "unmitigated" = price
+   hasn't visited the zone and left it, and no completed candle closed
+   through it (see strategy._apply_mitigation()).
+7. syncs that symbol's resting orders with those setups: orders whose
+   order block is no longer one of them (mitigated without a fill,
+   invalidated, bias changed, replaced by newer order blocks, zone already
+   traded) are cancelled; setups without an order get one.
+8. sizes each new order exactly like before (fixed margin, per-trade
+   leverage solved from the stop distance to hit RISK_PCT_PER_TRADE,
+   10x ceiling, shared margin-utilization cap -- see
+   risk_manager.position_size()); orders below MIN_NOTIONAL_USDT are
+   skipped.
+9. slots: a symbol with resting orders reserves ONE of the
+   MAX_CONCURRENT_POSITIONS slots (only one of its orders can become a
+   position), and its largest order's notional is reserved against the
+   margin cap. Symbols already holding resting orders keep their slot;
+   free slots go to clean (no-override) setups first, then to setups
+   that only qualified through the weekly/daily override.
+10. DRY_RUN=true: orders are simulated -- a resting paper order "fills"
+    once a candle since it was placed traded through its limit price, and
+    then follows the same paper-trade management as before.
 """
 import datetime
 import sys
 import traceback
+
+import pandas as pd
 
 from config import load_config
 from exchange_client import ExchangeClient
 from strategy import (
     ohlcv_to_df,
     detect_order_blocks,
-    generate_signal,
+    limit_setups,
     detect_trend,
     combine_htf_bias,
     weekly_room_pct,
@@ -114,15 +70,17 @@ from strategy import (
 )
 from risk_manager import RiskManager
 
+# How many of the most recent valid, unmitigated order blocks get a
+# resting limit order per symbol.
+MAX_LIMIT_ORDERS_PER_SYMBOL = 2
+
 
 def analyze_higher_timeframes(client, cfg, symbol):
     """Top-down weekly -> daily -> 4h -> 1h analysis for one symbol.
 
     Fetches each timeframe in cfg.htf_timeframes (highest first) and
     computes its trend (EMA-based, see strategy.detect_trend) and its
-    order blocks (so a level's structure is on record even though only
-    the 15m entry timeframe's order blocks currently drive the trade
-    itself -- see the README), then folds ONLY the PRIMARY levels'
+    order blocks, then folds ONLY the PRIMARY levels'
     (cfg.primary_htf_timeframes) trend readings into one overall bias
     with combine_htf_bias(). Non-primary ("refinement") levels are
     analyzed and included in `detail` for visibility, but never
@@ -134,24 +92,14 @@ def analyze_higher_timeframes(client, cfg, symbol):
     weekly trend's direction, before it reaches the weekly chart's own
     last confirmed swing high/low. If there's still at least
     cfg.weekly_daily_override_min_room_pct percent of room left, the
-    weekly trend is used as the bias instead of blocking the trade: a
-    daily trend that disagrees with a weekly trend that still has plenty
-    of room to run is more likely a pullback inside the bigger move than
-    an actual reversal. Below that room threshold the disagreement still
-    blocks the trade, since there's more reason to think the weekly move
-    itself is running out of room. A differently configured
-    HTF_PRIMARY_TIMEFRAMES (not exactly weekly+daily) skips this override
-    and keeps the original hard-conflict behavior.
+    weekly trend is used as the bias instead of blocking the trade.
+    Below that room threshold the disagreement still blocks the trade.
 
     Returns (bias, detail):
-        bias -- "bullish" / "bearish" / None (no primary-timeframe
-                opinion, don't filter) / "conflict" (primary levels
-                disagree and the weekly/daily override didn't apply --
-                caller should skip the symbol this cycle)
-        detail -- a short human-readable summary of every level's trend and
-                  unmitigated order-block count, for logging/the journal
-                  (primary levels are marked so it's clear which ones can
-                  veto and which are for timing only), plus a note when the
+        bias   -- "bullish" / "bearish" / None (no primary-timeframe
+                  opinion, don't filter) / "conflict" (skip the symbol)
+        detail -- a short human-readable summary of every level's trend
+                  and unmitigated order-block count, plus a note when the
                   weekly/daily override was evaluated
     """
     primary_trends = []
@@ -205,18 +153,27 @@ def analyze_higher_timeframes(client, cfg, symbol):
     return bias, " ".join(detail_parts) + " (*=primary/directional, rest=timing only)" + note
 
 
-def _manage_open_trades(client, risk, cfg, symbol):
-    """Fetches this symbol's latest entry-timeframe candle once and uses
-    it to resolve/advance every currently-tracked open trade on it,
-    LIVE or DRY_RUN. Returns the freshly-fetched OHLCV dataframe so the
-    caller can also use it for entry-signal scanning without fetching
-    twice, or None if the fetch failed."""
+def _fetch_df(client, symbol, df_cache):
+    df = df_cache.get(symbol)
+    if df is not None:
+        return df
     try:
         raw = client.fetch_ohlcv(symbol)
     except Exception as e:
-        print(f"[bot] {symbol}: could not fetch candles for trade management ({e}).")
+        print(f"[bot] {symbol}: could not fetch candles ({e}).")
         return None
     df = ohlcv_to_df(raw)
+    df_cache[symbol] = df
+    return df
+
+
+def _manage_open_trades(client, risk, cfg, symbol, df_cache):
+    """Uses this symbol's latest entry-timeframe candle to resolve/advance
+    every currently-tracked open trade on it, LIVE or DRY_RUN."""
+    df = _fetch_df(client, symbol, df_cache)
+    if df is None:
+        print(f"[bot] {symbol}: no candles for trade management this cycle.")
+        return
     high = float(df.iloc[-1]["high"])
     low = float(df.iloc[-1]["low"])
 
@@ -229,72 +186,188 @@ def _manage_open_trades(client, risk, cfg, symbol):
         print(f"[bot] {symbol}: advanced TP1/TP2 on {len(partial_live)} LIVE trade(s) (stop at breakeven after TP1, trailing after TP2).")
     risk.trail_live_stops(symbol, high=high, low=low, exchange_client=client)
 
-    return df
+
+# ---------------------------------------------------------------------------
+# resting limit orders
+# ---------------------------------------------------------------------------
+
+def _cancel_pending(client, risk, order, reason):
+    """Cancels one resting limit order (on the exchange for LIVE) and drops
+    it from state. Returns False if a LIVE cancel failed -- the order is
+    then kept in state so the next run checks it again (it may have
+    filled in the meantime)."""
+    if order["mode"] == "LIVE":
+        try:
+            client.cancel_order(order["order_id"], order["symbol"])
+        except Exception as e:
+            print(f"[bot] {order['symbol']}: could not cancel limit order {order['order_id']} ({e}) -- will re-check next cycle.")
+            return False
+    risk.remove_pending_order(order["order_id"])
+    risk.log_order_event("LIMIT_CANCELLED", order, reason)
+    print(f"[bot] {order['symbol']}: cancelled {order['position_side']} limit @ {order['entry_price']:.6g} -- {reason}")
+    return True
 
 
-def _find_candidate(client, cfg, symbol, df_cache):
-    """Runs the higher-timeframe cascade and entry-signal scan for one
-    symbol (steps 5-6 of the module docstring). Returns a dict describing
-    a tradeable candidate, or None if this symbol has nothing to trade
-    this cycle. Never sizes or opens anything -- that's left to the
-    caller so candidates from every symbol can be collected and reordered
-    before any of them actually claims margin (see run_once())."""
+def _promote_fill(client, risk, cfg, order, qty, fill_price, fill_time_iso):
+    """A resting limit order filled: start tracking it as a normal open
+    trade (same TP1/TP2/trailing plan as before), journal the ENTRY and
+    remember the zone as traded."""
+    symbol = order["symbol"]
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    trade = {
+        "trade_id": order["trade_id"],
+        "entry_time_utc": fill_time_iso or now_iso,
+        "mode": order["mode"],
+        "symbol": symbol,
+        "side": order["side"].upper(),
+        "position_side": order["position_side"],
+        "qty": round(qty, 6),
+        "entry_price": round(fill_price, 6),
+        "stop_loss": order["stop_loss"],
+        "take_profit": order["take_profit"],
+        "trigger": order["trigger"] + f" | filled limit @ {fill_price:.6g}",
+        "tp2_price": order.get("tp2_price"),
+        "tp2_source": order.get("tp2_source"),
+    }
+    risk.log_trade({
+        "trade_id": order["trade_id"],
+        "timestamp_utc": trade["entry_time_utc"],
+        "mode": order["mode"],
+        "symbol": symbol,
+        "side": trade["side"],
+        "position_side": trade["position_side"],
+        "qty": trade["qty"],
+        "price": trade["entry_price"],
+        "stop_loss": round(order["stop_loss"], 6),
+        "take_profit": round(order["take_profit"], 6),
+        "equity": order.get("equity", ""),
+        "trigger": trade["trigger"],
+    })
+    risk.remember_zone_trade(symbol, order["ob"])
+    risk.remove_pending_order(order["order_id"])
+    if order["mode"] == "LIVE":
+        risk.track_open_trade(trade)
+    else:
+        risk.track_dry_run_trade(trade)
+    print(f"[bot] {symbol}: {order['position_side']} limit FILLED @ {fill_price:.6g} (qty {qty:.6f}) -- now managing as an open trade.")
+
+
+def _dry_run_fill(order, df):
+    """DRY_RUN: has any candle since the order was placed traded through
+    its limit price? Returns the simulated fill price (the limit, or the
+    candle's open if it gapped past the limit), or None."""
+    if df is None or len(df) < 2:
+        return None
+    placed = pd.Timestamp(order["placed_time_utc"]).tz_convert("UTC").tz_localize(None)
+    candle_len = df["ts"].iloc[-1] - df["ts"].iloc[-2]
+    limit = order["entry_price"]
+    is_long = order["position_side"] == "LONG"
+    for _, row in df[df["ts"] + candle_len > placed].iterrows():
+        hit = row["low"] <= limit if is_long else row["high"] >= limit
+        if not hit:
+            continue
+        if row["ts"] >= placed:
+            return min(limit, float(row["open"])) if is_long else max(limit, float(row["open"]))
+        return limit
+    return None
+
+
+def _process_pending_fills(client, risk, cfg, df_cache):
+    """Step 2: turn filled limit orders into open trades, cancel the
+    other resting orders on a symbol once one of them fills, drop
+    orders the exchange cancelled/expired."""
+    for symbol in sorted(risk.pending_symbols()):
+        filled_any = False
+        for order in risk.pending_orders(symbol):
+            if order["mode"] == "LIVE":
+                try:
+                    o = client.fetch_order(order["order_id"], symbol)
+                except Exception as e:
+                    print(f"[bot] {symbol}: could not check limit order {order['order_id']} ({e}).")
+                    continue
+                status = (o.get("status") or "").lower()
+                filled = float(o.get("filled") or 0.0)
+                if filled > 0:
+                    if status == "open":
+                        # Partially filled: keep what filled, cancel the rest,
+                        # and make sure the stop covers exactly the filled size.
+                        close_side = "sell" if order["side"].lower() == "buy" else "buy"
+                        try:
+                            client.cancel_order(order["order_id"], symbol)
+                        except Exception as e:
+                            print(f"[bot] {symbol}: could not cancel rest of partially-filled order ({e}).")
+                        try:
+                            client.replace_stop_order(
+                                symbol=symbol, side=close_side, amount=filled,
+                                new_stop_price=order["stop_loss"], position_side=order["position_side"],
+                            )
+                        except Exception as e:
+                            print(f"[bot] {symbol}: WARNING could not re-place stop for the partial fill ({e}) -- CHECK THE STOP ON BINGX.")
+                    fill_price = float(o.get("average") or o.get("price") or order["entry_price"])
+                    ts = o.get("lastTradeTimestamp") or o.get("timestamp")
+                    fill_iso = (
+                        datetime.datetime.fromtimestamp(ts / 1000, tz=datetime.timezone.utc).isoformat()
+                        if ts else None
+                    )
+                    _promote_fill(client, risk, cfg, order, filled, fill_price, fill_iso)
+                    filled_any = True
+                elif status in ("canceled", "cancelled", "expired", "rejected"):
+                    risk.remove_pending_order(order["order_id"])
+                    risk.log_order_event("LIMIT_CANCELLED", order, f"order {status} on the exchange")
+                    print(f"[bot] {symbol}: limit order {order['order_id']} was {status} on the exchange -- dropped.")
+            else:
+                df = _fetch_df(client, symbol, df_cache)
+                fill_price = _dry_run_fill(order, df)
+                if fill_price is not None:
+                    _promote_fill(client, risk, cfg, order, order["qty"], fill_price, None)
+                    filled_any = True
+        if filled_any:
+            for other in risk.pending_orders(symbol):
+                _cancel_pending(client, risk, other, "another order on this symbol filled (one position per symbol)")
+
+
+def _find_setups(client, cfg, symbol, df_cache):
+    """Higher-timeframe cascade + limit-order setups for one symbol.
+    Returns (setups, htf_detail, is_override, df). setups is empty when
+    there's nothing to have an order resting for this cycle."""
     bias = None
     htf_detail = ""
     if cfg.trend_filter_enabled:
         try:
             bias, htf_detail = analyze_higher_timeframes(client, cfg, symbol)
         except Exception as e:
-            print(f"[bot] {symbol}: could not complete higher-timeframe analysis ({e}). Skipping.")
-            return None
+            print(f"[bot] {symbol}: could not complete higher-timeframe analysis ({e}).")
+            return None, "", False, None
         if bias == "conflict":
-            print(f"[bot] {symbol}: primary higher-timeframe trends disagree ({htf_detail}) -- no trade this cycle.")
-            return None
+            print(f"[bot] {symbol}: primary higher-timeframe trends disagree ({htf_detail}) -- no orders this cycle.")
+            return [], htf_detail, False, None
 
-    df = df_cache.get(symbol)
+    df = _fetch_df(client, symbol, df_cache)
     if df is None:
-        try:
-            raw = client.fetch_ohlcv(symbol)
-        except Exception as e:
-            print(f"[bot] {symbol}: could not fetch candles ({e}). Skipping.")
-            return None
-        df = ohlcv_to_df(raw)
+        return None, htf_detail, False, None
 
     obs = detect_order_blocks(df, n=cfg.fractal_n)
-    signal = generate_signal(df, obs, reward_risk_ratio=cfg.reward_risk_ratio)
-
-    if not signal:
-        print(f"[bot] {symbol}: no order-block retest signal this cycle.")
-        return None
-
-    # --- Step 5 (part 2) & Step 6: never trade against the
-    # PRIMARY higher-timeframe bias established above.
-    if bias == "bullish" and signal["position_side"] == "SHORT":
-        print(f"[bot] {symbol}: skipping SHORT signal -- primary higher-timeframe trend is bullish ({htf_detail}).")
-        return None
-    if bias == "bearish" and signal["position_side"] == "LONG":
-        print(f"[bot] {symbol}: skipping LONG signal -- primary higher-timeframe trend is bearish ({htf_detail}).")
-        return None
-
-    return {
-        "symbol": symbol,
-        "htf_detail": htf_detail,
-        "df": df,
-        "signal": signal,
-        "is_override": "OVERRIDE:" in htf_detail,
-    }
+    setups = limit_setups(
+        df, obs,
+        max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL,
+        direction=bias,
+        reward_risk_ratio=cfg.reward_risk_ratio,
+    )
+    if not setups:
+        print(f"[bot] {symbol}: no valid unmitigated order block in the {bias or 'any'} direction.")
+    return setups, htf_detail, "OVERRIDE:" in htf_detail, df
 
 
-def _find_tp2_level(df, signal, cfg):
+def _find_tp2_level(df, setup, cfg):
     """TP2 = the next swing high (LONG) / swing low (SHORT) beyond TP1 on
     the entry timeframe. Returns (price, description), or (None, None) when
     there's no such swing -- RiskManager then falls back to
     TP2_FALLBACK_R_MULTIPLE x risk."""
-    entry = signal["entry"]
-    risk_per_unit = abs(entry - signal["stop_loss"])
+    entry = setup["entry"]
+    risk_per_unit = abs(entry - setup["stop_loss"])
     if risk_per_unit <= 0:
         return None, None
-    is_long = signal["position_side"].upper() == "LONG"
+    is_long = setup["position_side"].upper() == "LONG"
     direction = 1 if is_long else -1
     tp1 = entry + direction * risk_per_unit * cfg.partial_tp_r_multiple
     level = next_swing_beyond(df, "bullish" if is_long else "bearish", tp1, n=cfg.fractal_n)
@@ -304,129 +377,121 @@ def _find_tp2_level(df, signal, cfg):
     return level, f"next swing {'high' if is_long else 'low'} ({r_multiple:.2f}R)"
 
 
-def _try_open_candidate(client, risk, cfg, candidate, equity):
-    """Sizes, journals and (if not DRY_RUN) submits one candidate's trade.
-    Returns True if a position was actually opened (so the caller can
-    update its own open_count/occupied_symbols bookkeeping), False if the
-    candidate was skipped (zero/too-small size, or the zone was already
-    traded)."""
-    symbol = candidate["symbol"]
-    htf_detail = candidate["htf_detail"]
-    df = candidate["df"]
-    signal = candidate["signal"]
+def _sync_symbol_orders(client, risk, cfg, symbol, setups, htf_detail, df, equity, may_add):
+    """Step 7-8: make this symbol's resting orders match `setups`.
+    Cancels orders whose order block is no longer a setup; places orders
+    for setups that don't have one (only if `may_add`). Returns True if
+    the symbol has at least one resting order afterwards."""
+    wanted = {risk._zone_key(symbol, s["order_block"]): s for s in setups}
 
-    existing_notional = risk.total_open_notional()
-    qty, leverage = risk.position_size(
-        equity, signal["entry"], signal["stop_loss"],
-        existing_notional=existing_notional,
-    )
-    if qty <= 0:
-        print(f"[bot] {symbol}: computed position size was zero (risk-based size or margin cap) -- skipping.")
-        return False
+    for order in risk.pending_orders(symbol):
+        if order["zone_key"] not in wanted:
+            _cancel_pending(client, risk, order, "order block mitigated/invalidated, bias changed, or replaced by newer order blocks")
 
-    notional = qty * signal["entry"]
-    if notional < cfg.min_notional_usdt:
-        print(
-            f"[bot] {symbol}: computed size (qty~{qty:.6f}, ~${notional:.2f} notional) is below "
-            f"MIN_NOTIONAL_USDT=${cfg.min_notional_usdt:.2f} -- skipping rather than opening a "
-            f"token-sized trade that can't move the needle and would burn this zone for nothing."
+    have = {o["zone_key"] for o in risk.pending_orders(symbol)}
+    to_place = [s for k, s in wanted.items() if k not in have]
+    if not to_place or not may_add:
+        return bool(risk.pending_orders(symbol))
+
+    sized = []
+    for setup in to_place:
+        ob = setup["order_block"]
+        if risk.zone_already_traded(symbol, ob):
+            print(f"[bot] {symbol}: zone {ob['bottom']:.6g}-{ob['top']:.6g} was already traded -- no new order.")
+            continue
+        existing_notional = risk.total_open_notional() + risk.pending_notional()
+        qty, leverage = risk.position_size(
+            equity, setup["entry"], setup["stop_loss"], existing_notional=existing_notional,
         )
-        return False
+        if qty <= 0:
+            print(f"[bot] {symbol}: limit @ {setup['entry']:.6g} sized to zero (risk-based size or margin cap) -- skipped.")
+            continue
+        notional = qty * setup["entry"]
+        if notional < cfg.min_notional_usdt:
+            print(
+                f"[bot] {symbol}: limit @ {setup['entry']:.6g} would be ~${notional:.2f} notional, below "
+                f"MIN_NOTIONAL_USDT=${cfg.min_notional_usdt:.2f} -- skipped."
+            )
+            continue
+        sized.append((setup, qty, leverage))
+    if not sized:
+        return bool(risk.pending_orders(symbol))
 
-    print(
-        f"[bot] {symbol}: signal {signal['side'].upper()} qty~{qty:.6f} "
-        f"entry~{signal['entry']:.2f} SL={signal['stop_loss']:.2f} TP={signal['take_profit']:.2f}"
-    )
+    # Leverage is per symbol+side on BingX, so every order on the same side
+    # shares one setting. Use the LOWEST leverage any of them needs: their
+    # dollar risk (qty x stop distance) doesn't depend on leverage, and the
+    # lower setting keeps the liquidation price further beyond each stop.
+    if not cfg.dry_run:
+        by_side = {}
+        for setup, _qty, lev in sized:
+            ps = setup["position_side"]
+            by_side[ps] = min(by_side.get(ps, lev), lev)
+        for o in risk.pending_orders(symbol):
+            ps = o["position_side"]
+            if o.get("leverage") and ps in by_side:
+                by_side[ps] = min(by_side[ps], o["leverage"])
+        for ps, lev in by_side.items():
+            client.set_leverage(symbol, lev, ps)
 
-    ob = signal["order_block"]
-    formed_ts = df.iloc[ob["formed_idx"]]["ts"]
-    bos_ts = df.iloc[ob["bos_idx"]]["ts"]
-    trigger = (
-        f"{ob['type']} order block retest: zone {ob['bottom']:.4f}-{ob['top']:.4f} "
-        f"(formed {formed_ts:%Y-%m-%d %H:%M} UTC, break of structure confirmed "
-        f"{bos_ts:%Y-%m-%d %H:%M} UTC) | HTF: {htf_detail or 'trend filter disabled'}"
-    )
-
-    if risk.zone_already_traded(symbol, ob):
-        print(f"[bot] {symbol}: a trade was already taken in this order-block zone -- skipping duplicate.")
-        return False
-
-    trade_id = risk.new_trade_id()
-    tp2_price, tp2_source = _find_tp2_level(df, signal, cfg)
-    trigger += (
-        f" | exits: TP1 {cfg.partial_tp_r_multiple:g}R (mirror of SL), TP2 "
-        + (f"{tp2_price:.6g} ({tp2_source})" if tp2_price is not None else "fallback (no swing beyond TP1)")
-        + ", runner trails after TP2"
-    )
-    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
-
-    journal_row = {
-        "trade_id": trade_id,
-        "timestamp_utc": now_iso,
-        "mode": "DRY_RUN" if cfg.dry_run else "LIVE",
-        "symbol": symbol,
-        "side": signal["side"].upper(),
-        "position_side": signal["position_side"],
-        "qty": round(qty, 6),
-        "price": round(signal["entry"], 4),
-        "stop_loss": round(signal["stop_loss"], 4),
-        "take_profit": round(signal["take_profit"], 4),
-        "equity": round(equity, 2),
-        "trigger": trigger,
-    }
-
-    if cfg.dry_run:
-        risk.log_trade(journal_row)
-        risk.remember_zone_trade(symbol, ob)
-        risk.track_dry_run_trade({
+    for setup, qty, leverage in sized:
+        ob = setup["order_block"]
+        formed_ts = df.iloc[ob["formed_idx"]]["ts"]
+        bos_ts = df.iloc[ob["bos_idx"]]["ts"]
+        tp2_price, tp2_source = _find_tp2_level(df, setup, cfg)
+        trigger = (
+            f"{ob['type']} order block limit: zone {ob['bottom']:.4f}-{ob['top']:.4f} "
+            f"(formed {formed_ts:%Y-%m-%d %H:%M} UTC, {ob.get('structure', 'BOS')} confirmed "
+            f"{bos_ts:%Y-%m-%d %H:%M} UTC) | HTF: {htf_detail or 'trend filter disabled'}"
+            f" | exits: TP1 {cfg.partial_tp_r_multiple:g}R (mirror of SL), TP2 "
+            + (f"{tp2_price:.6g} ({tp2_source})" if tp2_price is not None else "fallback (no swing beyond TP1)")
+            + ", runner trails after TP2"
+        )
+        now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        trade_id = risk.new_trade_id()
+        if cfg.dry_run:
+            order_id = f"paper-{trade_id}"
+        else:
+            try:
+                placed = client.create_limit_order_with_stop(
+                    symbol=symbol,
+                    side=setup["side"],
+                    amount=qty,
+                    price=setup["entry"],
+                    stop_loss_price=setup["stop_loss"],
+                    position_side=setup["position_side"],
+                )
+            except Exception as e:
+                print(f"[bot] {symbol}: placing {setup['position_side']} limit @ {setup['entry']:.6g} FAILED ({e}).")
+                continue
+            order_id = str((placed or {}).get("id"))
+        order = {
+            "order_id": order_id,
             "trade_id": trade_id,
-            "entry_time_utc": now_iso,
-            "mode": "DRY_RUN",
+            "mode": "DRY_RUN" if cfg.dry_run else "LIVE",
             "symbol": symbol,
-            "side": signal["side"].upper(),
-            "position_side": signal["position_side"],
+            "side": setup["side"],
+            "position_side": setup["position_side"],
             "qty": round(qty, 6),
-            "entry_price": round(signal["entry"], 4),
-            "stop_loss": round(signal["stop_loss"], 4),
-            "take_profit": round(signal["take_profit"], 4),
-            "trigger": trigger,
+            "leverage": leverage,
+            "entry_price": setup["entry"],
+            "stop_loss": setup["stop_loss"],
+            "take_profit": setup["take_profit"],
             "tp2_price": tp2_price,
             "tp2_source": tp2_source,
-        })
-        print(f"[bot] {symbol}: DRY_RUN is on -- no order sent (logged to trade journal).")
-        return True
-
-    client.set_leverage(symbol, leverage)
-    client.create_market_order_with_stops(
-        symbol=symbol,
-        side=signal["side"],
-        amount=qty,
-        stop_loss_price=signal["stop_loss"],
-        # With partial exits on (TP1/TP2/trailing, managed by RiskManager) no
-        # full-size exchange take-profit is placed -- it would close the whole
-        # position at a fixed target before TP2 and the trailing runner.
-        take_profit_price=None if cfg.partial_tp_fraction > 0 else signal["take_profit"],
-        position_side=signal["position_side"],
-    )
-    risk.log_trade(journal_row)
-    risk.remember_zone_trade(symbol, ob)
-    risk.track_open_trade({
-        "trade_id": trade_id,
-        "entry_time_utc": now_iso,
-        "mode": "LIVE",
-        "symbol": symbol,
-        "side": signal["side"].upper(),
-        "position_side": signal["position_side"],
-        "qty": round(qty, 6),
-        "entry_price": round(signal["entry"], 4),
-        "stop_loss": round(signal["stop_loss"], 4),
-        "take_profit": round(signal["take_profit"], 4),
-        "trigger": trigger,
-        "tp2_price": tp2_price,
-        "tp2_source": tp2_source,
-    })
-    print(f"[bot] {symbol}: order submitted with attached stop-loss/take-profit, logged.")
-    return True
+            "equity": round(equity, 2),
+            "zone_key": risk._zone_key(symbol, ob),
+            "ob": {"type": ob["type"], "top": ob["top"], "bottom": ob["bottom"]},
+            "placed_time_utc": now_iso,
+            "trigger": trigger,
+        }
+        risk.track_pending_order(order)
+        risk.log_order_event("LIMIT_PLACED", order)
+        print(
+            f"[bot] {symbol}: {'DRY_RUN ' if cfg.dry_run else ''}{setup['position_side']} limit placed @ "
+            f"{setup['entry']:.6g} SL={setup['stop_loss']:.6g} qty~{qty:.6f} ({ob.get('structure', 'BOS')} OB "
+            f"{ob['bottom']:.6g}-{ob['top']:.6g})"
+        )
+    return bool(risk.pending_orders(symbol))
 
 
 def run_once():
@@ -448,6 +513,13 @@ def run_once():
     if equity_warning:
         print(f"[bot] WARNING: {equity_warning}")
 
+    df_cache = {}
+
+    # Step 2 runs BEFORE reconciling closed positions, so an order that
+    # filled and got stopped out between two runs is first recorded as a
+    # trade and then closed in this same cycle.
+    _process_pending_fills(client, risk, cfg, df_cache)
+
     open_positions = client.fetch_open_positions()
     exchange_open_symbols = {p.get("symbol") for p in open_positions}
 
@@ -455,66 +527,57 @@ def run_once():
     if closed_trades:
         print(f"[bot] Reconciled {len(closed_trades)} closed trade(s), logged EXIT row(s).")
 
-    # Manage every currently-open trade (LIVE or DRY_RUN) against this
-    # cycle's fresh candle -- partial take-profit, trailing, or (for
-    # DRY_RUN) a full simulated stop/trail exit. Done for every occupied
-    # symbol regardless of the circuit breaker, since managing/closing
-    # existing risk should never be skipped.
-    df_cache = {}
     for symbol in sorted(risk.occupied_symbols()):
-        df_cache[symbol] = _manage_open_trades(client, risk, cfg, symbol)
+        _manage_open_trades(client, risk, cfg, symbol, df_cache)
 
     if risk.circuit_breaker_tripped(equity):
-        print("[bot] Daily loss circuit breaker is tripped. No new entries today.")
+        print("[bot] Daily loss circuit breaker is tripped. Cancelling resting orders, no new entries today.")
+        for order in risk.pending_orders():
+            _cancel_pending(client, risk, order, "daily loss circuit breaker tripped")
         return
 
-    # Recompute AFTER trade management above, since a full close/partial
-    # this cycle can change what counts as occupied. Counting by symbol
-    # (not by tracked-trade record) matches the existing simplification
-    # elsewhere in this bot that assumes at most one open position per
-    # symbol at a time.
-    occupied_symbols = risk.occupied_symbols() | exchange_open_symbols
-    open_count = len(occupied_symbols)
+    position_symbols = risk.occupied_symbols() | exchange_open_symbols
 
+    # A symbol that already has a position never keeps resting orders.
+    for symbol in sorted(risk.pending_symbols() & position_symbols):
+        for order in risk.pending_orders(symbol):
+            _cancel_pending(client, risk, order, "symbol already has an open position")
+
+    open_count = len(position_symbols | risk.pending_symbols())
     print(
-        f"[bot] Equity=${equity:.2f} | {open_count}/{cfg.max_concurrent_positions} "
-        f"positions open ({sorted(occupied_symbols) or 'none'}) | watching {len(cfg.symbols)} symbols"
+        f"[bot] Equity=${equity:.2f} | {open_count}/{cfg.max_concurrent_positions} slots used "
+        f"(positions: {sorted(position_symbols) or 'none'}; resting orders: "
+        f"{sorted(risk.pending_symbols()) or 'none'}) | watching {len(cfg.symbols)} symbols"
     )
 
-    if open_count >= cfg.max_concurrent_positions:
-        print("[bot] Already at max concurrent positions. Skipping scan this cycle.")
-        return
-
-    # --- Steps 5-6: find every symbol with a tradeable candidate this
-    # cycle, WITHOUT sizing or opening anything yet. Bucketed into
-    # "clean" (bias resolved without needing the weekly/daily override)
-    # and "override" (only tradeable because of it) so the execution
-    # pass below can give the higher-conviction setups first claim on
-    # the shared max_concurrent_positions slots and margin budget.
-    clean_candidates = []
-    override_candidates = []
+    # --- Step 6: analysis + setups for every symbol without a position.
+    holding, clean, override = [], [], []
     for symbol in cfg.symbols:
-        if symbol in occupied_symbols:
+        if symbol in position_symbols:
             print(f"[bot] {symbol}: already have an open position (LIVE or DRY_RUN), skipping.")
             continue
-        candidate = _find_candidate(client, cfg, symbol, df_cache)
-        if candidate is None:
+        setups, htf_detail, is_override, df = _find_setups(client, cfg, symbol, df_cache)
+        if setups is None:
+            # Data problem this cycle -- leave any resting orders alone
+            # rather than cancelling on missing information.
             continue
-        if candidate["is_override"]:
-            override_candidates.append(candidate)
-        else:
-            clean_candidates.append(candidate)
+        entry = (symbol, setups, htf_detail, df)
+        if risk.pending_orders(symbol):
+            holding.append(entry)
+        elif setups:
+            (override if is_override else clean).append(entry)
 
-    # --- Steps 7-11: size and open candidates, clean ones first, then
-    # override-only ones with whatever slots/margin remain.
-    for candidate in clean_candidates + override_candidates:
+    # --- Steps 7-9: symbols that already hold a slot first (keep/cancel/top
+    # up their orders), then free slots to clean setups, then override ones.
+    for symbol, setups, htf_detail, df in holding:
+        if not _sync_symbol_orders(client, risk, cfg, symbol, setups, htf_detail, df, equity, may_add=True):
+            open_count -= 1
+    for symbol, setups, htf_detail, df in clean + override:
         if open_count >= cfg.max_concurrent_positions:
-            print(f"[bot] Reached max concurrent positions ({cfg.max_concurrent_positions}) mid-scan. Stopping.")
-            break
-        opened = _try_open_candidate(client, risk, cfg, candidate, equity)
-        if opened:
+            print(f"[bot] {symbol}: valid order block(s) but all {cfg.max_concurrent_positions} slots are used -- no order.")
+            continue
+        if _sync_symbol_orders(client, risk, cfg, symbol, setups, htf_detail, df, equity, may_add=True):
             open_count += 1
-            occupied_symbols.add(candidate["symbol"])
 
 
 if __name__ == "__main__":

@@ -71,6 +71,7 @@ class RiskManager:
         data.setdefault("open_dry_run_trades", [])
         data.setdefault("dry_run_signaled", {})
         data.setdefault("traded_zones", {})
+        data.setdefault("pending_orders", [])
         data.setdefault("last_seen_equity", None)
         return data
 
@@ -241,6 +242,61 @@ class RiskManager:
             if seen > cutoff:
                 pruned[key] = seen_iso
         self.state["traded_zones"] = pruned
+
+    # --- resting limit orders: one per unmitigated order block, waiting
+    # for price to come back into the zone. Tracked in state so later runs
+    # can detect fills (and turn them into open trades), and cancel orders
+    # whose order block got mitigated/invalidated without filling. ---
+    def pending_orders(self, symbol: str | None = None) -> list:
+        orders = self.state.get("pending_orders", [])
+        if symbol is None:
+            return list(orders)
+        return [o for o in orders if o["symbol"] == symbol]
+
+    def pending_symbols(self) -> set:
+        return {o["symbol"] for o in self.state.get("pending_orders", [])}
+
+    def track_pending_order(self, order: dict):
+        self.state.setdefault("pending_orders", []).append(order)
+        self._save_state()
+
+    def remove_pending_order(self, order_id: str):
+        self.state["pending_orders"] = [
+            o for o in self.state.get("pending_orders", []) if o["order_id"] != order_id
+        ]
+        self._save_state()
+
+    def pending_notional(self, exclude_symbol: str | None = None) -> float:
+        """Notional reserved by resting limit orders, for the shared margin
+        cap. Only one order per symbol can ever turn into a position (the
+        others are cancelled on the first fill), so each symbol reserves
+        its single largest order, not the sum."""
+        per_symbol = {}
+        for o in self.state.get("pending_orders", []):
+            if o["symbol"] == exclude_symbol:
+                continue
+            notional = o.get("qty", 0.0) * o.get("entry_price", 0.0)
+            per_symbol[o["symbol"]] = max(per_symbol.get(o["symbol"], 0.0), notional)
+        return sum(per_symbol.values())
+
+    def log_order_event(self, event: str, order: dict, reason: str = ""):
+        """Journals a limit-order lifecycle event (LIMIT_PLACED /
+        LIMIT_CANCELLED) next to the ENTRY/EXIT rows, so the CSV shows
+        which order blocks got an order and why unfilled ones were pulled."""
+        self._write_journal_row({
+            "event": event,
+            "trade_id": order.get("trade_id", ""),
+            "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "mode": order.get("mode", ""),
+            "symbol": order["symbol"],
+            "side": order.get("side", ""),
+            "position_side": order.get("position_side", ""),
+            "qty": order.get("qty", ""),
+            "price": order.get("entry_price", ""),
+            "stop_loss": order.get("stop_loss", ""),
+            "take_profit": order.get("take_profit", ""),
+            "trigger": (order.get("trigger", "") + (f" | {reason}" if reason else "")),
+        })
 
     # --- occupied symbols (LIVE + DRY_RUN), used so paper trading obeys
     # the same "one position per symbol" / max_concurrent_positions rules

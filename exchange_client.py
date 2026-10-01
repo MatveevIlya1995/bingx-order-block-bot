@@ -60,11 +60,16 @@ class ExchangeClient:
         positions = self.exchange.fetch_positions(self.cfg.symbols)
         return [p for p in positions if p.get("contracts") and float(p["contracts"]) > 0]
 
-    def set_leverage(self, symbol: str, leverage: int):
+    def set_leverage(self, symbol: str, leverage: int, position_side: str = None):
+        """ccxt's BingX integration requires the position side for leverage
+        (LONG/SHORT in hedge mode, BOTH in one-way mode) and rejects the
+        call without it -- so leverage was never actually being set and
+        positions ran at whatever leverage the symbol already had on BingX."""
+        side = (position_side or "BOTH").upper()
         try:
-            self.exchange.set_leverage(leverage, symbol)
+            self.exchange.set_leverage(leverage, symbol, {"side": side})
         except Exception as e:
-            print(f"[exchange] {symbol}: could not set leverage: {e}")
+            print(f"[exchange] {symbol}: could not set {side} leverage to {leverage}x: {e}")
 
     @staticmethod
     def _close_params(position_side: str) -> dict:
@@ -163,6 +168,54 @@ class ExchangeClient:
                 except Exception as e:
                     print(f"[exchange] {symbol}: could not cancel old stop order {o.get('id')}: {e}")
         return new_order
+
+    def price_to_precision(self, symbol: str, price: float) -> float:
+        return float(self.exchange.price_to_precision(symbol, price))
+
+    def create_limit_order_with_stop(
+        self,
+        symbol: str,
+        side: str,
+        amount: float,
+        price: float,
+        stop_loss_price: float,
+        position_side: str,
+    ):
+        """Places a resting LIMIT entry with its stop-loss ATTACHED to the
+        order, so BingX itself creates the stop the moment the order fills
+        -- the fill can happen at any time between two bot runs, and the
+        position must never sit there without a stop. Every limit entry
+        MUST go through this method.
+
+        No take-profit is attached: TP1/TP2/trailing are managed by
+        RiskManager once the bot sees the fill (see bot.py).
+
+        If price is already past the limit price when this is placed (e.g.
+        it's sitting inside the order block right now), BingX fills it
+        straight away at the best available price -- which is then inside
+        the zone, since the limit sits at the zone's near edge.
+
+        UNVERIFIED against live BingX data, like the rest of this file:
+        confirm on the first real fill that BingX shows the attached stop
+        on the position."""
+        amount = self.amount_to_precision(symbol, amount)
+        price = self.price_to_precision(symbol, price)
+        stop = self.price_to_precision(symbol, stop_loss_price)
+        params = {
+            "positionSide": position_side,
+            "stopLoss": {
+                "triggerPrice": stop,
+                "type": "STOP_MARKET",
+                "workingType": "MARK_PRICE",
+            },
+        }
+        return self.exchange.create_order(symbol, "limit", side, amount, price, params)
+
+    def fetch_order(self, order_id: str, symbol: str) -> dict:
+        return self.exchange.fetch_order(order_id, symbol)
+
+    def cancel_order(self, order_id: str, symbol: str):
+        return self.exchange.cancel_order(order_id, symbol)
 
     def fetch_trade_exit(self, symbol: str, position_side: str, since_iso: str):
         """Looks up the fill that closed a previously-tracked position, so
