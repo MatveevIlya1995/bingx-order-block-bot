@@ -159,7 +159,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 197.4727,
+  "last_seen_equity": 159.0229,
   "traded_zones": {
     "ETH/USDT:USDT|bullish|2678.36-2685.68": "2026-09-24T16:36:57.340378+00:00",
     "SOL/USDT:USDT|bullish|117.22-117.703": "2026-09-24T16:36:57.341788+00:00",
