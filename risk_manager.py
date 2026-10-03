@@ -532,6 +532,19 @@ class RiskManager:
             f"remaining {runner:.0%} trailing {self.cfg.trail_r_multiple:g}R behind best price"
         )
 
+    @staticmethod
+    def _exchange_qty(exchange_client, symbol: str, qty: float) -> float:
+        """Rounds a partial-close size to the exchange's amount step BEFORE
+        the bot works out what's left. Otherwise the exchange rounds each
+        order down on its own (0.00285 BTC -> 0.0028) while the bot's
+        bookkeeping keeps the unrounded number, the next stop is sized for
+        less than what is really left, and a dust-sized position survives
+        every exit -- keeping the symbol's slot occupied."""
+        try:
+            return float(exchange_client.amount_to_precision(symbol, qty))
+        except Exception:
+            return qty
+
     def reconcile_live_exits(self, symbol: str, high: float, low: float, exchange_client) -> list:
         """LIVE: advance each open trade on symbol through TP1 and TP2
         using the latest candle's high/low.
@@ -562,6 +575,7 @@ class RiskManager:
                 if not ((high >= tp1) if is_long else (low <= tp1)):
                     continue
                 tp1_qty = round(min(initial_qty * f1, trade["qty"]), 8)
+                tp1_qty = self._exchange_qty(exchange_client, symbol, tp1_qty)
                 remaining_qty = round(trade["qty"] - tp1_qty, 8)
                 if tp1_qty <= 0 or remaining_qty <= 0:
                     continue
@@ -593,6 +607,7 @@ class RiskManager:
             tp2 = trade["tp2_price"]
             if (high >= tp2) if is_long else (low <= tp2):
                 tp2_qty = round(min(initial_qty * f2, trade["qty"]), 8)
+                tp2_qty = self._exchange_qty(exchange_client, symbol, tp2_qty)
                 remaining_qty = round(trade["qty"] - tp2_qty, 8)
                 try:
                     if remaining_qty <= 0:

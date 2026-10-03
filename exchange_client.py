@@ -44,14 +44,40 @@ class ExchangeClient:
             limit=limit or self.cfg.candle_limit,
         )
 
+    @staticmethod
+    def _usdt_equity_from_info(info):
+        """Finds the USDT account's 'equity' field anywhere in BingX's raw
+        balance payload (its shape differs between API versions: a dict
+        under data.balance, or a list of per-asset dicts)."""
+        stack = [info]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, dict):
+                if "equity" in node and str(node.get("asset", "USDT")).upper() == "USDT":
+                    try:
+                        return float(node["equity"])
+                    except (TypeError, ValueError):
+                        pass
+                stack.extend(node.values())
+            elif isinstance(node, list):
+                stack.extend(node)
+        return None
+
     def fetch_balance_usdt(self) -> float:
-        """Total USDT account equity -- NOT the free/available balance.
-        Resting limit orders and open positions reserve margin, which
-        shrinks "free" without any money being lost; using it made the
-        daily-loss circuit breaker trip on the bot's own orders and
-        undersized every trade. Falls back to free only if BingX/ccxt
-        doesn't report a total."""
+        """Total USDT account equity (wallet balance + unrealized P/L), read
+        from BingX's own 'equity' field.
+
+        NOT the free/available balance, and not ccxt's computed 'total'
+        either: both shrink when margin is frozen by resting limit orders
+        (ccxt's total = available + position margin, which leaves frozen
+        order margin out). Using them made the bot read its own resting
+        orders as an ~80% loss, trip the daily-loss breaker and cancel
+        everything every other run."""
         bal = self.exchange.fetch_balance()
+        equity = self._usdt_equity_from_info(bal.get("info"))
+        if equity is not None and equity > 0:
+            return equity
+        print("[exchange] WARNING: no 'equity' field in BingX balance response -- falling back to ccxt total/free.")
         usdt = bal.get("USDT", {}) or {}
         total = usdt.get("total")
         if total is None:
