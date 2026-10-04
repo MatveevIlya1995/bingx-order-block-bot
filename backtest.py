@@ -52,6 +52,11 @@ What it assumes -- read before trusting a number
 - Quantities are not rounded to BingX's amount step. Funding payments are
   ignored. Candle data is last-traded price; BingX triggers stops on mark
   price.
+- BingX only keeps a limited history of small-timeframe candles (roughly
+  100 days of 15m and 45 days of 5m when this was written). If the period
+  asked for is longer, the test starts where the history starts and says
+  so; if 5m candles don't cover it, price is walked on the entry-timeframe
+  candles instead (--exec-timeframe auto).
 - No backtest shows what will happen next. Picking the best-looking variant
   from one stretch of history over-fits: check that a filter helps in BOTH
   halves of the period (the report shows them) before believing it.
@@ -194,8 +199,61 @@ def load_data(cfg, symbols, start_ms, end_ms, exec_tf, cache_dir, synthetic_seed
         for tf in cfg.htf_timeframes:
             d[tf] = fetch_history(exchange, symbol, tf, start_ms - lookback * TF_MS[tf], end_ms, cache_dir)
         data[symbol] = d
-        log(f"{symbol}: " + ", ".join(f"{tf} x{len(a)}" for tf, a in d.items()) + f"  ({time.time() - t:.0f}s)")
+        log(f"{symbol}: " + ", ".join(
+            f"{tf} x{len(a)}" + (f" from {day(a[0, 0])}" if len(a) else "") for tf, a in d.items()
+        ) + f"  ({time.time() - t:.0f}s)")
     return data
+
+
+def day(ms):
+    return datetime.datetime.fromtimestamp(ms / 1000, datetime.timezone.utc).strftime("%Y-%m-%d")
+
+
+def usable_period(cfg, data, symbols, start_ms, exec_tf):
+    """BingX only keeps a limited history of small-timeframe candles, so the
+    requested period may not be fully available. Returns
+    (symbols, start_ms, exec_tf, notes): the symbols with enough history, the
+    first moment every one of them has the candles a bot run needs (warm-up
+    included), the execution timeframe to walk price with, and notes for the
+    report.
+
+    exec_tf "auto" picks 5m when 5m candles cover the whole period and the
+    entry timeframe otherwise -- one timeframe for the whole period, so
+    both halves are simulated the same way."""
+    entry_tf = cfg.timeframe
+    warm = max(cfg.candle_limit * TF_MS[entry_tf], max(TF_MS[tf] for tf in cfg.htf_timeframes)) + TF_MS[entry_tf]
+    notes = []
+    ready = {s: int(data[s][entry_tf][0, 0]) + warm for s in symbols if len(data[s][entry_tf])}
+    if not ready:
+        return [], start_ms, entry_tf, notes
+    typical = sorted(ready.values())[len(ready) // 2]
+    short = [s for s in ready if ready[s] > typical + TF_MS["1d"]]
+    for s in short:
+        notes.append(f"{s.split('/')[0]} left out: its {entry_tf} history only starts {day(data[s][entry_tf][0, 0])}.")
+    symbols = [s for s in symbols if s in ready and s not in short]
+    begin = max([start_ms] + [ready[s] for s in symbols])
+    if begin > start_ms:
+        notes.append(
+            f"Requested start {day(start_ms)}, but BingX only served {entry_tf} candles back to "
+            f"{day(min(data[s][entry_tf][0, 0] for s in symbols))}; after warm-up the test starts {day(begin)}."
+        )
+    want = "5m" if exec_tf == "auto" else exec_tf
+    if want != entry_tf:
+        have = all(want in data[s] and len(data[s][want]) for s in symbols)
+        first = max(int(data[s][want][0, 0]) for s in symbols) if have else None
+        if not have or first > begin:
+            if exec_tf == "auto":
+                notes.append(
+                    f"{want} candles only go back to {day(first) if first else 'n/a'}, so price between runs is walked on "
+                    f"{entry_tf} candles for the whole period (coarser: one candle per run, and a candle that touches "
+                    f"both stop and take-profit counts as a stop)."
+                )
+                want = entry_tf
+            else:
+                notes.append(f"{want} candles only go back to {day(first)}; the test starts there.")
+                begin = max(begin, first + TF_MS[entry_tf])
+    begin -= begin % TF_MS[entry_tf]
+    return symbols, begin, want, notes
 
 
 # ---------------------------------------------------------------------------
@@ -801,7 +859,9 @@ def main(argv=None):
     ap.add_argument("--days", type=int, default=180, help="length of the test period (default 180)")
     ap.add_argument("--end", default=None, help="last day of the period, YYYY-MM-DD UTC (default: today)")
     ap.add_argument("--symbols", default=None, help="comma-separated symbols (default: SYMBOLS / the bot's basket)")
-    ap.add_argument("--exec-timeframe", default="5m", help="candles used to walk price between two runs (default 5m)")
+    ap.add_argument("--exec-timeframe", default="auto",
+                    help="candles used to walk price between two runs: auto (5m if BingX has it for the whole "
+                         "period, else the entry timeframe), or e.g. 5m / 15m")
     ap.add_argument("--start-equity", type=float, default=230.0, help="account equity at the start, USDT")
     ap.add_argument("--maker-fee-pct", type=float, default=0.02, help="fee for resting limit fills, %% (BingX base tier 0.02)")
     ap.add_argument("--taker-fee-pct", type=float, default=0.05, help="fee for market / triggered fills, %% (BingX base tier 0.05)")
@@ -828,11 +888,16 @@ def main(argv=None):
     log(f"Period: {datetime.datetime.fromtimestamp(start_ms / 1000, datetime.timezone.utc):%Y-%m-%d %H:%M} -> "
         f"{datetime.datetime.fromtimestamp(end_ms / 1000, datetime.timezone.utc):%Y-%m-%d %H:%M} UTC, "
         f"{len(symbols)} symbols")
-    data = load_data(cfg, symbols, start_ms, end_ms, args.exec_timeframe, args.cache_dir, args.synthetic)
+    fetch_exec = "5m" if args.exec_timeframe == "auto" else args.exec_timeframe
+    data = load_data(cfg, symbols, start_ms, end_ms, fetch_exec, args.cache_dir, args.synthetic)
     symbols = [s for s in symbols if s in data and len(data[s][cfg.timeframe]) > cfg.candle_limit + 10]
-    if not symbols:
+    symbols, start_ms, exec_tf, notes = usable_period(cfg, data, symbols, start_ms, args.exec_timeframe)
+    for note in notes:
+        log("NOTE: " + note)
+    if not symbols or end_ms - start_ms < 2 * TF_MS["1d"]:
         log("No usable history -- nothing to backtest.")
         return 1
+    days = (end_ms - start_ms) / TF_MS["1d"]
 
     log(f"Computing signals with {args.jobs} worker(s)...")
     t0 = time.time()
@@ -849,7 +914,6 @@ def main(argv=None):
     with open(os.path.join(args.out, "signals.pkl"), "wb") as f:
         pickle.dump(signals, f)
 
-    exec_tf = args.exec_timeframe if all(args.exec_timeframe in data[s] for s in symbols) else cfg.timeframe
     exec_data = {s: data[s][exec_tf] for s in symbols}
     t_mid = (start_ms + end_ms) // 2
 
@@ -903,14 +967,15 @@ def main(argv=None):
               f"{datetime.datetime.fromtimestamp(end_ms / 1000, datetime.timezone.utc):%Y-%m-%d}")
     source = "SYNTHETIC random-walk candles (smoke test -- numbers are meaningless)" if args.synthetic is not None \
         else "BingX USDT-M perpetual candles"
-    report = f"""# Backtest: {period} ({args.days} days)
+    note_text = ("\n" + "\n".join(f"- {n}" for n in notes) + "\n") if notes else ""
+    report = f"""# Backtest: {period} ({days:.0f} days)
 
 Data: {source}. {len(symbols)} symbols: {", ".join(s.split("/")[0] for s in symbols)}.
-
+{note_text}
 Settings (from the bot's configuration): risk {cfg.risk_pct_per_trade * 100:g}% per trade, margin ${cfg.margin_per_trade_usd:g}, leverage ceiling {min(cfg.leverage, cfg.max_leverage_hard_cap)}x, max {cfg.max_concurrent_positions} positions, daily loss limit {cfg.max_daily_loss_pct * 100:g}%, weekly/daily override room {cfg.weekly_daily_override_min_room_pct:g}%, TP1 {cfg.partial_tp_fraction:.0%} at {cfg.partial_tp_r_multiple:g}R, TP2 {cfg.tp2_fraction:.0%}, trail {cfg.trail_r_multiple:g}R.
 Costs: maker {args.maker_fee_pct}%, taker {args.taker_fee_pct}%, slippage {args.slippage_pct}% on market/triggered fills. Starting equity ${args.start_equity:g}. Execution walked on {exec_tf} candles.
 
-"R" is the amount risked on a trade (size x stop distance); "avg R/trade" is net P/L after fees in units of that. The two halves split the period in the middle by entry time.
+"R" is the amount risked on a trade (size x stop distance); "avg R/trade" is net P/L after fees in units of that. The two halves split the period in the middle ({day(t_mid)}) by entry time.
 
 ## Baseline -- the live configuration, all filters off
 
