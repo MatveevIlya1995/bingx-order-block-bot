@@ -65,6 +65,9 @@ DEFAULT_HTF_TIMEFRAMES = "1w,1d,4h,1h"
 # just the weekly, or weekly+daily+4h).
 DEFAULT_HTF_PRIMARY_TIMEFRAMES = "1w,1d"
 
+# Valid values for HTF_TIMING_AGREEMENT (see Config.htf_timing_agreement).
+HTF_TIMING_AGREEMENT_MODES = ("off", "not_against", "aligned")
+
 
 @dataclass
 class Config:
@@ -243,14 +246,51 @@ class Config:
         default_factory=lambda: float(_env("TP2_FALLBACK_R_MULTIPLE", "2.0"))
     )
 
+    # --- resting take-profit orders (LIVE) ---
+    # True (default): once the bot sees a filled entry it places TP1 and TP2
+    # on BingX as resting reduce-only TAKE_PROFIT_MARKET orders, and splits
+    # the stop-loss into one stop per part of the position (TP1 part, TP2
+    # part, runner) so the stops still add up to exactly what is left after
+    # a take-profit fills between two runs. If any of those orders cannot be
+    # placed, that trade (or just that take-profit) falls back to the old
+    # behaviour: a market close on the scheduled run that sees the candle
+    # touch the level. Set RESTING_TP_ORDERS=false to use the old behaviour
+    # for every new trade.
+    resting_tp_orders: bool = field(default_factory=lambda: _bool("RESTING_TP_ORDERS", True))
+
+    # --- entry filters (all OFF by default) ---
+    # Minimum stop distance, in % of the entry price. A setup whose stop sits
+    # closer to the entry than this gets no order. 0 = off. Example: 0.25
+    # skips every setup with a stop less than 0.25% away from its entry.
+    min_stop_distance_pct: float = field(
+        default_factory=lambda: float(_env("MIN_STOP_DISTANCE_PCT", "0"))
+    )
+    # Symbols allowed to take NEW entries, as a comma-separated list of full
+    # symbols ("BTC/USDT:USDT") or just the coin ("BTC"). Empty = off (every
+    # symbol in SYMBOLS may trade). Symbols left out keep being watched, so
+    # positions already open on them are still managed -- which is why this
+    # is separate from SYMBOLS: never shrink SYMBOLS while a position on a
+    # removed symbol is open.
+    entry_symbols: list = field(default_factory=lambda: _env_list("ENTRY_SYMBOLS", ""))
+    # Whether the timing levels (the HTF_TIMEFRAMES that are not primary --
+    # 4h and 1h by default) must agree with the trade direction:
+    #   off         -- they never block a trade (the behaviour so far)
+    #   not_against -- no order if 4h or 1h trends AGAINST the trade
+    #                  (a neutral 4h/1h is fine)
+    #   aligned     -- no order unless 4h AND 1h both trend WITH the trade
+    htf_timing_agreement: str = field(
+        default_factory=lambda: _env("HTF_TIMING_AGREEMENT", "off").strip().lower()
+    )
+
     # --- cost modeling ---
     # DRY_RUN's simulated exits previously assumed a fill at the exact
     # stop/take-profit price with no trading fees at all, which makes
     # paper-trading stats look better than live trading ever will. This
     # is a round-trip (entry + exit) taker-fee estimate applied to
     # simulated DRY_RUN P/L only, so paper stats are a more honest
-    # preview -- it does NOT touch LIVE P/L, which already comes from
-    # BingX's own realized-PnL field (see exchange_client.fetch_trade_exit).
+    # preview. LIVE P/L uses the fee BingX reports on each fill (see
+    # exchange_client.order_fill); this rate is only the LIVE fallback when
+    # an order's fee can't be read, and such rows are marked as estimated.
     # 0.05% is BingX's standard default USDT-M perpetual taker fee at the
     # time this was written -- check your own account's actual fee tier
     # (maker/taker, any VIP discount) and adjust if it differs.
@@ -320,4 +360,16 @@ def load_config() -> Config:
             f"clamping to 50."
         )
         cfg.margin_per_trade_usd = 50.0
+    if cfg.min_stop_distance_pct < 0:
+        print(
+            f"[config] MIN_STOP_DISTANCE_PCT={cfg.min_stop_distance_pct} is negative; "
+            f"clamping to 0 (off)."
+        )
+        cfg.min_stop_distance_pct = 0.0
+    if cfg.htf_timing_agreement not in HTF_TIMING_AGREEMENT_MODES:
+        print(
+            f"[config] HTF_TIMING_AGREEMENT={cfg.htf_timing_agreement!r} is not one of "
+            f"{HTF_TIMING_AGREEMENT_MODES}; using 'off'."
+        )
+        cfg.htf_timing_agreement = "off"
     return cfg

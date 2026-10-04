@@ -23,12 +23,13 @@ position and the remainder's stop moves to breakeven; from there the
 remainder is a trailing-stop runner with no fixed take-profit cap, so a
 strong trend can pay out beyond the fixed 2R the trade would otherwise be
 capped at. This is simulated candle-by-candle for DRY_RUN trades (see
-reconcile_dry_run_exits) and, for LIVE trades, actually places the
-partial-close and replacement-stop orders on the exchange (see
-reconcile_live_exits and exchange_client.py) -- like the rest of this
-bot's BingX order wiring, the live path has not been verified against a
-real BingX account; validate it with a small real trade before trusting
-it (see the README).
+reconcile_dry_run_exits). For LIVE trades TP1 and TP2 rest on BingX as
+reduce-only take-profit orders next to one stop order per part of the
+position (see arm_live_exit_orders), each run journals the fills BingX
+reports -- real price, real fee, P/L net of fees -- and feeds them into
+today's realized P/L (see reconcile_live_exits / _book_live_exit). A
+take-profit that could not be placed falls back to a market close on the
+scheduled run.
 """
 import csv
 import json
@@ -40,7 +41,7 @@ import datetime
 TRADE_JOURNAL_FIELDS = [
     "event", "trade_id", "timestamp_utc", "mode", "symbol", "side",
     "position_side", "qty", "price", "stop_loss", "take_profit",
-    "equity", "trigger", "pnl", "duration_minutes",
+    "equity", "trigger", "pnl", "duration_minutes", "fee",
 ]
 
 # How many days to remember a DRY_RUN signal's (symbol, trigger) key for,
@@ -142,24 +143,28 @@ class RiskManager:
 
     def circuit_breaker_tripped(self, equity: float) -> bool:
         """True if account equity has dropped too much vs. the start of
-        the UTC day. Halts NEW entries; does not touch existing
-        positions/stops (those are managed by the exchange directly)."""
+        the UTC day, or today's realized P/L is down that much. Halts NEW
+        entries; does not touch existing positions/stops (those are
+        managed by the exchange directly)."""
         self._roll_day_if_needed(equity)
         start = self.state.get("day_start_equity") or equity
         if start <= 0:
             return False
         loss_pct = (start - equity) / start
-        if self.cfg.dry_run:
-            # Paper trades never move the real account balance, so the
-            # equity comparison above can't see them. Use today's
-            # simulated realized P/L as well, so DRY_RUN trips the breaker
-            # exactly when LIVE would.
-            today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
-            realized = (
-                self.state.get("realized_pnl_today", 0.0)
-                if self.state.get("realized_pnl_date") == today else 0.0
-            )
-            loss_pct = max(loss_pct, -realized / start)
+        # Today's realized P/L is checked as well, in both modes, and the
+        # worse of the two readings decides:
+        # - DRY_RUN: paper trades never move the real account balance, so
+        #   the equity comparison above can't see them at all.
+        # - LIVE: every exit -- partial take-profits included -- is booked
+        #   at its real fill price net of fees (_book_live_exit), so a day
+        #   of realized losses halts new entries even while unrealized
+        #   gains on open positions (or a deposit) hold the equity up.
+        today = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+        realized = (
+            self.state.get("realized_pnl_today", 0.0)
+            if self.state.get("realized_pnl_date") == today else 0.0
+        )
+        loss_pct = max(loss_pct, -realized / start)
         return loss_pct >= self.cfg.max_daily_loss_pct
 
     def check_equity_jump(self, equity: float, threshold_pct: float = 0.15) -> str | None:
@@ -183,10 +188,40 @@ class RiskManager:
             )
         return None
 
+    def _upgrade_journal_header(self, path: str):
+        """One-time upgrade of a journal written before a column was added
+        (currently: "fee"): rewrites the file with the current header and
+        pads every existing row with empty cells for the new column(s), so
+        the CSV stays rectangular. Rows are otherwise copied unchanged. The
+        new file is written next to the old one and swapped in only when
+        complete."""
+        with open(path, newline="") as f:
+            rows = list(csv.reader(f))
+        if not rows or rows[0] == TRADE_JOURNAL_FIELDS:
+            return
+        old_header = rows[0]
+        if old_header != TRADE_JOURNAL_FIELDS[:len(old_header)]:
+            # Not a header this bot wrote -- leave the file alone.
+            print(f"[risk] WARNING: {path} has an unexpected header; not upgrading it.")
+            return
+        width = len(TRADE_JOURNAL_FIELDS)
+        tmp = path + ".tmp"
+        with open(tmp, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(TRADE_JOURNAL_FIELDS)
+            for r in rows[1:]:
+                if r:
+                    writer.writerow(r + [""] * (width - len(r)))
+        os.replace(tmp, path)
+        print(f"[risk] upgraded {path} to the current journal columns ({', '.join(TRADE_JOURNAL_FIELDS[len(old_header):])} added).")
+
     def _write_journal_row(self, row: dict):
         path = self.cfg.trades_csv_path
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
         file_exists = os.path.exists(path)
+        if file_exists and not getattr(self, "_journal_header_checked", False):
+            self._upgrade_journal_header(path)
+        self._journal_header_checked = True
         full_row = {field: row.get(field, "") for field in TRADE_JOURNAL_FIELDS}
         with open(path, "a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=TRADE_JOURNAL_FIELDS)
@@ -406,11 +441,13 @@ class RiskManager:
         """Compares tracked open LIVE trades against the exchange's
         current open positions. Any tracked trade no longer open at all
         is treated as fully closed (its stop or the trailing stop was
-        hit, or it was closed manually): looks up the closing fill via
-        the exchange client, logs an EXIT row (with duration and realized
-        P/L when it can be determined), and updates today's realized P/L
-        running total. Returns the list of trades that were closed this
-        cycle.
+        hit, or it was closed manually) and settled -- see
+        _settle_closed_trade(): take-profit orders that filled since the
+        last run get their PARTIAL_EXIT rows, the closing fill gets an
+        EXIT row (with duration and realized P/L when it can be
+        determined), today's realized P/L running total is updated, and
+        whatever exit orders the trade still has on the exchange are
+        cancelled. Returns the list of trades that were closed this cycle.
 
         Must be called every cycle (bot.py does this right after fetching
         open_positions, before the circuit-breaker check) -- otherwise
@@ -419,12 +456,8 @@ class RiskManager:
 
         NOTE: matching a tracked trade to a live position by
         (symbol, position_side) assumes at most one open position per
-        side per symbol, which holds for this bot's default config
-        (MAX_CONCURRENT_POSITIONS=1) but is a simplification if that's
-        raised. Like the rest of this bot's BingX wiring, the exact field
-        names on a `fetch_positions()` result could not be verified
-        against live BingX data from this environment -- confirm once
-        you have a real trade go through.
+        side per symbol, which this bot guarantees (one position per
+        symbol).
         """
         still_open_keys = set()
         for p in open_positions:
@@ -444,56 +477,225 @@ class RiskManager:
         self._save_state()
 
         for trade in closed:
+            try:
+                self._settle_closed_trade(trade, exchange_client)
+            except Exception as e:
+                # Never let one trade's bookkeeping stop the others from
+                # being settled (they are already out of open_trades).
+                print(f"[risk] {trade['symbol']}: could not fully settle the closed trade {trade.get('trade_id')} ({e!r}) -- check its journal rows and leftover orders on BingX.")
+            self._save_state()
+
+        return closed
+
+    # ------------------------------------------------------------------
+    # LIVE exits: orders resting on the exchange, real fills, real fees
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _close_side(trade: dict) -> str:
+        return "sell" if trade["side"].upper() == "BUY" else "buy"
+
+    def _entry_fee_share(self, trade: dict, qty: float) -> tuple:
+        """(the part of the ENTRY fee that belongs to `qty`, estimated?).
+        Uses the fee BingX reported on the entry fill (trade["entry_fee"],
+        stored by bot._promote_fill) split pro rata over the original
+        size; falls back to the configured fee rate when that is unknown
+        (trades opened before fees were recorded)."""
+        initial = trade.get("initial_qty") or trade.get("qty") or 0.0
+        entry_fee = trade.get("entry_fee")
+        if entry_fee is not None and initial > 0:
+            return entry_fee * qty / initial, False
+        return qty * trade["entry_price"] * self.cfg.dry_run_fee_pct_per_side, True
+
+    def _book_live_exit(self, trade: dict, event: str, qty: float, price: float, exit_fee,
+                        price_is_real: bool, when, trigger: str, stop_after):
+        """Journals one LIVE exit (PARTIAL_EXIT or EXIT) and adds its P/L
+        to today's realized total.
+
+        pnl = (exit price - entry price) x qty in the trade's direction,
+              minus the exit fee, minus this part's share of the entry fee.
+
+        `price` and `exit_fee` are what BingX reported for the fill when
+        available. A missing fee is estimated from the configured rate; a
+        missing price means the caller passed its best estimate
+        (price_is_real=False). Either way the journal row says so."""
+        direction = 1 if trade["position_side"].upper() == "LONG" else -1
+        gross = (price - trade["entry_price"]) * direction * qty
+        exit_fee_estimated = exit_fee is None
+        if exit_fee_estimated:
+            exit_fee = qty * price * self.cfg.dry_run_fee_pct_per_side
+        entry_share, entry_estimated = self._entry_fee_share(trade, qty)
+        pnl = gross - exit_fee - entry_share
+        self._record_realized_pnl(pnl)
+
+        notes = []
+        if not price_is_real:
+            notes.append("fill price ESTIMATED (BingX order details unavailable)")
+        else:
+            notes.append("fill price from BingX")
+        notes.append("exit fee estimated" if exit_fee_estimated else "exit fee from BingX")
+        notes.append(
+            f"pnl is net of the exit fee and a {entry_share:.4f} USDT entry-fee share"
+            + (" (entry fee estimated)" if entry_estimated else "")
+        )
+        now = when or datetime.datetime.now(datetime.timezone.utc)
+        entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+        self._write_journal_row({
+            "event": event,
+            "trade_id": trade["trade_id"],
+            "timestamp_utc": now.isoformat(),
+            "mode": trade.get("mode", "LIVE"),
+            "symbol": trade["symbol"],
+            "side": trade["side"],
+            "position_side": trade["position_side"],
+            "qty": qty,
+            "price": round(price, 8),
+            "stop_loss": stop_after,
+            "take_profit": trade.get("take_profit", ""),
+            "trigger": f"{trigger} | " + "; ".join(notes),
+            "pnl": round(pnl, 4),
+            "duration_minutes": round((now - entry_time).total_seconds() / 60, 1),
+            "fee": round(exit_fee, 6),
+        })
+        return pnl
+
+    def _settle_closed_trade(self, trade: dict, exchange_client):
+        """A LIVE trade whose position is gone from the exchange: journal
+        everything that happened since the last run, then clean up."""
+        symbol = trade["symbol"]
+        side = self._close_side(trade)
+        leftovers = []
+        try:
+            self._journal_closed_trade(trade, exchange_client, leftovers)
+        finally:
+            # Whatever happened above: nothing of this trade may stay on
+            # the exchange.
+            exchange_client.cancel_orders(symbol, leftovers)
+            if not self.pending_orders(symbol):
+                # Also clears stops left behind by older versions of the
+                # bot. Skipped while the symbol has a resting entry order,
+                # so that order's own attached stop can never be touched.
+                cancelled = exchange_client.cancel_exit_orders_for_side(symbol, trade["position_side"], side)
+                if cancelled:
+                    print(f"[risk] {symbol}: cancelled {cancelled} leftover stop/take-profit order(s) after the trade closed.")
+
+    def _journal_closed_trade(self, trade: dict, exchange_client, leftovers: list):
+        """Journal rows for a closed LIVE trade. Order ids that may still be
+        open on the exchange are appended to `leftovers` for the caller to
+        cancel."""
+        symbol = trade["symbol"]
+        eo = trade.get("exit_orders") or {}
+
+        # 1. take-profits that filled since the last run
+        for stage in (1, 2):
+            order_id = eo.get(f"tp{stage}_id")
+            taken_key = "partial_taken" if stage == 1 else "tp2_taken"
+            if not order_id or trade.get(taken_key):
+                continue
+            try:
+                info = exchange_client.order_fill(order_id, symbol)
+            except Exception as e:
+                print(f"[risk] {symbol}: could not read resting TP{stage} order {order_id} while closing the trade ({e}) -- its fill, if any, is NOT in the journal; check BingX.")
+                leftovers.append(order_id)
+                continue
+            if info["status"] != "filled":
+                if info["status"] == "open":
+                    leftovers.append(order_id)
+                continue
+            tp_price = trade["partial_tp_price"] if stage == 1 else trade["tp2_price"]
+            qty = min(info["filled"], trade["qty"])
+            text = self._tp1_trigger_text(trade) if stage == 1 else self._tp2_trigger_text(trade)
+            self._book_live_exit(
+                trade, "PARTIAL_EXIT", qty, info["price"] or tp_price, info["fee"],
+                info["price"] is not None, info["timestamp"],
+                text + " (resting order on BingX)", trade["stop_loss"],
+            )
+            trade["qty"] = max(round(trade["qty"] - qty, 8), 0.0)
+            trade[taken_key] = True
+
+        # 2. the stop(s) that closed what was left
+        filled_qty, notional, fee_total, fee_known, price_known, last_ts = 0.0, 0.0, 0.0, True, True, None
+        for order_id in eo.get("stop_ids") or []:
+            try:
+                info = exchange_client.order_fill(order_id, symbol)
+            except Exception:
+                leftovers.append(order_id)
+                continue
+            if info["status"] == "open":
+                leftovers.append(order_id)
+                continue
+            if info["status"] != "filled":
+                continue
+            px = info["price"]
+            if px is None:
+                px, price_known = trade["stop_loss"], False
+            filled_qty += info["filled"]
+            notional += info["filled"] * px
+            if info["fee"] is None:
+                fee_known = False
+            else:
+                fee_total += info["fee"]
+            if info["timestamp"] and (last_ts is None or info["timestamp"] > last_ts):
+                last_ts = info["timestamp"]
+
+        qty = trade["qty"]
+        entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+        if qty <= 0:
+            # The take-profits closed the whole position: nothing is left
+            # for an EXIT row.
+            pass
+        elif filled_qty > 0 and abs(filled_qty - qty) <= 0.02 * qty:
+            # The trade's own stop orders account for the close.
+            self._book_live_exit(
+                trade, "EXIT", filled_qty, notional / filled_qty,
+                fee_total if fee_known else None, price_known, last_ts,
+                trade.get("trigger", ""), trade.get("stop_loss", ""),
+            )
+        else:
+            # Stop order ids unknown (trade opened before they were tracked,
+            # or closed by hand) -- look the closing fill up in the trade
+            # history instead, as before.
             exit_info = exchange_client.fetch_trade_exit(
-                symbol=trade["symbol"],
+                symbol=symbol,
                 position_side=trade["position_side"],
                 since_iso=trade["entry_time_utc"],
             )
-            entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
-
-            if exit_info and exit_info.get("timestamp"):
-                exit_time = exit_info["timestamp"]
-                exit_price = exit_info.get("price")
-                pnl = exit_info.get("realized_pnl")
-                if pnl is None and exit_price is not None:
-                    direction = 1 if trade["position_side"].upper() == "LONG" else -1
-                    pnl = (exit_price - trade["entry_price"]) * direction * trade["qty"]
+            if exit_info and exit_info.get("timestamp") and exit_info.get("price") is not None:
+                # The lookup returns the LAST closing fill. Its fee only
+                # covers the whole remainder if that one fill closed it.
+                amount = exit_info.get("amount")
+                whole = amount is not None and abs(amount - qty) <= 0.02 * qty
+                self._book_live_exit(
+                    trade, "EXIT", qty, exit_info["price"],
+                    exit_info.get("fee") if whole else None,
+                    True, exit_info["timestamp"], trade.get("trigger", ""),
+                    trade.get("stop_loss", ""),
+                )
             else:
                 # Couldn't confirm the exact fill from BingX (e.g. an API
                 # gap) -- still record that the position closed, using
                 # "now" as an approximate exit time. Check BingX directly
                 # for the exact fill/P&L on this trade.
-                exit_time = datetime.datetime.now(datetime.timezone.utc)
-                exit_price = None
-                pnl = None
-
-            duration_minutes = round((exit_time - entry_time).total_seconds() / 60, 1)
-
-            if pnl is not None:
-                self._record_realized_pnl(pnl)
-                self._save_state()
-
-            self._write_journal_row({
-                "event": "EXIT",
-                "trade_id": trade["trade_id"],
-                "timestamp_utc": exit_time.isoformat(),
-                "mode": trade.get("mode", "LIVE"),
-                "symbol": trade["symbol"],
-                "side": trade["side"],
-                "position_side": trade["position_side"],
-                "qty": trade["qty"],
-                "price": exit_price if exit_price is not None else "",
-                "stop_loss": trade.get("stop_loss", ""),
-                "take_profit": trade.get("take_profit", ""),
-                "trigger": trade.get("trigger", ""),
-                "pnl": round(pnl, 4) if pnl is not None else "",
-                "duration_minutes": duration_minutes,
-            })
-
-        return closed
+                exit_time = (exit_info or {}).get("timestamp") or datetime.datetime.now(datetime.timezone.utc)
+                self._write_journal_row({
+                    "event": "EXIT",
+                    "trade_id": trade["trade_id"],
+                    "timestamp_utc": exit_time.isoformat(),
+                    "mode": trade.get("mode", "LIVE"),
+                    "symbol": symbol,
+                    "side": trade["side"],
+                    "position_side": trade["position_side"],
+                    "qty": qty,
+                    "price": "",
+                    "stop_loss": trade.get("stop_loss", ""),
+                    "take_profit": trade.get("take_profit", ""),
+                    "trigger": trade.get("trigger", "") + " | closing fill not found on BingX -- pnl unknown",
+                    "pnl": "",
+                    "duration_minutes": round((exit_time - entry_time).total_seconds() / 60, 1),
+                })
 
     def _journal_partial(self, trade: dict, mode: str, qty: float, price: float,
-                         stop_after: float, trigger: str, pnl=""):
+                         stop_after: float, trigger: str, pnl="", fee=""):
         now = datetime.datetime.now(datetime.timezone.utc)
         entry_time = datetime.datetime.fromisoformat(trade["entry_time_utc"])
         self._write_journal_row({
@@ -511,6 +713,7 @@ class RiskManager:
             "trigger": trigger,
             "pnl": pnl if pnl == "" else round(pnl, 4),
             "duration_minutes": round((now - entry_time).total_seconds() / 60, 1),
+            "fee": fee if fee == "" else round(fee, 6),
         })
 
     def _tp1_trigger_text(self, trade: dict) -> str:
@@ -539,22 +742,359 @@ class RiskManager:
         order down on its own (0.00285 BTC -> 0.0028) while the bot's
         bookkeeping keeps the unrounded number, the next stop is sized for
         less than what is really left, and a dust-sized position survives
-        every exit -- keeping the symbol's slot occupied."""
+        every exit -- keeping the symbol's slot occupied.
+
+        A size below the exchange's smallest step comes back as 0: that
+        part can't be traded on its own and simply stays with the rest."""
         try:
             return float(exchange_client.amount_to_precision(symbol, qty))
-        except Exception:
+        except Exception as e:
+            if type(e).__name__ == "InvalidOrder" or "minimum amount precision" in str(e):
+                return 0.0
             return qty
 
-    def reconcile_live_exits(self, symbol: str, high: float, low: float, exchange_client) -> list:
-        """LIVE: advance each open trade on symbol through TP1 and TP2
-        using the latest candle's high/low.
+    def _tranche_plan(self, trade: dict, exchange_client) -> list:
+        """The parts the still-open position is made of, in exit order:
+        [("tp1", qty), ("tp2", qty), ("runner", qty)], leaving out parts
+        already closed or too small to exist. The quantities always add up
+        to exactly trade["qty"].
 
-        TP1 hit  -> close PARTIAL_TP_FRACTION of the original size at market,
-                    move the exchange stop for the rest to breakeven.
-        TP2 hit  -> close TP2_FRACTION of the original size at market,
-                    re-place the breakeven stop for the smaller remainder,
-                    and arm the trailing stop (trail_live_stops()).
-        A candle that runs through both levels advances both stages.
+        Every part gets its OWN stop order (see arm_live_exit_orders), and
+        the take-profit parts also get a resting take-profit order."""
+        f1, f2 = self._tp_fractions()
+        symbol = trade["symbol"]
+        initial = trade.get("initial_qty", trade["qty"])
+        left = trade["qty"]
+        plan = []
+        if not trade.get("partial_taken"):
+            q1 = self._exchange_qty(exchange_client, symbol, round(min(initial * f1, left), 8))
+            # TP1 never closes the whole position (same rule as before).
+            if q1 > 0 and round(left - q1, 8) > 0:
+                plan.append(("tp1", q1))
+                left = round(left - q1, 8)
+        if not trade.get("tp2_taken", False) and f2 > 0:
+            q2 = self._exchange_qty(exchange_client, symbol, round(min(initial * f2, left), 8))
+            if q2 > 0:
+                plan.append(("tp2", q2))
+                left = round(left - q2, 8)
+        if left > 0:
+            plan.append(("runner", left))
+        return plan
+
+    @staticmethod
+    def _match_orders(existing: list, kind: str, price: float, amounts: list):
+        """Finds, among open exit orders, one order per entry in `amounts`
+        of the given kind at `price`. Returns their ids, or None unless
+        every amount has a match. Lets arming adopt orders it already
+        placed (e.g. when a previous run placed them but its state update
+        was lost) instead of placing them twice."""
+        pool = [o for o in existing if o["kind"] == kind and o.get("price") and o.get("amount")]
+        ids = []
+        for amount in amounts:
+            hit = None
+            for o in pool:
+                if abs(o["price"] - price) <= 5e-4 * price and abs(o["amount"] - amount) <= 1e-3 * amount:
+                    hit = o
+                    break
+            if hit is None:
+                return None
+            pool.remove(hit)
+            ids.append(hit["id"])
+        return ids
+
+    def arm_live_exit_orders(self, symbol: str, exchange_client):
+        """LIVE: puts a newly filled trade's exits on the exchange.
+
+        Called every cycle; acts once per trade, on the first run that
+        sees it (trade has no "exit_orders" yet -- this includes trades
+        that were already open when this feature was deployed):
+
+        1. One stop order per part of the position (TP1 part, TP2 part,
+           runner), all at the trade's stop price, replacing the single
+           full-size stop BingX attached to the entry. Reason: a resting
+           take-profit can fill between two runs, and until the next run
+           the stops must still add up to what is left. With one stop per
+           part they always do -- whichever parts already closed, the
+           stops for the remaining parts are each no bigger than the
+           position.
+        2. TP1 and TP2 as resting reduce-only TAKE_PROFIT_MARKET orders.
+
+        Fallbacks (the behaviour before this feature):
+        - the stops can't be placed -> nothing changes for this trade:
+          the original full-size stop stays, no take-profit is placed, and
+          TP1/TP2 are closed at market by the scheduled run as before.
+        - one take-profit can't be placed (e.g. price is already past it)
+          -> only that take-profit falls back to the market close on the
+          run; the other one still rests.
+        """
+        if not self.cfg.resting_tp_orders:
+            return
+        for trade in self.state.get("open_trades", []):
+            if trade["symbol"] != symbol or "exit_orders" in trade:
+                continue
+            if self._trailing_armed(trade):
+                # Already a trailing runner: nothing to place, the trailing
+                # logic owns its stop from the next move on.
+                trade["exit_orders"] = {"mode": "legacy", "stop_ids": []}
+                self._save_state()
+                continue
+
+            side = self._close_side(trade)
+            ps = trade["position_side"]
+            plan = self._tranche_plan(trade, exchange_client)
+            amounts = [q for _, q in plan]
+            stop_price = trade["stop_loss"]
+            try:
+                existing = exchange_client.open_exit_orders(symbol, ps, side)
+            except Exception as e:
+                print(f"[risk] {symbol}: could not read open orders to arm the exit orders ({e}) -- will try again next cycle.")
+                continue
+
+            stop_ids = self._match_orders(existing, "stop", stop_price, amounts)
+            if stop_ids is None:
+                try:
+                    stop_ids = exchange_client.place_stop_orders(symbol, side, amounts, stop_price, ps)
+                except Exception as e:
+                    trade["exit_orders"] = {
+                        "mode": "legacy", "stop_ids": [],
+                        "note": f"per-part stops could not be placed: {e}",
+                    }
+                    self._save_state()
+                    print(
+                        f"[risk] {symbol}: could not place the per-part stop orders ({e}) -- keeping the "
+                        f"original stop; TP1/TP2 fall back to market closes on the scheduled run."
+                    )
+                    continue
+            eo = {"mode": "resting", "stop_ids": stop_ids}
+            trade["exit_orders"] = eo
+            self._save_state()
+
+            # The single full-size stop that came with the entry is now
+            # superseded by the per-part stops.
+            stale = [
+                o["id"] for o in existing
+                if o["kind"] == "stop" and o["id"] not in stop_ids
+                and o.get("price") and o.get("amount")
+                and abs(o["price"] - stop_price) <= 5e-4 * stop_price
+                and abs(o["amount"] - trade["qty"]) <= 1e-3 * trade["qty"]
+            ]
+            exchange_client.cancel_orders(symbol, stale)
+
+            placed = []
+            for name, qty in plan:
+                if name == "runner":
+                    continue
+                price = trade["partial_tp_price"] if name == "tp1" else trade["tp2_price"]
+                found = self._match_orders(existing, "tp", price, [qty])
+                if found:
+                    order_id = found[0]
+                else:
+                    try:
+                        order_id = exchange_client.place_take_profit_order(symbol, side, qty, price, ps)
+                    except Exception as e:
+                        order_id = None
+                        print(
+                            f"[risk] {symbol}: could not place the resting {name.upper()} order at {price:.6g} "
+                            f"({e}) -- this take-profit falls back to a market close on the scheduled run."
+                        )
+                eo[f"{name}_id"] = order_id
+                eo[f"{name}_qty"] = qty
+                self._save_state()
+                if order_id:
+                    placed.append(f"{name.upper()} {qty:g} @ {price:.6g}")
+            print(
+                f"[risk] {symbol}: exit orders on BingX -- {len(stop_ids)} stop(s) at {stop_price:.6g} "
+                f"for {' + '.join(f'{q:g}' for q in amounts)}; resting take-profits: {', '.join(placed) or 'none'}."
+            )
+
+    def _move_stops(self, trade: dict, exchange_client, price: float, amounts: list) -> bool:
+        """Moves the trade's stop(s) to `price`, one stop per entry in
+        `amounts`: places the new ones first, then cancels the old ones,
+        so the position is never without a stop. Returns False (and leaves
+        the old stops exactly as they were) if the new ones can't be
+        placed."""
+        symbol = trade["symbol"]
+        side = self._close_side(trade)
+        ps = trade["position_side"]
+        eo = trade.get("exit_orders")
+        if eo is None:
+            eo = trade["exit_orders"] = {"mode": "legacy", "stop_ids": []}
+        old_ids = list(eo.get("stop_ids") or [])
+        try:
+            new_ids = exchange_client.place_stop_orders(symbol, side, amounts, price, ps)
+        except Exception as e:
+            print(f"[risk] {symbol}: could not place the stop at {price:.6g} ({e}) -- the previous stop stays in place.")
+            return False
+        if old_ids:
+            exchange_client.cancel_orders(symbol, old_ids)
+        elif not self.pending_orders(symbol):
+            # Stops this trade has no ids for (attached by BingX to the
+            # entry, or placed by an older version of the bot).
+            try:
+                stale = [
+                    o["id"] for o in exchange_client.open_exit_orders(symbol, ps, side)
+                    if o["kind"] == "stop" and o["id"] not in new_ids
+                ]
+                exchange_client.cancel_orders(symbol, stale)
+            except Exception as e:
+                print(f"[risk] {symbol}: could not look up superseded stop orders ({e}).")
+        eo["stop_ids"] = new_ids
+        trade["stop_loss"] = price
+        self._save_state()
+        return True
+
+    def _tp_fill(self, trade: dict, stage: int, high, low, last_price, exchange_client, position_qty):
+        """Has TP1 (stage=1) / TP2 (stage=2) of this LIVE trade been taken?
+        Returns the fill {"qty", "price", "fee", "real", "when", "resting"}
+        or None if not (yet).
+
+        Resting order on the exchange: its own status decides, read from
+        BingX. If the order can't be read this cycle, the trade waits --
+        unless the exchange position has shrunk by (at least) that
+        take-profit's size, in which case the fill is taken as given with
+        an estimated price. A resting order that is gone without filling
+        (cancelled by hand, rejected when it triggered) switches this
+        take-profit to the fallback below.
+
+        Fallback (no resting order): the behaviour before resting
+        take-profits -- when the latest candle has reached the level,
+        close that part at market now."""
+        symbol = trade["symbol"]
+        eo = trade.get("exit_orders") or {}
+        key = f"tp{stage}_id"
+        tp_price = trade["partial_tp_price"] if stage == 1 else trade["tp2_price"]
+
+        order_id = eo.get(key)
+        if order_id:
+            try:
+                info = exchange_client.order_fill(order_id, symbol)
+            except Exception as e:
+                planned = eo.get(f"tp{stage}_qty") or 0.0
+                if position_qty is not None and planned > 0 and position_qty <= (trade["qty"] - planned) * 1.02:
+                    print(f"[risk] {symbol}: resting TP{stage} order unreadable ({e}), but the position shrank to {position_qty:g} -- treating it as filled.")
+                    return {"qty": min(planned, trade["qty"]), "price": tp_price, "fee": None,
+                            "real": False, "when": None, "resting": True}
+                print(f"[risk] {symbol}: could not read the resting TP{stage} order ({e}) -- will check again next cycle.")
+                return None
+            if info["status"] == "open":
+                return None
+            if info["status"] == "filled":
+                return {"qty": min(info["filled"], trade["qty"]), "price": info["price"] or tp_price,
+                        "fee": info["fee"], "real": info["price"] is not None,
+                        "when": info["timestamp"], "resting": True}
+            eo[key] = None
+            print(f"[risk] {symbol}: the resting TP{stage} order is no longer on BingX (cancelled or rejected) -- falling back to a market close on the scheduled run for this take-profit.")
+
+        if high is None or low is None:
+            return None
+        is_long = trade["position_side"].upper() == "LONG"
+        if not ((high >= tp_price) if is_long else (low <= tp_price)):
+            return None
+        f1, f2 = self._tp_fractions()
+        initial_qty = trade.get("initial_qty", trade["qty"])
+        tp_qty = round(min(initial_qty * (f1 if stage == 1 else f2), trade["qty"]), 8)
+        tp_qty = self._exchange_qty(exchange_client, symbol, tp_qty)
+        remaining_qty = round(trade["qty"] - tp_qty, 8)
+        if stage == 1 and (tp_qty <= 0 or remaining_qty <= 0):
+            return None
+        if stage == 2 and remaining_qty <= 0:
+            # TP1 + TP2 fractions add up to the whole position:
+            # TP2 closes everything that's left.
+            tp_qty = trade["qty"]
+        if tp_qty <= 0:
+            # Too small to close as its own order: nothing to sell, the
+            # stage is simply done and the remainder moves on.
+            return {"qty": 0.0, "price": tp_price, "fee": None, "real": False, "when": None, "resting": False}
+        try:
+            order = exchange_client.close_partial_position(
+                symbol=symbol, side=self._close_side(trade), amount=tp_qty,
+                position_side=trade["position_side"],
+            )
+        except Exception as e:
+            print(f"[risk] {symbol}: TP{stage} market close failed, will retry next cycle: {e}")
+            return None
+        fill = {"qty": tp_qty, "price": last_price if last_price else tp_price, "fee": None,
+                "real": False, "when": None, "resting": False}
+        order_id = (order or {}).get("id")
+        if order_id:
+            try:
+                info = exchange_client.order_fill(str(order_id), symbol)
+                if info["status"] == "filled" and info["price"] is not None:
+                    fill.update(price=info["price"], fee=info["fee"], real=True, when=info["timestamp"])
+            except Exception as e:
+                print(f"[risk] {symbol}: TP{stage} closed at market but its fill could not be read ({e}) -- journalled with an estimated price.")
+        return fill
+
+    def _apply_tp_fill(self, trade: dict, stage: int, fill: dict, exchange_client):
+        """Books a TP1/TP2 fill and brings the stops in line with what is
+        left: after TP1 the remaining parts' stops move to breakeven;
+        after TP2 only the runner's stop remains and trailing is armed."""
+        symbol = trade["symbol"]
+        f1, f2 = self._tp_fractions()
+        eo = trade.get("exit_orders")
+        how = "resting order on BingX" if fill["resting"] else "market close on the scheduled run"
+        if stage == 1:
+            text, stop_after = self._tp1_trigger_text(trade), trade["entry_price"]
+        else:
+            text, stop_after = self._tp2_trigger_text(trade), trade["stop_loss"]
+        if fill["qty"] > 0:
+            self._book_live_exit(
+                trade, "PARTIAL_EXIT", fill["qty"], fill["price"], fill["fee"],
+                fill["real"], fill["when"], f"{text} ({how})", stop_after,
+            )
+        trade["qty"] = max(round(trade["qty"] - fill["qty"], 8), 0.0)
+        if eo is not None:
+            eo[f"tp{stage}_id"] = None
+        if stage == 1:
+            trade["partial_taken"] = True
+            if f2 <= 0:
+                trade["tp2_taken"] = True
+                trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+            target = trade["entry_price"]
+        else:
+            trade["tp2_taken"] = True
+            trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+            target = trade["entry_price"] if trade.get("breakeven_pending") else trade["stop_loss"]
+        self._save_state()
+
+        if trade["qty"] <= 0:
+            if eo is not None:
+                exchange_client.cancel_orders(symbol, eo.get("stop_ids") or [])
+                eo["stop_ids"] = []
+            return
+        amounts = [q for _, q in self._tranche_plan(trade, exchange_client)]
+        if self._move_stops(trade, exchange_client, target, amounts):
+            trade.pop("breakeven_pending", None)
+        elif trade["stop_loss"] != target:
+            # Typically: price is already back through the entry, so BingX
+            # refuses a stop there. The previous stops stay (still one per
+            # remaining part), and the move is retried every cycle.
+            trade["breakeven_pending"] = True
+            print(f"[risk] {symbol}: stop NOT yet at breakeven after TP{stage}; previous stop at {trade['stop_loss']:.6g} still protects the position, retrying next cycle.")
+
+    def reconcile_live_exits(self, symbol: str, high, low, exchange_client,
+                             last_price=None, position_qty=None) -> list:
+        """LIVE: advance each open trade on symbol through TP1 and TP2.
+
+        With resting take-profit orders (the default, see
+        arm_live_exit_orders) BingX executes TP1/TP2 itself the moment
+        price gets there; this method notices the fill on the next run,
+        journals it with the real fill price and fee, and moves the stops:
+
+        TP1 filled -> the remaining parts' stops move to breakeven.
+        TP2 filled -> only the runner's stop is left, and the trailing
+                      stop is armed (trail_live_stops()).
+
+        Without a resting order for a take-profit (it couldn't be placed,
+        or RESTING_TP_ORDERS=false) that take-profit works as before: when
+        the latest candle's high/low reaches the level, that part is
+        closed at market on this run.
+        A run that finds both levels done advances both stages.
+
+        high/low/last_price may be None (no candles this cycle): resting
+        orders are still checked, only the fallback is skipped.
+        position_qty is the size of the exchange position for this symbol,
+        used only as a cross-check when an order can't be read.
         """
         open_trades = self.state.get("open_trades", [])
         touched = [t for t in open_trades if t["symbol"] == symbol and not self._trailing_armed(t)]
@@ -564,119 +1104,63 @@ class RiskManager:
         f1, f2 = self._tp_fractions()
         acted = []
         for trade in touched:
-            is_long = trade["position_side"].upper() == "LONG"
-            close_side = "sell" if trade["side"].upper() == "BUY" else "buy"
-            initial_qty = trade.get("initial_qty", trade["qty"])
             progressed = False
+
+            if trade.get("breakeven_pending") and trade.get("partial_taken"):
+                amounts = [q for _, q in self._tranche_plan(trade, exchange_client)]
+                if self._move_stops(trade, exchange_client, trade["entry_price"], amounts):
+                    trade.pop("breakeven_pending", None)
 
             # --- TP1 ---
             if not trade.get("partial_taken"):
-                tp1 = trade["partial_tp_price"]
-                if not ((high >= tp1) if is_long else (low <= tp1)):
+                fill = self._tp_fill(trade, 1, high, low, last_price, exchange_client, position_qty)
+                if fill is None:
                     continue
-                tp1_qty = round(min(initial_qty * f1, trade["qty"]), 8)
-                tp1_qty = self._exchange_qty(exchange_client, symbol, tp1_qty)
-                remaining_qty = round(trade["qty"] - tp1_qty, 8)
-                if tp1_qty <= 0 or remaining_qty <= 0:
-                    continue
-                try:
-                    exchange_client.close_partial_position(
-                        symbol=symbol, side=close_side, amount=tp1_qty,
-                        position_side=trade["position_side"],
-                    )
-                    exchange_client.replace_stop_order(
-                        symbol=symbol, side=close_side, amount=remaining_qty,
-                        new_stop_price=trade["entry_price"], position_side=trade["position_side"],
-                    )
-                except Exception as e:
-                    print(f"[risk] {symbol}: TP1 order failed, leaving trade untouched: {e}")
-                    continue
-                self._journal_partial(trade, "LIVE", tp1_qty, tp1, trade["entry_price"],
-                                      self._tp1_trigger_text(trade))
-                trade["qty"] = remaining_qty
-                trade["stop_loss"] = trade["entry_price"]
-                trade["partial_taken"] = True
+                self._apply_tp_fill(trade, 1, fill, exchange_client)
                 progressed = True
-                if f2 <= 0:
-                    trade["tp2_taken"] = True
-                    trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+                if f2 <= 0 or trade["qty"] <= 0:
                     acted.append(trade)
                     continue
 
             # --- TP2 ---
-            tp2 = trade["tp2_price"]
-            if (high >= tp2) if is_long else (low <= tp2):
-                tp2_qty = round(min(initial_qty * f2, trade["qty"]), 8)
-                tp2_qty = self._exchange_qty(exchange_client, symbol, tp2_qty)
-                remaining_qty = round(trade["qty"] - tp2_qty, 8)
-                try:
-                    if remaining_qty <= 0:
-                        # TP1 + TP2 fractions add up to the whole position:
-                        # TP2 closes everything that's left.
-                        exchange_client.close_partial_position(
-                            symbol=symbol, side=close_side, amount=trade["qty"],
-                            position_side=trade["position_side"],
-                        )
-                    else:
-                        exchange_client.close_partial_position(
-                            symbol=symbol, side=close_side, amount=tp2_qty,
-                            position_side=trade["position_side"],
-                        )
-                        exchange_client.replace_stop_order(
-                            symbol=symbol, side=close_side, amount=remaining_qty,
-                            new_stop_price=trade["stop_loss"], position_side=trade["position_side"],
-                        )
-                except Exception as e:
-                    print(f"[risk] {symbol}: TP2 order failed, will retry next cycle: {e}")
-                    if progressed:
-                        acted.append(trade)
-                    continue
-                self._journal_partial(trade, "LIVE", min(tp2_qty, trade["qty"]), tp2,
-                                      trade["stop_loss"], self._tp2_trigger_text(trade))
-                trade["qty"] = max(remaining_qty, 0.0)
-                trade["tp2_taken"] = True
-                trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
+            fill = self._tp_fill(trade, 2, high, low, last_price, exchange_client, position_qty)
+            if fill is not None:
+                self._apply_tp_fill(trade, 2, fill, exchange_client)
                 progressed = True
 
             if progressed:
                 acted.append(trade)
 
-        if acted:
-            self._save_state()
+        self._save_state()
         return acted
 
-    def trail_live_stops(self, symbol: str, high: float, low: float, exchange_client):
+    def trail_live_stops(self, symbol: str, high, low, exchange_client):
         """LIVE: ratchet the stop on runners (trades past TP2) to
         TRAIL_R_MULTIPLE x risk behind the best price seen so far."""
+        if high is None or low is None:
+            return
         open_trades = self.state.get("open_trades", [])
         trailing = [
             t for t in open_trades
             if t["symbol"] == symbol and self._trailing_armed(t) and t.get("qty", 0) > 0
         ]
-        moved = False
         for trade in trailing:
             is_long = trade["position_side"].upper() == "LONG"
             if is_long:
                 candidate = high - trade["trail_distance"]
                 new_stop = max(trade["stop_loss"], candidate)
+                if trade.get("breakeven_pending"):
+                    new_stop = max(new_stop, trade["entry_price"])
             else:
                 candidate = low + trade["trail_distance"]
                 new_stop = min(trade["stop_loss"], candidate)
+                if trade.get("breakeven_pending"):
+                    new_stop = min(new_stop, trade["entry_price"])
             if new_stop == trade["stop_loss"]:
                 continue
-            close_side = "sell" if trade["side"].upper() == "BUY" else "buy"
-            try:
-                exchange_client.replace_stop_order(
-                    symbol=symbol, side=close_side, amount=trade["qty"],
-                    new_stop_price=new_stop, position_side=trade["position_side"],
-                )
-            except Exception as e:
-                print(f"[risk] {symbol}: could not move trailing stop, leaving it where it was: {e}")
-                continue
-            trade["stop_loss"] = new_stop
-            moved = True
-        if moved:
-            self._save_state()
+            if self._move_stops(trade, exchange_client, new_stop, [trade["qty"]]):
+                trade.pop("breakeven_pending", None)
+                self._save_state()
 
     def track_dry_run_trade(self, trade: dict):
         """Remembers a just-logged DRY_RUN paper trade so a later cycle can
@@ -691,9 +1175,8 @@ class RiskManager:
     def _estimate_round_trip_fee(self, qty: float, entry_price: float, exit_price: float) -> float:
         """Rough taker-fee estimate for one round trip (entry + this
         exit), applied to DRY_RUN P/L only -- see config.py's
-        dry_run_fee_pct_per_side for why. LIVE P/L is unaffected: it
-        comes from BingX's own realized-PnL field, which already reflects
-        whatever BingX actually charged."""
+        dry_run_fee_pct_per_side for why. LIVE P/L uses the fees BingX
+        reports on the actual fills instead (see _book_live_exit)."""
         return (qty * entry_price + qty * exit_price) * self.cfg.dry_run_fee_pct_per_side
 
     def _close_dry_run_trade(self, trade: dict, exit_price: float, qty: float, reason: str):
@@ -721,6 +1204,7 @@ class RiskManager:
             "trigger": reason,
             "pnl": round(pnl, 4),
             "duration_minutes": duration_minutes,
+            "fee": round(fee, 6),
         })
 
     def _take_dry_run_partial(self, trade: dict, symbol: str, stage: int = 1) -> bool:
@@ -754,7 +1238,7 @@ class RiskManager:
 
         if stage == 1:
             self._journal_partial(trade, "DRY_RUN", part_qty, exit_price, trade["entry_price"],
-                                  self._tp1_trigger_text(trade), pnl)
+                                  self._tp1_trigger_text(trade), pnl, fee)
             trade["qty"] = remaining_qty
             trade["stop_loss"] = trade["entry_price"]
             trade["partial_taken"] = True
@@ -763,7 +1247,7 @@ class RiskManager:
                 trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
         else:
             self._journal_partial(trade, "DRY_RUN", part_qty, exit_price, trade["stop_loss"],
-                                  self._tp2_trigger_text(trade), pnl)
+                                  self._tp2_trigger_text(trade), pnl, fee)
             trade["qty"] = remaining_qty
             trade["tp2_taken"] = True
             trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple

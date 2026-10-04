@@ -483,3 +483,77 @@ def next_swing_beyond(df: pd.DataFrame, direction: str, beyond_price: float, n: 
         levels = levels[levels < beyond_price]
         return float(levels.max()) if not levels.empty else None
     return None
+
+
+# ---------------------------------------------------------------------------
+# entry filters (all off by default -- see config.py)
+# ---------------------------------------------------------------------------
+
+def stop_distance_pct(setup: dict) -> float:
+    """Distance from a setup's entry to its stop-loss, in % of the entry."""
+    entry = setup["entry"]
+    if entry <= 0:
+        return 0.0
+    return abs(entry - setup["stop_loss"]) / entry * 100.0
+
+
+def timing_agreement_ok(position_side: str, timing_trends, mode: str) -> bool:
+    """Does the timing levels' trend (4h/1h by default) allow a trade in
+    this direction?
+
+      off         -- always
+      not_against -- no timing level trends against the trade (neutral ok)
+      aligned     -- every timing level trends with the trade
+
+    timing_trends=None means the trends aren't available (trend filter
+    disabled): nothing to disagree with, so the trade is allowed.
+    """
+    if mode == "off" or timing_trends is None:
+        return True
+    want = "bullish" if position_side.upper() == "LONG" else "bearish"
+    against = "bearish" if want == "bullish" else "bullish"
+    if mode == "not_against":
+        return against not in timing_trends
+    if mode == "aligned":
+        return len(timing_trends) > 0 and all(t == want for t in timing_trends)
+    return True
+
+
+def apply_entry_filters(
+    setups: list[dict],
+    min_stop_distance_pct: float = 0.0,
+    timing_trends=None,
+    timing_mode: str = "off",
+) -> tuple[list[dict], list[tuple]]:
+    """Applies the optional entry filters to the setups limit_setups()
+    picked. Returns (kept, dropped) where dropped is a list of
+    (setup, reason). With the defaults nothing is dropped.
+
+    The filters only REMOVE setups: a setup that is filtered out is not
+    replaced by an older order block, so "the last two unmitigated order
+    blocks" still means exactly that. bot.py and backtest.py both call
+    this, so the backtest filters exactly like the live bot.
+    """
+    kept, dropped = [], []
+    for setup in setups:
+        distance = stop_distance_pct(setup)
+        if min_stop_distance_pct > 0 and distance < min_stop_distance_pct:
+            dropped.append((setup, f"stop {distance:.3f}% from entry, below MIN_STOP_DISTANCE_PCT={min_stop_distance_pct:g}%"))
+            continue
+        if not timing_agreement_ok(setup["position_side"], timing_trends, timing_mode):
+            dropped.append((setup, f"timing levels {list(timing_trends)} fail HTF_TIMING_AGREEMENT={timing_mode}"))
+            continue
+        kept.append(setup)
+    return kept, dropped
+
+
+def entry_symbol_allowed(symbol: str, entry_symbols: list) -> bool:
+    """True if `symbol` may take new entries. entry_symbols is the
+    ENTRY_SYMBOLS list: empty = every symbol; entries may be full symbols
+    ("BTC/USDT:USDT") or just the coin ("BTC"), case-insensitive."""
+    if not entry_symbols:
+        return True
+    full = symbol.upper()
+    base = full.split("/")[0]
+    wanted = {str(s).strip().upper() for s in entry_symbols}
+    return full in wanted or base in wanted
