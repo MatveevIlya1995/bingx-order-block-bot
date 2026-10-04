@@ -231,3 +231,38 @@ def test_whole_period_accounting_identity(world):
         assert open_fees >= 0
     filtered = bt.simulate(cfg, costs, 230.0, signals, exec_data, SYMS, min_stop_pct=0.3)
     assert all(t["setup_stop_pct"] >= 0.3 for t in filtered.trades)
+
+
+def test_period_shrinks_to_the_history_bingx_actually_has(world):
+    cfg, data, signals, start, end = world
+    step = bt.TF_MS["15m"]
+    warm = max(cfg.candle_limit * step, bt.TF_MS["1w"]) + step
+
+    # everything available: 5m is used, the period is untouched
+    syms, begin, exec_tf, notes = bt.usable_period(cfg, data, SYMS, start, "auto")
+    assert (syms, begin, exec_tf, notes) == (SYMS, start, "5m", [])
+
+    # 5m history starts late: auto falls back to the entry timeframe for the whole period
+    cut = {s: dict(data[s]) for s in SYMS}
+    for s in SYMS:
+        cut[s]["5m"] = data[s]["5m"][data[s]["5m"][:, 0] >= start + 5 * DAY]
+    syms, begin, exec_tf, notes = bt.usable_period(cfg, cut, SYMS, start, "auto")
+    assert begin == start and exec_tf == "15m" and len(notes) == 1
+    # ...and an explicit 5m shortens the period instead
+    syms, begin, exec_tf, notes = bt.usable_period(cfg, cut, SYMS, start, "5m")
+    assert exec_tf == "5m" and begin >= start + 5 * DAY
+
+    # entry history starts late: the test starts after the warm-up
+    for s in SYMS:
+        cut[s]["15m"] = data[s]["15m"][data[s]["15m"][:, 0] >= start - DAY]
+    syms, begin, exec_tf, notes = bt.usable_period(cfg, cut, SYMS, start, "auto")
+    assert begin == start - DAY + warm and begin % step == 0 and syms == SYMS
+    sig = bt.compute_signals((cfg, SYMS[0], cut[SYMS[0]], begin, end))
+    assert sig["steps"][0] == begin and len(sig["signals"]) > 5
+
+    # one symbol with a much shorter history is left out rather than shrinking everyone
+    three = SYMS + ["CCC/USDT:USDT"]
+    more = dict(data)
+    more["CCC/USDT:USDT"] = {tf: a[a[:, 0] >= end - 2 * DAY] for tf, a in data[SYMS[0]].items()}
+    syms, begin, exec_tf, notes = bt.usable_period(cfg, more, three, start, "auto")
+    assert syms == SYMS and begin == start and any("CCC left out" in n for n in notes)
