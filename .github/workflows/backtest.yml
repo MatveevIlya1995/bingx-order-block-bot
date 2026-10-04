@@ -20,6 +20,9 @@ on:
       start_equity:
         description: "Starting equity, USDT"
         default: "230"
+      exec_timeframe:
+        description: "Candles to walk price between runs: auto, 5m or 15m"
+        default: "auto"
 
 permissions:
   contents: read
@@ -64,8 +67,9 @@ jobs:
           BT_END: ${{ inputs.end }}
           BT_SLIPPAGE: ${{ inputs.slippage_pct }}
           BT_EQUITY: ${{ inputs.start_equity }}
+          BT_EXEC: ${{ inputs.exec_timeframe }}
         run: |
-          ARGS="--days ${BT_DAYS:-180} --slippage-pct ${BT_SLIPPAGE:-0.02} --start-equity ${BT_EQUITY:-230} --out backtest_results"
+          ARGS="--days ${BT_DAYS:-180} --slippage-pct ${BT_SLIPPAGE:-0.02} --start-equity ${BT_EQUITY:-230} --exec-timeframe ${BT_EXEC:-auto} --out backtest_results"
           if [ -n "$BT_END" ]; then ARGS="$ARGS --end $BT_END"; fi
           python3 backtest.py $ARGS
 
