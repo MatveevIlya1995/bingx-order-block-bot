@@ -31,9 +31,9 @@
       "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.03,
+      "qty": 0.02,
       "entry_price": 2694.45,
-      "stop_loss": 2694.45,
+      "stop_loss": 2697.0789500000005,
       "take_profit": 2706.632099999999,
       "trigger": "bullish order block limit: zone 2691.0500-2694.4500 (formed 2026-10-04 07:15 UTC, BOS confirmed 2026-10-04 07:45 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bullish(4 OB) 4h=bullish(1 OB) 1h=bullish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 2701.21 (next swing high (1.11R)), runner trails after TP2 | filled limit @ 2694.45",
       "tp2_price": 2701.21,
@@ -42,7 +42,8 @@
       "risk_per_unit": 6.091049999999541,
       "partial_tp_price": 2700.5410499999994,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 6.091049999999541
     }
   ],
   "open_dry_run_trades": [],
@@ -179,7 +180,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 230.9804,
+  "last_seen_equity": 231.1281,
   "traded_zones": {
     "BTC/USDT:USDT|bullish|84665.5-84830.0": "2026-09-27T13:54:46.156655+00:00",
     "ETH/USDT:USDT|bullish|2704.34-2708.16": "2026-09-27T13:54:46.158134+00:00",
