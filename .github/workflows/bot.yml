@@ -50,6 +50,10 @@ jobs:
           TP2_FRACTION: ${{ vars.TP2_FRACTION }}
           TP2_FALLBACK_R_MULTIPLE: ${{ vars.TP2_FALLBACK_R_MULTIPLE }}
           DRY_RUN_FEE_PCT_PER_SIDE: ${{ vars.DRY_RUN_FEE_PCT_PER_SIDE }}
+          RESTING_TP_ORDERS: ${{ vars.RESTING_TP_ORDERS }}
+          MIN_STOP_DISTANCE_PCT: ${{ vars.MIN_STOP_DISTANCE_PCT }}
+          ENTRY_SYMBOLS: ${{ vars.ENTRY_SYMBOLS }}
+          HTF_TIMING_AGREEMENT: ${{ vars.HTF_TIMING_AGREEMENT }}
           DRY_RUN: ${{ vars.DRY_RUN }}
         run: python3 bot.py
 
