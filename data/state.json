@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 228.8218,
+  "last_seen_equity": 227.8936,
   "traded_zones": {
     "SOL/USDT:USDT|bullish|120.311-121.537": "2026-09-27T23:24:29.046755+00:00",
     "BNB/USDT:USDT|bullish|774.81-775.57": "2026-09-27T23:24:29.048053+00:00",
@@ -218,30 +218,6 @@
   "realized_pnl_date": "2026-10-05",
   "pending_orders": [
     {
-      "order_id": "2106750222285889536",
-      "trade_id": "a07a5beb01c0",
-      "mode": "LIVE",
-      "symbol": "BNB/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 0.636821,
-      "leverage": 10,
-      "entry_price": 785.15,
-      "stop_loss": 782.78643,
-      "take_profit": 789.8771399999999,
-      "tp2_price": 788.08,
-      "tp2_source": "next swing high (1.24R)",
-      "equity": 230.79,
-      "zone_key": "BNB/USDT:USDT|bullish|783.57-785.15",
-      "ob": {
-        "type": "bullish",
-        "top": 785.15,
-        "bottom": 783.57
-      },
-      "placed_time_utc": "2026-10-04T14:16:08.394041+00:00",
-      "trigger": "bullish order block limit: zone 783.5700-785.1500 (formed 2026-10-04 04:00 UTC, BOS confirmed 2026-10-04 05:00 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(3 OB) 4h=bullish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 788.08 (next swing high (1.24R)), runner trails after TP2"
-    },
-    {
       "order_id": "2106840786050179072",
       "trade_id": "ff61cdef82d8",
       "mode": "LIVE",
@@ -264,6 +240,30 @@
       },
       "placed_time_utc": "2026-10-04T20:16:01.084973+00:00",
       "trigger": "bullish order block limit: zone 788.2000-789.0400 (formed 2026-10-04 17:45 UTC, BOS confirmed 2026-10-04 19:45 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(3 OB) 4h=bullish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 791.46 (next swing high (1.49R)), runner trails after TP2"
+    },
+    {
+      "order_id": "2106916334491361280",
+      "trade_id": "d2e23cfa3dcd",
+      "mode": "LIVE",
+      "symbol": "BNB/USDT:USDT",
+      "side": "buy",
+      "position_side": "LONG",
+      "qty": 0.628686,
+      "leverage": 10,
+      "entry_price": 795.31,
+      "stop_loss": 792.61659,
+      "take_profit": 800.6968199999999,
+      "tp2_price": null,
+      "tp2_source": null,
+      "equity": 227.89,
+      "zone_key": "BNB/USDT:USDT|bullish|793.41-795.31",
+      "ob": {
+        "type": "bullish",
+        "top": 795.31,
+        "bottom": 793.41
+      },
+      "placed_time_utc": "2026-10-05T01:16:13.244452+00:00",
+      "trigger": "bullish order block limit: zone 793.4100-795.3100 (formed 2026-10-05 00:15 UTC, CHoCH confirmed 2026-10-05 01:00 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(3 OB) 4h=bullish(3 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 fallback (no swing beyond TP1), runner trails after TP2"
     }
   ]
 }
