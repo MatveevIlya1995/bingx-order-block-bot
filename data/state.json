@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 224.9904,
+  "last_seen_equity": 225.0206,
   "traded_zones": {
     "AVAX/USDT:USDT|bearish|10.596-10.689": "2026-09-29T01:21:42.875721+00:00",
     "APT/USDT:USDT|bearish|0.8189-0.826": "2026-09-29T01:21:42.877315+00:00",
@@ -315,28 +315,28 @@
       "trigger": "bullish order block limit: zone 777.3400-779.0400 (formed 2026-10-03 16:00 UTC, BOS confirmed 2026-10-03 16:30 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(3 OB) 4h=bullish(3 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 783.24 (next swing high (1.70R)), runner trails after TP2"
     },
     {
-      "order_id": "2106999362525814784",
-      "trade_id": "347349830bdb",
+      "order_id": "2107010754767183872",
+      "trade_id": "c72c4ead1ee7",
       "mode": "LIVE",
       "symbol": "LINK/USDT:USDT",
       "side": "buy",
       "position_side": "LONG",
-      "qty": 17.529209,
+      "qty": 15.988984,
       "leverage": 10,
-      "entry_price": 13.606,
-      "stop_loss": 13.533453,
-      "take_profit": 13.751094,
-      "tp2_price": 13.883,
-      "tp2_source": "next swing high (3.82R)",
-      "equity": 227.41,
-      "zone_key": "LINK/USDT:USDT|bullish|13.547-13.606",
+      "entry_price": 14.168,
+      "stop_loss": 14.095889999999999,
+      "take_profit": 14.31222,
+      "tp2_price": 14.255,
+      "tp2_source": "next swing high (1.21R)",
+      "equity": 225.02,
+      "zone_key": "LINK/USDT:USDT|bullish|14.11-14.168",
       "ob": {
         "type": "bullish",
-        "top": 13.606,
-        "bottom": 13.547
+        "top": 14.168,
+        "bottom": 14.11
       },
-      "placed_time_utc": "2026-10-05T06:46:08.721392+00:00",
-      "trigger": "bullish order block limit: zone 13.5470-13.6060 (formed 2026-10-02 20:45 UTC, CHoCH confirmed 2026-10-02 21:45 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bullish(3 OB) 4h=bullish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 13.883 (next swing high (3.82R)), runner trails after TP2"
+      "placed_time_utc": "2026-10-05T07:31:24.765948+00:00",
+      "trigger": "bullish order block limit: zone 14.1100-14.1680 (formed 2026-10-05 06:30 UTC, BOS confirmed 2026-10-05 07:15 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bullish(3 OB) 4h=bullish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 14.255 (next swing high (1.21R)), runner trails after TP2"
     }
   ]
 }
