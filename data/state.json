@@ -172,7 +172,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 225.4256,
+  "last_seen_equity": 225.3348,
   "traded_zones": {
     "BTC/USDT:USDT|bullish|83853.8-83900.0": "2026-09-29T07:04:36.277594+00:00",
     "SOL/USDT:USDT|bullish|119.054-120.204": "2026-09-29T07:04:36.279183+00:00",
@@ -329,30 +329,6 @@
       },
       "placed_time_utc": "2026-10-06T03:31:16.744464+00:00",
       "trigger": "bullish order block limit: zone 5.1040-5.1830 (formed 2026-10-05 23:30 UTC, BOS confirmed 2026-10-06 00:15 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 5.301 (next swing high (1.40R)), runner trails after TP2"
-    },
-    {
-      "order_id": "2107312714955317248",
-      "trade_id": "bc399c898496",
-      "mode": "LIVE",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 2.852026,
-      "leverage": 7,
-      "entry_price": 5.012,
-      "stop_loss": 4.95504,
-      "take_profit": 5.125919999999998,
-      "tp2_price": 5.077,
-      "tp2_source": "next swing high (1.14R)",
-      "equity": 225.39,
-      "zone_key": "NEAR/USDT:USDT|bullish|4.96-5.012",
-      "ob": {
-        "type": "bullish",
-        "top": 5.012,
-        "bottom": 4.96
-      },
-      "placed_time_utc": "2026-10-06T03:31:17.032077+00:00",
-      "trigger": "bullish order block limit: zone 4.9600-5.0120 (formed 2026-10-05 17:00 UTC, CHoCH confirmed 2026-10-05 17:45 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 5.077 (next swing high (1.14R)), runner trails after TP2"
     }
   ]
 }
