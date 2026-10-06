@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-05",
-  "day_start_equity": 229.5056,
-  "realized_pnl_today": -7.3787166649999225,
+  "date": "2026-10-06",
+  "day_start_equity": 225.4826,
+  "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [],
@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 225.5058,
+  "last_seen_equity": 225.4826,
   "traded_zones": {
     "AVAX/USDT:USDT|bearish|10.596-10.689": "2026-09-29T01:21:42.875721+00:00",
     "APT/USDT:USDT|bearish|0.8189-0.826": "2026-09-29T01:21:42.877315+00:00",
@@ -222,6 +222,79 @@
     "SOL/USDT:USDT|bullish|119.525-119.651": "2026-10-05T14:45:48.564444+00:00",
     "LTC/USDT:USDT|bullish|69.97-70.25": "2026-10-05T15:45:56.353101+00:00"
   },
-  "realized_pnl_date": "2026-10-05",
-  "pending_orders": []
+  "realized_pnl_date": "2026-10-06",
+  "pending_orders": [
+    {
+      "order_id": "2107259913684344832",
+      "trade_id": "1373504976c8",
+      "mode": "LIVE",
+      "symbol": "ETH/USDT:USDT",
+      "side": "buy",
+      "position_side": "LONG",
+      "qty": 0.185472,
+      "leverage": 10,
+      "entry_price": 2695.82,
+      "stop_loss": 2675.6716499999998,
+      "take_profit": 2736.116700000001,
+      "tp2_price": 2718.06,
+      "tp2_source": "next swing high (1.10R)",
+      "equity": 225.48,
+      "zone_key": "ETH/USDT:USDT|bullish|2678.35-2695.82",
+      "ob": {
+        "type": "bullish",
+        "top": 2695.82,
+        "bottom": 2678.35
+      },
+      "placed_time_utc": "2026-10-06T00:01:28.902321+00:00",
+      "trigger": "bullish order block limit: zone 2678.3500-2695.8200 (formed 2026-10-05 16:15 UTC, CHoCH confirmed 2026-10-05 18:00 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bullish(4 OB) 4h=bullish(1 OB) 1h=bullish(0 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 2718.06 (next swing high (1.10R)), runner trails after TP2"
+    },
+    {
+      "order_id": "2107259918952390656",
+      "trade_id": "04af328ad8a5",
+      "mode": "LIVE",
+      "symbol": "SOL/USDT:USDT",
+      "side": "buy",
+      "position_side": "LONG",
+      "qty": 4.161499,
+      "leverage": 10,
+      "entry_price": 120.149,
+      "stop_loss": 119.822058,
+      "take_profit": 120.802884,
+      "tp2_price": 120.7,
+      "tp2_source": "next swing high (1.69R)",
+      "equity": 225.48,
+      "zone_key": "SOL/USDT:USDT|bullish|119.942-120.149",
+      "ob": {
+        "type": "bullish",
+        "top": 120.149,
+        "bottom": 119.942
+      },
+      "placed_time_utc": "2026-10-06T00:01:30.166445+00:00",
+      "trigger": "bullish order block limit: zone 119.9420-120.1490 (formed 2026-10-05 19:30 UTC, CHoCH confirmed 2026-10-05 20:30 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(1 OB) 4h=bullish(3 OB) 1h=bullish(0 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 120.7 (next swing high (1.69R)), runner trails after TP2"
+    },
+    {
+      "order_id": "2107259922022621184",
+      "trade_id": "0a317c2ca7ec",
+      "mode": "LIVE",
+      "symbol": "BNB/USDT:USDT",
+      "side": "buy",
+      "position_side": "LONG",
+      "qty": 0.163552,
+      "leverage": 10,
+      "entry_price": 779.04,
+      "stop_loss": 776.56266,
+      "take_profit": 783.9946799999998,
+      "tp2_price": 784.3,
+      "tp2_source": "next swing high (2.12R)",
+      "equity": 225.48,
+      "zone_key": "BNB/USDT:USDT|bullish|777.34-779.04",
+      "ob": {
+        "type": "bullish",
+        "top": 779.04,
+        "bottom": 777.34
+      },
+      "placed_time_utc": "2026-10-06T00:01:30.908216+00:00",
+      "trigger": "bullish order block limit: zone 777.3400-779.0400 (formed 2026-10-03 16:00 UTC, BOS confirmed 2026-10-03 16:30 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(3 OB) 4h=bullish(2 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 784.3 (next swing high (2.12R)), runner trails after TP2"
+    }
+  ]
 }
