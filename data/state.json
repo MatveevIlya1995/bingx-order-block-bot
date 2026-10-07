@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-06",
-  "day_start_equity": 225.4826,
-  "realized_pnl_today": 0.22125699999998172,
+  "date": "2026-10-07",
+  "day_start_equity": 227.0487,
+  "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -160,7 +160,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 226.8058,
+  "last_seen_equity": 227.0487,
   "traded_zones": {
     "DOGE/USDT:USDT|bearish|0.09366-0.09455": "2026-09-30T01:16:17.737170+00:00",
     "BNB/USDT:USDT|bullish|762.38-763.39": "2026-09-30T05:01:23.711444+00:00",
@@ -238,7 +238,7 @@
     "LTC/USDT:USDT|bullish|69.73-69.83": "2026-10-06T13:15:52.795692+00:00",
     "NEAR/USDT:USDT|bullish|5.047-5.078": "2026-10-06T23:01:38.318618+00:00"
   },
-  "realized_pnl_date": "2026-10-06",
+  "realized_pnl_date": "2026-10-07",
   "pending_orders": [
     {
       "order_id": "paper-c795a3c947bf",
