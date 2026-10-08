@@ -1,7 +1,7 @@
 {
   "date": "2026-10-08",
   "day_start_equity": 235.3799,
-  "realized_pnl_today": 0.7580441997019511,
+  "realized_pnl_today": -0.906794919401742,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -49,23 +49,23 @@
       "tp2_taken": false
     },
     {
-      "trade_id": "460d75cd77af",
-      "entry_time_utc": "2026-10-08T01:30:55.426860+00:00",
+      "trade_id": "2fdc7ffd8e77",
+      "entry_time_utc": "2026-10-08T02:01:02.441436+00:00",
       "mode": "DRY_RUN",
-      "symbol": "SOL/USDT:USDT",
+      "symbol": "LTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 3.437847,
-      "entry_price": 116.352,
-      "stop_loss": 115.98389999999999,
-      "take_profit": 117.08820000000003,
-      "trigger": "bullish order block limit: zone 116.1000-116.3520 (formed 2026-10-08 00:30 UTC, BOS confirmed 2026-10-08 01:00 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bearish(3 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 116.995 (next swing high (1.75R)), runner trails after TP2 | filled limit @ 116.352",
-      "tp2_price": 116.995,
-      "tp2_source": "next swing high (1.75R)",
+      "qty": 3.788484,
+      "entry_price": 65.99,
+      "stop_loss": 65.82411,
+      "take_profit": 66.32177999999998,
+      "trigger": "bullish order block limit: zone 65.8900-65.9900 (formed 2026-10-08 00:30 UTC, CHoCH confirmed 2026-10-08 01:00 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bearish(3 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 66.22 (next swing high (1.39R)), runner trails after TP2 | filled limit @ 65.99",
+      "tp2_price": 66.22,
+      "tp2_source": "next swing high (1.39R)",
       "entry_fee": null,
-      "initial_qty": 3.437847,
-      "risk_per_unit": 0.36810000000001253,
-      "partial_tp_price": 116.72010000000002,
+      "initial_qty": 3.788484,
+      "risk_per_unit": 0.16588999999999032,
+      "partial_tp_price": 66.15588999999999,
       "partial_taken": false,
       "tp2_taken": false
     }
@@ -257,7 +257,8 @@
     "BTC/USDT:USDT|bullish|83095.3-83209.2": "2026-10-08T00:15:50.460306+00:00",
     "ETH/USDT:USDT|bullish|2565.78-2569.76": "2026-10-08T00:15:50.833775+00:00",
     "BNB/USDT:USDT|bullish|772.87-773.6": "2026-10-08T01:30:54.970220+00:00",
-    "SOL/USDT:USDT|bullish|116.1-116.352": "2026-10-08T01:30:55.427080+00:00"
+    "SOL/USDT:USDT|bullish|116.1-116.352": "2026-10-08T01:30:55.427080+00:00",
+    "LTC/USDT:USDT|bullish|65.89-65.99": "2026-10-08T02:01:02.450367+00:00"
   },
   "realized_pnl_date": "2026-10-08",
   "pending_orders": [
@@ -310,28 +311,52 @@
       "trigger": "bullish order block limit: zone 0.3334-0.3337 (formed 2026-10-07 12:15 UTC, BOS confirmed 2026-10-07 14:00 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(0 OB) 1h=bullish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.33468 (next swing high (1.58R)), runner trails after TP2"
     },
     {
-      "order_id": "paper-2fdc7ffd8e77",
-      "trade_id": "2fdc7ffd8e77",
+      "order_id": "paper-8339fa0b20ac",
+      "trade_id": "8339fa0b20ac",
       "mode": "DRY_RUN",
-      "symbol": "LTC/USDT:USDT",
+      "symbol": "NEAR/USDT:USDT",
       "side": "buy",
       "position_side": "LONG",
-      "qty": 3.788484,
-      "leverage": 10,
-      "entry_price": 65.99,
-      "stop_loss": 65.82411,
-      "take_profit": 66.32177999999998,
-      "tp2_price": 66.22,
-      "tp2_source": "next swing high (1.39R)",
+      "qty": 48.459004,
+      "leverage": 5,
+      "entry_price": 5.159,
+      "stop_loss": 5.076918,
+      "take_profit": 5.323163999999999,
+      "tp2_price": 5.244,
+      "tp2_source": "next swing high (1.04R)",
       "equity": 235.38,
-      "zone_key": "LTC/USDT:USDT|bullish|65.89-65.99",
+      "zone_key": "NEAR/USDT:USDT|bullish|5.082-5.159",
       "ob": {
         "type": "bullish",
-        "top": 65.99,
-        "bottom": 65.89
+        "top": 5.159,
+        "bottom": 5.082
       },
-      "placed_time_utc": "2026-10-08T01:46:05.693096+00:00",
-      "trigger": "bullish order block limit: zone 65.8900-65.9900 (formed 2026-10-08 00:30 UTC, CHoCH confirmed 2026-10-08 01:00 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bearish(3 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 66.22 (next swing high (1.39R)), runner trails after TP2"
+      "placed_time_utc": "2026-10-08T02:01:16.620155+00:00",
+      "trigger": "bullish order block limit: zone 5.0820-5.1590 (formed 2026-10-07 17:30 UTC, BOS confirmed 2026-10-07 18:15 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(1 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 5.244 (next swing high (1.04R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-ba1429280eab",
+      "trade_id": "ba1429280eab",
+      "mode": "DRY_RUN",
+      "symbol": "NEAR/USDT:USDT",
+      "side": "buy",
+      "position_side": "LONG",
+      "qty": 49.485352,
+      "leverage": 5,
+      "entry_price": 5.052,
+      "stop_loss": 4.967028,
+      "take_profit": 5.221943999999999,
+      "tp2_price": 5.154,
+      "tp2_source": "next swing high (1.20R)",
+      "equity": 235.38,
+      "zone_key": "NEAR/USDT:USDT|bullish|4.972-5.052",
+      "ob": {
+        "type": "bullish",
+        "top": 5.052,
+        "bottom": 4.972
+      },
+      "placed_time_utc": "2026-10-08T02:01:16.623091+00:00",
+      "trigger": "bullish order block limit: zone 4.9720-5.0520 (formed 2026-10-07 14:15 UTC, CHoCH confirmed 2026-10-07 16:45 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(1 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 5.154 (next swing high (1.20R)), runner trails after TP2"
     }
   ]
 }
