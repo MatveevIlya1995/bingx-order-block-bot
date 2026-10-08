@@ -197,30 +197,6 @@
   "realized_pnl_date": "2026-10-08",
   "pending_orders": [
     {
-      "order_id": "paper-91560c689c13",
-      "trade_id": "91560c689c13",
-      "mode": "DRY_RUN",
-      "symbol": "XRP/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 279.448382,
-      "leverage": 10,
-      "entry_price": 1.4314,
-      "stop_loss": 1.4417402999999998,
-      "take_profit": 1.4107194000000005,
-      "tp2_price": 1.4185,
-      "tp2_source": "next swing low (1.25R)",
-      "equity": 235.38,
-      "zone_key": "XRP/USDT:USDT|bearish|1.4314-1.4403",
-      "ob": {
-        "type": "bearish",
-        "top": 1.4403,
-        "bottom": 1.4314
-      },
-      "placed_time_utc": "2026-10-08T02:16:04.728640+00:00",
-      "trigger": "bearish order block limit: zone 1.4314-1.4403 (formed 2026-10-07 16:00 UTC, BOS confirmed 2026-10-07 17:15 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bullish(2 OB) 4h=bearish(2 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 12.40% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 1.4185 (next swing low (1.25R)), runner trails after TP2"
-    },
-    {
       "order_id": "paper-e364660a304e",
       "trade_id": "e364660a304e",
       "mode": "DRY_RUN",
@@ -387,6 +363,78 @@
       },
       "placed_time_utc": "2026-10-08T04:46:09.277184+00:00",
       "trigger": "bearish order block limit: zone 0.2676-0.2684 (formed 2026-10-06 23:00 UTC, BOS confirmed 2026-10-07 00:15 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bullish(4 OB) 4h=bearish(3 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 24.28% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 0.2665 (next swing low (1.03R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-238822e8d468",
+      "trade_id": "238822e8d468",
+      "mode": "DRY_RUN",
+      "symbol": "XRP/USDT:USDT",
+      "side": "sell",
+      "position_side": "SHORT",
+      "qty": 157.953324,
+      "leverage": 10,
+      "entry_price": 1.4125,
+      "stop_loss": 1.4189174999999998,
+      "take_profit": 1.3996650000000006,
+      "tp2_price": 1.4058,
+      "tp2_source": "next swing low (1.04R)",
+      "equity": 235.38,
+      "zone_key": "XRP/USDT:USDT|bearish|1.4125-1.4175",
+      "ob": {
+        "type": "bearish",
+        "top": 1.4175,
+        "bottom": 1.4125
+      },
+      "placed_time_utc": "2026-10-08T10:31:08.646294+00:00",
+      "trigger": "bearish order block limit: zone 1.4125-1.4175 (formed 2026-10-08 09:30 UTC, BOS confirmed 2026-10-08 10:15 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bullish(2 OB) 4h=bearish(2 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 11.41% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 1.4058 (next swing low (1.04R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-571ebaa4dbd9",
+      "trade_id": "571ebaa4dbd9",
+      "mode": "DRY_RUN",
+      "symbol": "TRX/USDT:USDT",
+      "side": "buy",
+      "position_side": "LONG",
+      "qty": 529.003092,
+      "leverage": 10,
+      "entry_price": 0.33439,
+      "stop_loss": 0.33383583,
+      "take_profit": 0.33549834000000006,
+      "tp2_price": 0.33503,
+      "tp2_source": "next swing high (1.15R)",
+      "equity": 235.38,
+      "zone_key": "TRX/USDT:USDT|bullish|0.33417-0.33439",
+      "ob": {
+        "type": "bullish",
+        "top": 0.33439,
+        "bottom": 0.33417
+      },
+      "placed_time_utc": "2026-10-08T10:31:08.649503+00:00",
+      "trigger": "bullish order block limit: zone 0.3342-0.3344 (formed 2026-10-07 14:30 UTC, BOS confirmed 2026-10-07 15:30 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(0 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.33503 (next swing high (1.15R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-5bfb30686f39",
+      "trade_id": "5bfb30686f39",
+      "mode": "DRY_RUN",
+      "symbol": "TRX/USDT:USDT",
+      "side": "buy",
+      "position_side": "LONG",
+      "qty": 530.08104,
+      "leverage": 10,
+      "entry_price": 0.33371,
+      "stop_loss": 0.33309657,
+      "take_profit": 0.33493686000000006,
+      "tp2_price": 0.33468,
+      "tp2_source": "next swing high (1.58R)",
+      "equity": 235.38,
+      "zone_key": "TRX/USDT:USDT|bullish|0.33343-0.33371",
+      "ob": {
+        "type": "bullish",
+        "top": 0.33371,
+        "bottom": 0.33343
+      },
+      "placed_time_utc": "2026-10-08T10:31:08.652599+00:00",
+      "trigger": "bullish order block limit: zone 0.3334-0.3337 (formed 2026-10-07 12:15 UTC, BOS confirmed 2026-10-07 14:00 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(0 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.33468 (next swing high (1.58R)), runner trails after TP2"
     }
   ]
 }
