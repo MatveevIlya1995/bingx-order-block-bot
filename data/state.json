@@ -1,7 +1,7 @@
 {
   "date": "2026-10-08",
   "day_start_equity": 235.3799,
-  "realized_pnl_today": -0.906794919401742,
+  "realized_pnl_today": -1.7849543535163255,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -45,27 +45,6 @@
       "initial_qty": 0.228664,
       "risk_per_unit": 1.50287000000003,
       "partial_tp_price": 775.10287,
-      "partial_taken": false,
-      "tp2_taken": false
-    },
-    {
-      "trade_id": "2fdc7ffd8e77",
-      "entry_time_utc": "2026-10-08T02:01:02.441436+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "LTC/USDT:USDT",
-      "side": "BUY",
-      "position_side": "LONG",
-      "qty": 3.788484,
-      "entry_price": 65.99,
-      "stop_loss": 65.82411,
-      "take_profit": 66.32177999999998,
-      "trigger": "bullish order block limit: zone 65.8900-65.9900 (formed 2026-10-08 00:30 UTC, CHoCH confirmed 2026-10-08 01:00 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bearish(3 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 66.22 (next swing high (1.39R)), runner trails after TP2 | filled limit @ 65.99",
-      "tp2_price": 66.22,
-      "tp2_source": "next swing high (1.39R)",
-      "entry_fee": null,
-      "initial_qty": 3.788484,
-      "risk_per_unit": 0.16588999999999032,
-      "partial_tp_price": 66.15588999999999,
       "partial_taken": false,
       "tp2_taken": false
     }
@@ -357,6 +336,54 @@
       },
       "placed_time_utc": "2026-10-08T02:01:16.623091+00:00",
       "trigger": "bullish order block limit: zone 4.9720-5.0520 (formed 2026-10-07 14:15 UTC, CHoCH confirmed 2026-10-07 16:45 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(1 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 5.154 (next swing high (1.20R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-91560c689c13",
+      "trade_id": "91560c689c13",
+      "mode": "DRY_RUN",
+      "symbol": "XRP/USDT:USDT",
+      "side": "sell",
+      "position_side": "SHORT",
+      "qty": 279.448382,
+      "leverage": 10,
+      "entry_price": 1.4314,
+      "stop_loss": 1.4417402999999998,
+      "take_profit": 1.4107194000000005,
+      "tp2_price": 1.4185,
+      "tp2_source": "next swing low (1.25R)",
+      "equity": 235.38,
+      "zone_key": "XRP/USDT:USDT|bearish|1.4314-1.4403",
+      "ob": {
+        "type": "bearish",
+        "top": 1.4403,
+        "bottom": 1.4314
+      },
+      "placed_time_utc": "2026-10-08T02:16:04.728640+00:00",
+      "trigger": "bearish order block limit: zone 1.4314-1.4403 (formed 2026-10-07 16:00 UTC, BOS confirmed 2026-10-07 17:15 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bullish(2 OB) 4h=bearish(2 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 12.40% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 1.4185 (next swing low (1.25R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-1d9a21976283",
+      "trade_id": "1d9a21976283",
+      "mode": "DRY_RUN",
+      "symbol": "XRP/USDT:USDT",
+      "side": "sell",
+      "position_side": "SHORT",
+      "qty": 276.952443,
+      "leverage": 10,
+      "entry_price": 1.4443,
+      "stop_loss": 1.4521507,
+      "take_profit": 1.4285985999999997,
+      "tp2_price": 1.4322,
+      "tp2_source": "next swing low (1.54R)",
+      "equity": 235.38,
+      "zone_key": "XRP/USDT:USDT|bearish|1.4443-1.4507",
+      "ob": {
+        "type": "bearish",
+        "top": 1.4507,
+        "bottom": 1.4443
+      },
+      "placed_time_utc": "2026-10-08T02:16:04.731625+00:00",
+      "trigger": "bearish order block limit: zone 1.4443-1.4507 (formed 2026-10-07 12:00 UTC, BOS confirmed 2026-10-07 13:00 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bullish(2 OB) 4h=bearish(2 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 12.40% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 1.4322 (next swing low (1.54R)), runner trails after TP2"
     }
   ]
 }
