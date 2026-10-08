@@ -262,30 +262,6 @@
       "trigger": "bearish order block limit: zone 0.0890-0.0892 (formed 2026-10-08 02:30 UTC, CHoCH confirmed 2026-10-08 03:00 UTC) | HTF: 1w*=bearish(0 OB) 1d*=bullish(3 OB) 4h=bearish(4 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 11.51% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 0.08871 (next swing low (1.03R)), runner trails after TP2"
     },
     {
-      "order_id": "paper-4b512a70de3c",
-      "trade_id": "4b512a70de3c",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 2667.830861,
-      "leverage": 10,
-      "entry_price": 0.09371,
-      "stop_loss": 0.09394385,
-      "take_profit": 0.09324230000000001,
-      "tp2_price": 0.09338,
-      "tp2_source": "next swing low (1.41R)",
-      "equity": 235.38,
-      "zone_key": "DOGE/USDT:USDT|bearish|0.09371-0.09385",
-      "ob": {
-        "type": "bearish",
-        "top": 0.09385,
-        "bottom": 0.09371
-      },
-      "placed_time_utc": "2026-10-08T04:16:07.062996+00:00",
-      "trigger": "bearish order block limit: zone 0.0937-0.0939 (formed 2026-10-07 00:45 UTC, BOS confirmed 2026-10-07 01:15 UTC) | HTF: 1w*=bearish(0 OB) 1d*=bullish(3 OB) 4h=bearish(4 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 11.51% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 0.09338 (next swing low (1.41R)), runner trails after TP2"
-    },
-    {
       "order_id": "paper-ea45a8046b7c",
       "trade_id": "ea45a8046b7c",
       "mode": "DRY_RUN",
