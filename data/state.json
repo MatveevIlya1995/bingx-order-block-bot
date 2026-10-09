@@ -1,7 +1,7 @@
 {
   "date": "2026-10-09",
   "day_start_equity": 234.8381,
-  "realized_pnl_today": 0.6010537154488085,
+  "realized_pnl_today": 1.315446185056314,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -33,7 +33,7 @@
       "symbol": "LTC/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 1.3746115,
+      "qty": 0.5498446,
       "entry_price": 63.36,
       "stop_loss": 63.36,
       "take_profit": 64.14605999999999,
@@ -45,7 +45,8 @@
       "risk_per_unit": 0.393029999999996,
       "partial_tp_price": 63.753029999999995,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 0.393029999999996
     },
     {
       "trade_id": "102a558e526e",
@@ -202,7 +203,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 236.3671,
+  "last_seen_equity": 236.4821,
   "traded_zones": {
     "ETH/USDT:USDT|bullish|2713.05-2720.15": "2026-10-02T06:01:03.234056+00:00",
     "BTC/USDT:USDT|bullish|86248.6-86401.1": "2026-10-02T12:45:48.911469+00:00",
