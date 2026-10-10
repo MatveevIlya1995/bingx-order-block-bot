@@ -1373,6 +1373,25 @@ Baseline trades by what their order block looked like when the order was placed 
                    "candidate": {"settings": candidate_kw, "passed": passed, **candidate_stats}},
                   f, indent=2, default=str)
     print(report)
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # The headline results as run annotations too: unlike the summary page
+        # and the artifact, annotations can be read through the GitHub API.
+        def notice(title, lines):
+            text = "\n".join(lines).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+            print(f"::notice title={title}::{text}", flush=True)
+
+        def plain(rows, header=VARIANT_HEADER):
+            return [" | ".join(header)] + [" | ".join(str(x) for x in row) for row in rows]
+
+        notice("Backtest", [f"{period} ({days:.0f} days), {len(symbols)} symbols, entries on {cfg.timeframe}, direction "
+                            f"{'/'.join(cfg.primary_htf_timeframes)}, timing {timing_label}, stop beyond the "
+                            f"{cfg.stop_placement.replace('_', ' ')}, walked on {exec_tf} candles."])
+        notice("Candidate verdict", [verdict.replace("**", "")])
+        notice("Candidate table", plain(rows_candidate))
+        notice("Candidate exits", plain([[r[0], r[1], f"{r[2]:.1f}%", f"{r[3]:+.2f}", f"{r[4]:+.3f}", f"{r[5]:.2f}"]
+                                         for r in candidate_exits],
+                                        ["how the trade ended", "trades", "win rate", "net P/L $", "avg R/trade", "fees $"]))
+        notice("Stop placement", plain(rows_stop_place))
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a") as f:
