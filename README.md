@@ -185,6 +185,29 @@ by a completed candle never disappears, and the BOS/CHoCH labels that follow
 it are right. Set `STRUCTURE_CONFIRMED_SWINGS=false` for the old behaviour;
 the backtest report compares the two.
 
+## Entry models (`ENTRY_MODEL`)
+
+The bot rests its limit orders in one kind of smart-money entry zone. All of
+them come from the same market structure, use the same "visited and left =
+used up" rule, the same stop placements and the same exits; only the zone
+differs (`strategy.detect_zones`). For a LONG (SHORT is the mirror image):
+
+| `ENTRY_MODEL` | The zone | The entry |
+|---|---|---|
+| `order_block` (default) | The last down candle at the low of the move that broke structure | Limit at the top of that candle |
+| `fvg` | The fair value gap that move left: three candles where the third's low is above the first's high; the most recent one up to the breaking candle | Limit at the top of the gap |
+| `ote` | "Optimal trade entry": the 62-79% retracement of the move, measured from its low to the first swing high confirmed after the break | Limit at the 62% level |
+| `breaker` | The candle that made the swing high which was broken: resistance turned support | Limit at that high -- the broken level, retested |
+| `sweep` | A liquidity sweep: a candle trades below the last confirmed swing low and closes back above it. The zone runs from that candle's low up to the swept low | Limit at the swept low |
+
+The first four need a BOS or CHoCH whose move started from a strong swing;
+`sweep` needs no break. The stop goes beyond the swing the zone belongs to
+(`STOP_PLACEMENT`): the low of the move for the first four, the low of the
+sweep candle for `sweep`.
+
+`backtest.py` computes every model's setups in one pass and compares them,
+each with three exit plans, so the report shows all five side by side.
+
 ## Smart-money concepts in this bot
 
 | Concept | How the bot reads it | Where it is used |
@@ -271,8 +294,9 @@ bot uses.
 `backtest.py` replays the strategy on BingX history with fees and compares
 the entry filters -- including each smart-money filter alone, a few of them
 stacked, the baseline's trades split by BOS/CHoCH, liquidity, fair value gap,
-displacement, premium/discount and session, the three stop placements, and
-swing confirmation and the strong-swing rule on vs. off:
+displacement, premium/discount and session, the three stop placements, the
+five entry models, and swing confirmation and the strong-swing rule on vs.
+off:
 
 ```
 python3 backtest.py --days 180
@@ -392,6 +416,7 @@ Or use the included `.github/workflows/bot.yml` (GitHub Actions, started by its 
 | `TIMEFRAME` | `5m` | Entry candle timeframe -- where structure is read and the limit orders rest. Never below 5m: a smaller value is replaced by 5m |
 | `CANDLE_LIMIT` | `300` | How many entry-timeframe candles to fetch per cycle |
 | `FRACTAL_N` | `2` | Fractal window (bars each side) used for swing-high/low detection, on every timeframe |
+| `ENTRY_MODEL` | `order_block` | Which smart-money zone the limit orders rest in: `order_block`, `fvg`, `ote`, `breaker` or `sweep` (see "Entry models") |
 | `STOP_PLACEMENT` | `swing` | Where the stop-loss goes, 0.1% beyond the level: `swing` = the swing low/high the order block belongs to; `order_block` = the order block candle's own low/high (before, tightest); `previous_swing` = the earlier swing further out (widest) |
 | `REQUIRE_STRONG_SWING` | `true` | Count only order blocks at a strong swing -- a swing low/high that went on to cause a BOS or CHoCH. `false` = every order block that caused a break |
 | `STRUCTURE_CONFIRMED_SWINGS` | `true` | A swing becomes the level a BOS/CHoCH must break only once `FRACTAL_N` candles after it have closed. `false` = the behaviour before (see "Market structure") |

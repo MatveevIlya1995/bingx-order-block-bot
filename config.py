@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 # Valid values for OB_STRUCTURE (see Config.ob_structure), and the parser
 # for ENTRY_HOURS_UTC.
-from strategy import OB_STRUCTURE_MODES, STOP_PLACEMENTS, parse_hour_windows
+from strategy import ENTRY_MODELS, OB_STRUCTURE_MODES, STOP_PLACEMENTS, parse_hour_windows
 
 
 def _env(env_key: str, default: str) -> str:
@@ -148,6 +148,17 @@ class Config:
         default_factory=lambda: _bool("REQUIRE_STRONG_SWING", True)
     )
 
+    # Which smart-money entry the bot rests its limit orders in (see
+    # strategy.detect_zones for the exact rules):
+    #   order_block  the last opposite candle before the move that broke
+    #                structure (default; what the bot has always traded)
+    #   fvg          the fair value gap that move left
+    #   ote          the 62-79% retracement of that move ("optimal trade entry")
+    #   breaker      the broken swing itself, retested from the other side
+    #   sweep        a liquidity sweep: a wick through a swing that closes back
+    entry_model: str = field(
+        default_factory=lambda: _env("ENTRY_MODEL", "order_block").strip().lower()
+    )
     # Where the stop-loss goes, always 0.1% of the price beyond the level
     # (see strategy.stop_prices):
     #   swing           beyond the last swing -- below the swing low the
@@ -490,6 +501,12 @@ def load_config() -> Config:
             f"{HTF_TIMING_AGREEMENT_MODES}; using 'off'."
         )
         cfg.htf_timing_agreement = "off"
+    if cfg.entry_model not in ENTRY_MODELS:
+        print(
+            f"[config] ENTRY_MODEL={cfg.entry_model!r} is not one of "
+            f"{ENTRY_MODELS}; using 'order_block'."
+        )
+        cfg.entry_model = "order_block"
     if cfg.stop_placement not in STOP_PLACEMENTS:
         print(
             f"[config] STOP_PLACEMENT={cfg.stop_placement!r} is not one of "

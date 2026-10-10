@@ -17,7 +17,7 @@ CLEAN_ENV = ("SYMBOLS", "MIN_STOP_DISTANCE_PCT", "ENTRY_SYMBOLS", "HTF_TIMING_AG
              "MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT",
              "STRUCTURE_CONFIRMED_SWINGS", "REQUIRE_STRONG_SWING", "OB_STRUCTURE", "REQUIRE_LIQUIDITY_SWEEP",
              "MIN_DISPLACEMENT_ATR", "REQUIRE_FVG", "PREMIUM_DISCOUNT_FILTER", "DEALING_RANGE_CANDLES",
-             "ENTRY_HOURS_UTC", "TIMEFRAME", "HTF_TIMEFRAMES", "HTF_PRIMARY_TIMEFRAMES", "STOP_PLACEMENT")
+             "ENTRY_HOURS_UTC", "TIMEFRAME", "HTF_TIMEFRAMES", "HTF_PRIMARY_TIMEFRAMES", "STOP_PLACEMENT", "ENTRY_MODEL")
 ACCOUNT_ENV = {"MAX_CONCURRENT_POSITIONS": "5", "RISK_PCT_PER_TRADE": "2", "LEVERAGE": "10",
                "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT": "1"}
 # The cascade the bot ran before the timeframes moved down a level. The
@@ -289,6 +289,47 @@ def test_sim_smart_money_filters(world):
     sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
     sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
     assert bt.structure_tag(sim.positions[S]) == "n/a" and bt.liquidity_tag(sim.positions[S]) == "n/a"
+
+
+def test_every_entry_model_equals_what_the_bot_finds(world_5m):
+    """One signal pass holds every entry model's setups; each equals what
+    the bot's own code finds with ENTRY_MODEL set to that model."""
+    from dataclasses import replace
+    from strategy import ENTRY_MODELS
+    cfg, data, signals, start, end = world_5m
+    symbol = SYMS[0]
+    sig = signals[symbol]
+    steps = sorted(sig["signals"])[::max(1, len(sig["signals"]) // 60)]
+    found = {m: 0 for m in ENTRY_MODELS}
+    for i in steps:
+        got = sig["signals"][i]
+        assert got[2] == got[3].get(cfg.entry_model, [])
+        client = ClientAt(cfg, data, sig["steps"][i], sig["px"][i])
+        for model in ENTRY_MODELS:
+            setups = bot._find_setups(client, replace(cfg, entry_model=model), symbol, {})[0]
+            live = sorted((s["position_side"], s["entry"], s["stop_loss"]) for s in setups)
+            mine = sorted((s[0], s[1], s[2]) for s in got[3].get(model, []))
+            assert mine == pytest.approx(live), (i, model)
+            found[model] += len(live)
+    assert all(count > 10 for count in found.values()), found
+
+
+def test_sim_entry_model(world):
+    """The simulation trades the model its variant names."""
+    ob = long_signal()[2][0]                                                  # entry 100
+    gap = ("LONG", 100.4, 99.9, "bullish", 100.4, 100.2, 101.4)
+    signal = (False, ("bullish", "bullish"), [ob], {"order_block": [ob], "fvg": [gap]})
+    for model, entry in ((None, 100.0), ("order_block", 100.0), ("fvg", 100.4)):
+        sim = make_sim(world, entry_model=model)
+        sim.run(0, {S: 100.6}, {S: signal}, [S])
+        assert [o["entry"] for o in sim.pending[S]] == [entry], model
+    sim = make_sim(world, entry_model="sweep")                               # a model with no setup at this run
+    sim.run(0, {S: 100.6}, {S: signal}, [S])
+    assert S not in sim.pending
+    # signals recorded before there were several models (three fields) still simulate
+    sim = make_sim(world, entry_model="fvg")
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    assert [o["entry"] for o in sim.pending[S]] == [100.0]
 
 
 def test_sim_stop_placement(world):

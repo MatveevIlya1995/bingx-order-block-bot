@@ -151,22 +151,26 @@ def combine_htf_bias(trends: list) -> str | None:
 
 
 def find_fractals(df: pd.DataFrame, n: int = 2) -> pd.DataFrame:
+    """df with two boolean columns added: swing_high / swing_low. A candle
+    is a swing high if its high is the highest of the 2n+1 candles centred
+    on it (the first of them, on a tie), and symmetrically for swing lows.
+    A frame that already carries the swings for this n is returned as is,
+    so a caller can compute them once and pass the result around."""
+    if df.attrs.get("fractal_n") == n and "swing_high" in df.columns and "swing_low" in df.columns:
+        return df
     highs = df["high"].values
     lows = df["low"].values
     swing_high = np.zeros(len(df), dtype=bool)
     swing_low = np.zeros(len(df), dtype=bool)
-
-    for i in range(n, len(df) - n):
-        window_h = highs[i - n : i + n + 1]
-        window_l = lows[i - n : i + n + 1]
-        if highs[i] == window_h.max() and np.argmax(window_h) == n:
-            swing_high[i] = True
-        if lows[i] == window_l.min() and np.argmin(window_l) == n:
-            swing_low[i] = True
+    if len(df) >= 2 * n + 1:
+        windows = np.lib.stride_tricks.sliding_window_view
+        swing_high[n:len(df) - n] = windows(highs, 2 * n + 1).argmax(axis=1) == n
+        swing_low[n:len(df) - n] = windows(lows, 2 * n + 1).argmin(axis=1) == n
 
     out = df.copy()
     out["swing_high"] = swing_high
     out["swing_low"] = swing_low
+    out.attrs["fractal_n"] = n
     return out
 
 
@@ -304,7 +308,7 @@ def _apply_mitigation(highs, lows, closes, obs):
         first_touch = None
         invalidated = False
         left_zone = False
-        for j in range(ob["bos_idx"] + 1, last + 1):
+        for j in range(ob.get("scan_from", ob["bos_idx"] + 1), last + 1):
             if bullish:
                 touched = lows[j] <= top
                 through = closes[j] < bottom
@@ -354,14 +358,27 @@ def detect_structure_breaks(df: pd.DataFrame, n: int = 2, confirmed_swings: bool
     and with the break gone the direction doesn't flip, so later BOS/CHoCH
     labels are off. Kept only so the two can be compared in the backtest.
     """
-    if "swing_high" not in df.columns or "swing_low" not in df.columns:
-        df = find_fractals(df, n=n)
+    return _walk_structure(df, n, confirmed_swings)[0]
+
+
+def _walk_structure(df: pd.DataFrame, n: int = 2, confirmed_swings: bool = True):
+    """One pass over the candles: (breaks, sweeps).
+
+    breaks -- see detect_structure_breaks.
+    sweeps -- rule 2's other half: a candle that traded THROUGH the most
+              recent confirmed swing low/high but did not close beyond it.
+              {idx, direction, level, swing_idx, extreme}: direction is
+              "bullish" for a sweep of a low (the reversal it sets up is
+              up), extreme is that candle's low (bullish) / high (bearish).
+    """
+    df = find_fractals(df, n=n)
     highs = df["high"].values
     lows = df["low"].values
     closes = df["close"].values
     swing_highs = df["swing_high"].values
     swing_lows = df["swing_low"].values
     breaks: list[dict] = []
+    sweeps: list[dict] = []
 
     last_swing_high = None
     last_swing_high_idx = None
@@ -393,6 +410,9 @@ def detect_structure_breaks(df: pd.DataFrame, n: int = 2, confirmed_swings: bool
             })
             structure = "bullish"
             last_swing_high = None  # structure broken; wait for the next confirmed swing
+        elif last_swing_high is not None and highs[i] > last_swing_high and last_swing_high_idx != i:
+            sweeps.append({"idx": i, "direction": "bearish", "level": float(last_swing_high),
+                           "swing_idx": last_swing_high_idx, "extreme": float(highs[i])})
 
         # Bearish break (BOS if structure was already bearish, CHoCH if it was bullish)
         if last_swing_low is not None and closes[i] < last_swing_low:
@@ -405,8 +425,11 @@ def detect_structure_breaks(df: pd.DataFrame, n: int = 2, confirmed_swings: bool
             })
             structure = "bearish"
             last_swing_low = None
+        elif last_swing_low is not None and lows[i] < last_swing_low and last_swing_low_idx != i:
+            sweeps.append({"idx": i, "direction": "bullish", "level": float(last_swing_low),
+                           "swing_idx": last_swing_low_idx, "extreme": float(lows[i])})
 
-    return breaks
+    return breaks, sweeps
 
 
 def structure_state(df: pd.DataFrame, n: int = 2, confirmed_swings: bool = True):
@@ -417,6 +440,10 @@ def structure_state(df: pd.DataFrame, n: int = 2, confirmed_swings: bool = True)
     last = len(df) - 1
     done = [b for b in detect_structure_breaks(df, n=n, confirmed_swings=confirmed_swings) if b["idx"] < last]
     return done[-1] if done else None
+
+
+ENTRY_MODELS = ("order_block", "fvg", "ote", "breaker", "sweep")
+OTE_SHALLOW, OTE_DEEP = 0.62, 0.79      # the "optimal trade entry" band of a retracement
 
 
 def detect_order_blocks(
@@ -458,6 +485,49 @@ def detect_order_blocks(
     mitigated across scheduled runs instead of looking fresh again each
     time the order blocks are re-detected.
     """
+    return detect_zones(df, n=n, confirmed_swings=confirmed_swings, strong_swings_only=strong_swings_only,
+                        models=("order_block",))["order_block"]
+
+
+def detect_zones(
+    df: pd.DataFrame, n: int = 2, confirmed_swings: bool = True, strong_swings_only: bool = True,
+    models=ENTRY_MODELS,
+) -> dict:
+    """The entry zones of every smart-money entry model asked for:
+    {model: [zone, ...]}, each list oldest first. A zone has the same shape
+    as an order block (see detect_order_blocks) plus `model`, so
+    limit_setups(), stop_prices(), add_smc_context() and the mitigation
+    rule work on all of them alike: the entry is a limit at the edge price
+    reaches first, and a zone price has visited and left, or closed through,
+    is used up.
+
+    Four models start from a structure break (BOS/CHoCH) whose move began at
+    a strong swing; for a bullish break of a swing high (bearish: mirrored):
+
+      order_block  the last down candle at the low of the move. Zone = that
+                   candle. The entry this bot started with.
+      fvg          the fair value gap the move left: three candles where the
+                   third's low is above the first's high. Zone = the gap; the
+                   most recent one up to the breaking candle. (The "sweep,
+                   shift, gap" entry.) Known one candle after the break.
+      ote          optimal trade entry: once the first swing high after the
+                   break is confirmed, the 62%-79% retracement of the move
+                   from its low to that high. Zone = that band.
+      breaker      the candle that made the swing high which was broken:
+                   resistance turned support. Zone = that candle, entry at
+                   its high -- the broken level itself (break and retest).
+
+    One model needs no break:
+
+      sweep        a candle trades below the last confirmed swing low and
+                   closes back above it (a liquidity sweep). Zone = from
+                   that candle's low up to the swept low, entry at the swept
+                   low, the natural stop just under the candle's low.
+
+    Every zone carries swing_price / prev_swing_price for the stop (see
+    stop_prices): for the break models the low of the move, for a sweep the
+    low of the sweep candle.
+    """
     df = find_fractals(df, n=n)
     opens = df["open"].values
     highs = df["high"].values
@@ -467,53 +537,92 @@ def detect_order_blocks(
     swing_lows = df["swing_low"].values
     low_idx, high_idx = np.flatnonzero(swing_lows), np.flatnonzero(swing_highs)
     last = len(df) - 1
-    obs: list[dict] = []
+    zones: dict = {m: [] for m in models}
 
-    for brk in detect_structure_breaks(df, n=n, confirmed_swings=confirmed_swings):
-        found = _find_order_block(
-            opens, highs, lows, closes, brk["direction"], brk["swing_idx"], brk["idx"]
-        )
-        if found is None:
-            continue
-        origin = found["origin_idx"]
-        # a real swing point, with the n candles after it complete (the
-        # last candle is still forming and could yet undo it)
-        strong = origin + n < last and bool(
-            swing_lows[origin] if brk["direction"] == "bullish" else swing_highs[origin]
-        )
-        if strong_swings_only and not strong:
-            continue
-        # The swing the order block belongs to, and the swing before it that
-        # lies further out than both -- the levels a stop can sit beyond.
-        if brk["direction"] == "bullish":
-            swing_price = min(float(lows[origin]), found["bottom"])
+    def add(model, bullish, top, bottom, formed_idx, bos_idx, origin, **more):
+        # The swing the zone belongs to, and the swing before it that lies
+        # further out than both -- the levels a stop can sit beyond.
+        if bullish:
+            swing_price = min(float(lows[origin]), bottom)
             earlier = lows[low_idx[low_idx < origin]]
             further = earlier[earlier < swing_price]
         else:
-            swing_price = max(float(highs[origin]), found["top"])
+            swing_price = max(float(highs[origin]), top)
             earlier = highs[high_idx[high_idx < origin]]
             further = earlier[earlier > swing_price]
-        prev_swing_price = float(further[-1]) if len(further) else None
-        obs.append(
-            {
-                "type": brk["direction"],
-                "top": found["top"],
-                "bottom": found["bottom"],
-                "formed_idx": found["formed_idx"],
-                "bos_idx": brk["idx"],
-                "structure": brk["kind"],
-                "broken_level": brk["level"],
-                "swing_idx": brk["swing_idx"],
-                "origin_idx": origin,
-                "strong_swing": strong,
-                "swing_price": swing_price,
-                "prev_swing_price": prev_swing_price,
-                "mitigated": False,
-            }
-        )
+        zones[model].append({
+            "type": "bullish" if bullish else "bearish",
+            "top": float(top),
+            "bottom": float(bottom),
+            "formed_idx": int(formed_idx),
+            "bos_idx": int(bos_idx),
+            "origin_idx": int(origin),
+            "swing_price": swing_price,
+            "prev_swing_price": float(further[-1]) if len(further) else None,
+            "model": model,
+            "mitigated": False,
+            **more,
+        })
 
-    _apply_mitigation(highs, lows, closes, obs)
-    return obs
+    breaks, sweeps = _walk_structure(df, n, confirmed_swings)
+    for brk in breaks:
+        bullish = brk["direction"] == "bullish"
+        swing, b = brk["swing_idx"], brk["idx"]
+        lo = swing + 1
+        if b - lo < 1:
+            continue
+        # the turning point of the move that broke structure
+        origin = lo + int(np.argmin(lows[lo:b]) if bullish else np.argmax(highs[lo:b]))
+        # a real swing point, with the n candles after it complete (the
+        # last candle is still forming and could yet undo it)
+        strong = origin + n < last and bool(swing_lows[origin] if bullish else swing_highs[origin])
+        if strong_swings_only and not strong:
+            continue
+        common = {"structure": brk["kind"], "broken_level": brk["level"], "swing_idx": swing, "strong_swing": strong}
+        move = {"leg_idx": origin, "break_idx": b}       # for the smart-money tags of the non-order-block zones
+
+        if "order_block" in zones:
+            found = _find_order_block(opens, highs, lows, closes, brk["direction"], swing, b)
+            if found is not None:
+                add("order_block", bullish, found["top"], found["bottom"], found["formed_idx"], b, origin, **common)
+
+        if "fvg" in zones and b + 1 < last:              # the gap can involve the candle after the break
+            for mid in range(b, origin, -1):
+                if bullish and lows[mid + 1] > highs[mid - 1]:
+                    add("fvg", True, lows[mid + 1], highs[mid - 1], mid, max(b, mid + 1), origin, **common, **move)
+                    break
+                if not bullish and highs[mid + 1] < lows[mid - 1]:
+                    add("fvg", False, lows[mid - 1], highs[mid + 1], mid, max(b, mid + 1), origin, **common, **move)
+                    break
+
+        if "ote" in zones:
+            after = (high_idx if bullish else low_idx)
+            after = after[after >= b]
+            if len(after) and after[0] + n < last:       # the first swing after the break, confirmed
+                end = int(after[0])
+                if bullish:
+                    low, high = float(lows[origin]), float(highs[end])
+                    top, bottom = high - OTE_SHALLOW * (high - low), high - OTE_DEEP * (high - low)
+                else:
+                    high, low = float(highs[origin]), float(lows[end])
+                    bottom, top = low + OTE_SHALLOW * (high - low), low + OTE_DEEP * (high - low)
+                if high > low:
+                    add("ote", bullish, top, bottom, end, end + n, origin, scan_from=end + 1, **common, **move)
+
+        if "breaker" in zones:
+            add("breaker", bullish, highs[swing], lows[swing], swing, b, origin, **common, **move)
+
+    if "sweep" in zones:
+        for sw in sweeps:
+            i = sw["idx"]
+            bullish = sw["direction"] == "bullish"
+            top, bottom = (sw["level"], sw["extreme"]) if bullish else (sw["extreme"], sw["level"])
+            add("sweep", bullish, top, bottom, i, i, i, structure="sweep", broken_level=sw["level"],
+                swing_idx=sw["swing_idx"], strong_swing=True, leg_idx=i, break_idx=i)
+
+    for model_zones in zones.values():
+        _apply_mitigation(highs, lows, closes, model_zones)
+    return zones
 
 
 STOP_PLACEMENTS = ("order_block", "swing", "previous_swing")
@@ -713,7 +822,9 @@ def _liquidity_taken(highs, lows, closes, swing_highs, swing_lows, ob: dict) -> 
     start = ob.get("swing_idx")
     if start is None:
         return "none"
-    lo, bos_idx = start + 1, ob["bos_idx"]
+    lo, bos_idx = start + 1, ob.get("break_idx", ob["bos_idx"])
+    if ob.get("model") == "sweep":
+        return "sweep"                    # the zone IS a sweep
     if bos_idx <= lo:
         return "none"
     result = "none"
@@ -750,8 +861,9 @@ def _displacement_atr(opens, highs, lows, closes, ob: dict):
     included), in multiples of the average true range of the ATR_PERIOD
     candles up to the order block. 2.0 = a candle body twice the size of a
     normal candle's whole range. None if it can't be measured."""
-    a, b = ob["formed_idx"] + 1, ob["bos_idx"] + 1
-    atr = _atr(highs, lows, closes, ob["formed_idx"])
+    start = ob.get("leg_idx", ob["formed_idx"])
+    a, b = start + 1, ob.get("break_idx", ob["bos_idx"]) + 1
+    atr = _atr(highs, lows, closes, start)
     if atr is None or b <= a:
         return None
     return float(np.abs(closes[a:b] - opens[a:b]).max() / atr)
@@ -766,7 +878,7 @@ def _has_fair_value_gap(highs, lows, ob: dict, last: int) -> bool:
     gap whose middle candle is the breaking candle only counts once the
     candle after it has closed (`last` is the still-forming candle)."""
     bullish = ob["type"] == "bullish"
-    for mid in range(ob["formed_idx"] + 1, ob["bos_idx"] + 1):
+    for mid in range(ob.get("leg_idx", ob["formed_idx"]) + 1, ob.get("break_idx", ob["bos_idx"]) + 1):
         if mid + 1 >= last:
             break
         if (lows[mid + 1] > highs[mid - 1]) if bullish else (highs[mid + 1] < lows[mid - 1]):

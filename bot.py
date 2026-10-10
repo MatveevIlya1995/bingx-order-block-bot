@@ -82,6 +82,7 @@ from exchange_client import ExchangeClient
 from strategy import (
     ohlcv_to_df,
     detect_order_blocks,
+    detect_zones,
     limit_setups,
     detect_trend,
     combine_htf_bias,
@@ -98,6 +99,10 @@ from risk_manager import RiskManager
 # How many of the most recent valid, unmitigated order blocks get a
 # resting limit order per symbol.
 MAX_LIMIT_ORDERS_PER_SYMBOL = 2
+
+# ENTRY_MODEL, as written into the journal's trigger column.
+ENTRY_NAMES = {"order_block": "order block", "fvg": "fair value gap", "ote": "optimal trade entry",
+               "breaker": "breaker", "sweep": "liquidity sweep"}
 
 # STOP_PLACEMENT, as written into the journal's trigger column.
 STOP_NAMES = {"order_block": "order block", "swing": "last swing", "previous_swing": "previous swing"}
@@ -420,8 +425,7 @@ def _find_setups(client, cfg, symbol, df_cache):
     if df is None:
         return None, htf_detail, False, None
 
-    obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
-                              strong_swings_only=cfg.require_strong_swing)
+    obs = _entry_zones(df, cfg)
     setups = limit_setups(
         df, obs,
         max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL,
@@ -430,7 +434,7 @@ def _find_setups(client, cfg, symbol, df_cache):
         stop_placement=cfg.stop_placement,
     )
     if not setups:
-        print(f"[bot] {symbol}: no valid unmitigated order block in the {bias or 'any'} direction ({_structure_note(df, cfg)}).")
+        print(f"[bot] {symbol}: no valid unmitigated {ENTRY_NAMES[cfg.entry_model]} in the {bias or 'any'} direction ({_structure_note(df, cfg)}).")
     setups = add_smc_context(df, setups, n=cfg.fractal_n, dealing_range_candles=cfg.dealing_range_candles)
     setups, dropped = apply_entry_filters(
         setups,
@@ -442,6 +446,15 @@ def _find_setups(client, cfg, symbol, df_cache):
     for setup, reason in dropped:
         print(f"[bot] {symbol}: {setup['position_side']} setup @ {setup['entry']:.6g} filtered out -- {reason}.")
     return setups, htf_detail, "OVERRIDE:" in htf_detail, df
+
+
+def _entry_zones(df, cfg):
+    """The zones of the configured ENTRY_MODEL on the entry timeframe."""
+    if cfg.entry_model == "order_block":
+        return detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
+                                   strong_swings_only=cfg.require_strong_swing)
+    return detect_zones(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
+                        strong_swings_only=cfg.require_strong_swing, models=(cfg.entry_model,))[cfg.entry_model]
 
 
 def _structure_note(df, cfg):
@@ -538,7 +551,7 @@ def _sync_symbol_orders(client, risk, cfg, symbol, setups, htf_detail, df, equit
         bos_ts = df.iloc[ob["bos_idx"]]["ts"]
         tp2_price, tp2_source = _find_tp2_level(df, setup, cfg)
         trigger = (
-            f"{ob['type']} order block limit: zone {ob['bottom']:.4f}-{ob['top']:.4f} "
+            f"{ob['type']} {ENTRY_NAMES.get(ob.get('model'), 'order block')} limit: zone {ob['bottom']:.4f}-{ob['top']:.4f} "
             f"(formed {formed_ts:%Y-%m-%d %H:%M} UTC, {ob.get('structure', 'BOS')} confirmed "
             f"{bos_ts:%Y-%m-%d %H:%M} UTC) | HTF: {htf_detail or 'trend filter disabled'}"
             f" | exits: TP1 {cfg.partial_tp_r_multiple:g}R (mirror of SL), TP2 "

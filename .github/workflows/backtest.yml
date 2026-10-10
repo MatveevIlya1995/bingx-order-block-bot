@@ -78,6 +78,7 @@ jobs:
           STRUCTURE_CONFIRMED_SWINGS: ${{ vars.STRUCTURE_CONFIRMED_SWINGS }}
           REQUIRE_STRONG_SWING: ${{ vars.REQUIRE_STRONG_SWING }}
           STOP_PLACEMENT: ${{ vars.STOP_PLACEMENT }}
+          ENTRY_MODEL: ${{ vars.ENTRY_MODEL }}
           DEALING_RANGE_CANDLES: ${{ vars.DEALING_RANGE_CANDLES }}
           BT_DAYS: ${{ inputs.days }}
           BT_END: ${{ inputs.end }}

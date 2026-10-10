@@ -14,7 +14,7 @@ What it does
    exactly what the live bot would have seen at that moment -- the last
    CANDLE_LIMIT entry candles and the last TREND_CANDLE_LIMIT candles of each
    higher timeframe, each ending in a just-opened, still-forming candle -- and
-   calls the bot's own code on it: strategy.detect_order_blocks(),
+   calls the bot's own code on it: strategy.detect_zones(),
    strategy.limit_setups(), strategy.add_smc_context(),
    strategy.combine_htf_bias(), strategy.weekly_room_pct(),
    bot._find_tp2_level(). Nothing about the strategy is re-implemented
@@ -32,7 +32,9 @@ What it does
    blocks from a BOS only / a CHoCH only, liquidity sweep, displacement,
    fair value gap, premium/discount, entry hours) each alone and in a few
    combinations, the three stop placements (beyond the order block, the
-   last swing, the swing before it), and -- with an extra signal pass each -- swings confirmed
+   last swing, the swing before it), the five entry models (order block,
+   fair value gap, optimal trade entry, breaker, liquidity sweep) each with
+   three exit plans, and -- with an extra signal pass each -- swings confirmed
    before they count as structure vs. the behaviour before
    (STRUCTURE_CONFIRMED_SWINGS) and only order blocks at strong swings vs.
    all of them (REQUIRE_STRONG_SWING).
@@ -89,11 +91,13 @@ import pandas as pd
 from config import load_config, override_levels
 from risk_manager import RiskManager
 from strategy import (
+    ENTRY_MODELS,
     add_smc_context,
     apply_entry_filters,
     combine_htf_bias,
-    detect_order_blocks,
+    detect_zones,
     entry_symbol_allowed,
+    find_fractals,
     limit_setups,
     nearest_confirmed_swing_level,
 )
@@ -360,7 +364,9 @@ def analyze_htf(cfg, views, n_done, partials, price):
 
 def compute_signals(args):
     """Every run's setups for ONE symbol. Returns
-    {"symbol", "steps": [t_run, ...], "px": [...], "signals": {i: (is_override, timing_trends, [setup, ...])}}
+    {"symbol", "steps": [t_run, ...], "px": [...],
+     "signals": {i: (is_override, timing_trends, [setup, ...], {entry model: [setup, ...]})}}
+    -- the third field holds the setups of the bot's ENTRY_MODEL, the fourth those of every model --
     where setup = (position_side, entry, stop, ob_type, ob_top, ob_bottom, tp2_price, smc, stops):
     smc is the setup's smart-money context (strategy.add_smc_context) and
     stops is {STOP_PLACEMENT: (stop, tp2_price)} -- the stop and the TP2
@@ -422,27 +428,35 @@ def compute_signals(args):
         # completed ones and the candle that has just opened.
         win = np.vstack([c[i - (cfg.candle_limit - 1):i], [t_run, px, px, px, px, 0.0]])
         df = pd.DataFrame(win, columns=cols)
-        obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
-                                  strong_swings_only=cfg.require_strong_swing)
-        setups = limit_setups(df, obs, max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL, direction=bias,
-                              reward_risk_ratio=cfg.reward_risk_ratio, stop_placement=cfg.stop_placement)
-        if not setups:
+        # Swings once, then the zones of EVERY entry model: the simulation
+        # picks a model per variant without another signal pass.
+        df = find_fractals(df, n=cfg.fractal_n)
+        zones = detect_zones(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
+                             strong_swings_only=cfg.require_strong_swing, models=ENTRY_MODELS)
+        by_model = {}
+        for model in ENTRY_MODELS:
+            setups = limit_setups(df, zones[model], max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL, direction=bias,
+                                  reward_risk_ratio=cfg.reward_risk_ratio, stop_placement=cfg.stop_placement)
+            if not setups:
+                continue
+            add_smc_context(df, setups, n=cfg.fractal_n, dealing_range_candles=cfg.dealing_range_candles)
+            out = []
+            for s in setups:
+                tp2, _ = _find_tp2_level(df, s, cfg)
+                ob = s["order_block"]
+                stops, tp2_at = {}, {float(s["stop_loss"]): tp2}
+                for placement, stop in s["stops"].items():
+                    stop = float(stop)
+                    if stop not in tp2_at:
+                        tp2_at[stop], _ = _find_tp2_level(df, {**s, "stop_loss": stop}, cfg)
+                    stops[placement] = (stop, tp2_at[stop])
+                out.append((s["position_side"], float(s["entry"]), float(s["stop_loss"]),
+                            ob["type"], float(ob["top"]), float(ob["bottom"]), tp2, dict(s["smc"]), stops))
+            by_model[model] = out
+        if not by_model:
             continue
-        add_smc_context(df, setups, n=cfg.fractal_n, dealing_range_candles=cfg.dealing_range_candles)
-        out = []
-        for s in setups:
-            tp2, _ = _find_tp2_level(df, s, cfg)
-            ob = s["order_block"]
-            stops, tp2_at = {}, {float(s["stop_loss"]): tp2}
-            for placement, stop in s["stops"].items():
-                stop = float(stop)
-                if stop not in tp2_at:
-                    tp2_at[stop], _ = _find_tp2_level(df, {**s, "stop_loss": stop}, cfg)
-                stops[placement] = (stop, tp2_at[stop])
-            out.append((s["position_side"], float(s["entry"]), float(s["stop_loss"]),
-                        ob["type"], float(ob["top"]), float(ob["bottom"]), tp2, dict(s["smc"]), stops))
         timing = tuple(trend_by_tf[tf] for tf in timing_tfs) if cfg.trend_filter_enabled else None
-        signals[len(steps) - 1] = (is_override, timing, out)
+        signals[len(steps) - 1] = (is_override, timing, by_model.get(cfg.entry_model, []), by_model)
     return {"symbol": symbol, "steps": steps, "px": prices, "signals": signals}
 
 
@@ -466,7 +480,7 @@ class Sim:
 
     def __init__(self, cfg, costs, start_equity, exit_mode="resting",
                  min_stop_pct=0.0, timing_mode="off", entry_symbols=None, stop_placement=None,
-                 tp1_r=None, tp2_r=None, **smc_filters):
+                 tp1_r=None, tp2_r=None, entry_model=None, **smc_filters):
         self.cfg = cfg
         self.costs = costs
         self.exit_mode = exit_mode
@@ -481,6 +495,8 @@ class Sim:
         # swing beyond TP1, or its fallback); a number: TP2 fixed there.
         self.tp1_r = tp1_r
         self.tp2_r = tp2_r
+        # None: the bot's ENTRY_MODEL; otherwise that model's setups
+        self.entry_model = entry_model
         # smart-money filters, as strategy.apply_entry_filters() takes them:
         # ob_structure, require_sweep, min_displacement_atr, require_fvg,
         # premium_discount, entry_hours
@@ -701,7 +717,9 @@ class Sim:
             sig = signals_at.get(symbol)
             setups, is_override, timing = [], False, None
             if sig is not None and entry_symbol_allowed(symbol, self.entry_symbols):
-                is_override, timing, raw = sig
+                is_override, timing, raw = sig[:3]
+                if self.entry_model and len(sig) > 3:
+                    raw = sig[3].get(self.entry_model, [])
                 setups = []
                 for s in raw:
                     stop, tp2 = s[2], s[6]
@@ -954,6 +972,20 @@ CANDIDATE_PARTS = [
 ]
 
 
+# The entry models compared (strategy.detect_zones), and the three plans each
+# is run with. The verdict for a model is its FULL plan: profitable in both
+# halves of the period, or it fails. Fixed before the run.
+MODEL_NAMES = {"order_block": "order block", "fvg": "fair value gap", "ote": "optimal trade entry (62-79%)",
+               "breaker": "breaker (break and retest)", "sweep": "liquidity sweep reversal"}
+FULL_PLAN = {"stop_placement": "previous_swing", "min_stop_pct": 0.5, "timing_mode": "not_against",
+             "tp1_r": 2.0, "tp2_r": 3.0}
+MODEL_PLANS = [
+    ("current exits (TP1 1R, TP2 next swing)", {}),
+    ("targets 2R / 3R", {"tp1_r": 2.0, "tp2_r": 3.0}),
+    ("FULL: targets 2R/3R + previous-swing stop + min stop 0.5% + timing not against", FULL_PLAN),
+]
+
+
 def exit_kind(trade):
     kinds = [e[1] for e in trade["exits"]]
     if "tp1" not in kinds:
@@ -1169,6 +1201,29 @@ def main(argv=None):
                f"{candidate_stats['trades_h2']} trades). It passes only if both are above zero.")
     candidate_exits = breakdown(candidate.trades, exit_kind, order=EXIT_KINDS)
 
+    # Entry models: every model with the same three plans, from the one signal pass.
+    rows_models, rows_reach, model_json, model_verdicts = [], [], [], []
+    for model in ENTRY_MODELS:
+        for plan_name, kw in MODEL_PLANS:
+            reuse = model == cfg.entry_model and not kw
+            sim = base if reuse else run(entry_model=model, **kw)
+            st = base_stats if reuse else stats(sim, t_mid)
+            rows_models.append(fmt_variant_row(f"{MODEL_NAMES[model]} -- {plan_name}", st))
+            model_json.append({"entry_model": model, "plan": plan_name, **st})
+            if not kw:
+                n_trades = len(sim.trades)
+                reached = sum(1 for t in sim.trades if any(e[1] == "tp1" for e in t["exits"]))
+                widths = sorted(t["setup_stop_pct"] for t in sim.trades)
+                rows_reach.append([MODEL_NAMES[model], n_trades,
+                                   f"{reached / n_trades * 100:.1f}%" if n_trades else "n/a",
+                                   f"{(n_trades - reached) / n_trades * 100:.1f}%" if n_trades else "n/a",
+                                   f"{widths[len(widths) // 2]:.2f}%" if widths else "n/a",
+                                   f"{st['avg_r']:+.3f}"])
+            if kw is FULL_PLAN:
+                ok = st["trades"] > 0 and st["pnl_h1"] > 0 and st["pnl_h2"] > 0
+                model_verdicts.append(f"- {MODEL_NAMES[model]}: **{'PASSED' if ok else 'FAILED'}** "
+                                      f"({st['pnl_h1']:+.2f} / {st['pnl_h2']:+.2f} on {st['trades']} trades)")
+
     rows_smc = [fmt_variant_row("all smart-money filters off", base_stats)]
     smc_json = []
     for name, kw in SMC_VARIANTS:
@@ -1244,6 +1299,26 @@ Costs: maker {args.maker_fee_pct}%, taker {args.taker_fee_pct}%, slippage {args.
 {md_table(VARIANT_HEADER, [fmt_variant_row("baseline", base_stats)])}
 
 Daily-loss breaker active on {base_stats["breaker_runs"]} of {len(base.equity_curve)} runs.
+
+## Entry models
+
+Five smart-money entries, each a resting limit order in its zone, all from the same market structure (strategy.detect_zones):
+
+- **order block** -- the last opposite candle before the move that broke structure.
+- **fair value gap** -- the gap that move left (three candles, first and third not overlapping).
+- **optimal trade entry** -- the 62-79% retracement of that move, once its first swing is confirmed.
+- **breaker** -- the swing that was broken, retested from the other side.
+- **liquidity sweep reversal** -- a wick through a swing that closes back; entry at the swept level.
+
+{md_table(VARIANT_HEADER, rows_models)}
+
+Verdict on the FULL plan (profitable in both halves, or it fails):
+
+{chr(10).join(model_verdicts)}
+
+How often each entry reaches 1R before its stop (current exits, stop beyond the last swing). With a target as far away as the stop, an entry needs to get there clearly more than half the time just to cover fees:
+
+{md_table(["entry model", "trades", "reached 1R first", "stopped first", "median stop distance", "avg R/trade"], rows_reach)}
 
 ## Combined candidate
 
@@ -1370,7 +1445,8 @@ Baseline trades by what their order block looked like when the order was placed 
         json.dump({"baseline": base_stats,
                    "combinations": [{"min_stop_pct": c[2], "timing": c[3], "symbols": c[4], **c[5]} for c in combos],
                    "smart_money": smc_json, "stop_placement": stop_json,
-                   "candidate": {"settings": candidate_kw, "passed": passed, **candidate_stats}},
+                   "candidate": {"settings": candidate_kw, "passed": passed, **candidate_stats},
+                   "entry_models": model_json},
                   f, indent=2, default=str)
     print(report)
     if os.environ.get("GITHUB_ACTIONS") == "true":
@@ -1386,12 +1462,12 @@ Baseline trades by what their order block looked like when the order was placed 
         notice("Backtest", [f"{period} ({days:.0f} days), {len(symbols)} symbols, entries on {cfg.timeframe}, direction "
                             f"{'/'.join(cfg.primary_htf_timeframes)}, timing {timing_label}, stop beyond the "
                             f"{cfg.stop_placement.replace('_', ' ')}, walked on {exec_tf} candles."])
+        notice("Entry models verdict", [v.replace("**", "") for v in model_verdicts])
+        notice("Entry models table", plain(rows_models))
+        notice("Entry models reach", plain(rows_reach, ["entry model", "trades", "reached 1R first", "stopped first",
+                                                         "median stop distance", "avg R/trade"]))
         notice("Candidate verdict", [verdict.replace("**", "")])
         notice("Candidate table", plain(rows_candidate))
-        notice("Candidate exits", plain([[r[0], r[1], f"{r[2]:.1f}%", f"{r[3]:+.2f}", f"{r[4]:+.3f}", f"{r[5]:.2f}"]
-                                         for r in candidate_exits],
-                                        ["how the trade ended", "trades", "win rate", "net P/L $", "avg R/trade", "fees $"]))
-        notice("Stop placement", plain(rows_stop_place))
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a") as f:
