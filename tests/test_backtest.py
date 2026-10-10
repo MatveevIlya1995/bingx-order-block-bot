@@ -17,7 +17,9 @@ DAY = 86_400_000
 def world():
     import os
     for key in ("SYMBOLS", "MIN_STOP_DISTANCE_PCT", "ENTRY_SYMBOLS", "HTF_TIMING_AGREEMENT",
-                "MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT"):
+                "MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT",
+                "STRUCTURE_CONFIRMED_SWINGS", "OB_STRUCTURE", "REQUIRE_LIQUIDITY_SWEEP", "MIN_DISPLACEMENT_ATR",
+                "REQUIRE_FVG", "PREMIUM_DISCOUNT_FILTER", "DEALING_RANGE_CANDLES", "ENTRY_HOURS_UTC"):
         os.environ.pop(key, None)
     os.environ.update({"MAX_CONCURRENT_POSITIONS": "5", "RISK_PCT_PER_TRADE": "2", "LEVERAGE": "10",
                        "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT": "1"})
@@ -59,6 +61,7 @@ def test_signals_equal_what_the_live_bot_code_finds(world):
     cfg, data, signals, start, end = world
     rng = np.random.default_rng(3)
     checked = with_setups = overrides = conflicts = 0
+    tags = set()
     for symbol in SYMS:
         sig = signals[symbol]
         picks = set(rng.choice(len(sig["steps"]), size=140, replace=False).tolist())
@@ -80,12 +83,23 @@ def test_signals_equal_what_the_live_bot_code_finds(world):
                     tp2, _ = bot._find_tp2_level(df, s, cfg)
                     raw = [r for r in got[2] if r[1] == pytest.approx(s["entry"])][0]
                     assert raw[6] == (pytest.approx(tp2) if tp2 is not None else None)
+                # the smart-money tags the filters read
+                for s in setups:
+                    raw = [r for r in got[2] if r[1] == pytest.approx(s["entry"])][0]
+                    assert set(raw[7]) == set(s["smc"]) == {"structure", "liquidity", "sweep", "displacement_atr",
+                                                            "fvg", "range_pos", "hour_utc"}
+                    for key, value in s["smc"].items():
+                        assert raw[7][key] == (pytest.approx(value) if isinstance(value, float) else value), key
+                    tags.add((raw[7]["structure"], raw[7]["liquidity"], raw[7]["fvg"]))
                 # and the 4h/1h trends the timing filter uses
                 _, _, trends = bot.analyze_higher_timeframes(client, cfg, symbol)
                 assert got[1] == tuple(trends[tf] for tf in cfg.htf_timeframes if tf not in cfg.primary_htf_timeframes)
             conflicts += "disagree" in detail or setups == [] and "NOT overridden" in detail
             checked += 1
     assert checked >= 300 and with_setups >= 60
+    # the tags vary across the sample (both kinds of break, every liquidity outcome, gap and no gap)
+    assert {t[0] for t in tags} == {"BOS", "CHoCH"} and {t[1] for t in tags} == {"sweep", "run", "none"}
+    assert {t[2] for t in tags} == {True, False}
 
 
 def test_htf_trend_equals_detect_trend(world):
@@ -190,6 +204,63 @@ def test_sim_filters(world):
         sim = make_sim(world, **kw)
         sim.run(0, {S: 100.6}, {S: long_signal(timing=("bullish", "neutral"))}, [S])
         assert len(sim.pending.get(S, [])) == expect, kw
+
+
+def smc_signal(**smc):
+    tags = {"structure": "BOS", "liquidity": "none", "sweep": False, "displacement_atr": 1.2,
+            "fvg": False, "range_pos": 0.3, "hour_utc": 9}
+    tags.update(smc)
+    sig = long_signal()
+    return (sig[0], sig[1], [sig[2][0] + (tags,)])
+
+
+def test_sim_smart_money_filters(world):
+    """The simulation applies the smart-money filters through the bot's own
+    filter function, on the tags the signal pass stored."""
+    cases = [
+        ({}, {}, 1),
+        ({"ob_structure": "choch"}, {}, 0), ({"ob_structure": "choch"}, {"structure": "CHoCH"}, 1),
+        ({"require_sweep": True}, {"liquidity": "run"}, 0), ({"require_sweep": True}, {"liquidity": "sweep", "sweep": True}, 1),
+        ({"min_displacement_atr": 1.5}, {}, 0), ({"min_displacement_atr": 1.0}, {}, 1),
+        ({"require_fvg": True}, {}, 0), ({"require_fvg": True}, {"fvg": True}, 1),
+        ({"premium_discount": True}, {"range_pos": 0.7}, 0), ({"premium_discount": True}, {}, 1),
+        ({"entry_hours": [(12, 16)]}, {}, 0), ({"entry_hours": [(7, 11)]}, {}, 1),
+    ]
+    for filters, tags, expect in cases:
+        sim = make_sim(world, **filters)
+        sim.run(0, {S: 100.6}, {S: smc_signal(**tags)}, [S])
+        assert len(sim.pending.get(S, [])) == expect, (filters, tags)
+    # the tags travel with the order into the trade, for the report's breakdowns
+    sim = make_sim(world)
+    sim.run(0, {S: 100.6}, {S: smc_signal(structure="CHoCH", liquidity="sweep", sweep=True)}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    trade = sim.positions[S]
+    assert bt.structure_tag(trade) == "CHoCH" and bt.liquidity_tag(trade) == bt.LIQUIDITY_NAMES["sweep"]
+    assert bt.range_half(trade) == bt.RANGE_RIGHT and bt.displacement_bucket(trade) == "1-1.5 ATR"
+    # a resting order whose setup stops passing a filter is cancelled, as in the bot
+    sim = make_sim(world, require_fvg=True)
+    sim.run(0, {S: 100.6}, {S: smc_signal(fvg=True)}, [S])
+    assert len(sim.pending[S]) == 1
+    sim.run(1, {S: 100.6}, {S: smc_signal(fvg=False)}, [S])
+    assert S not in sim.pending
+    # signals recorded before the tags existed (7 fields) still simulate
+    sim = make_sim(world)
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    assert bt.structure_tag(sim.positions[S]) == "n/a" and bt.liquidity_tag(sim.positions[S]) == "n/a"
+
+
+def test_swing_confirmation_changes_the_signals(world):
+    """STRUCTURE_CONFIRMED_SWINGS reaches the signal pass: the two settings
+    do not find the same setups."""
+    from dataclasses import replace
+    cfg, data, signals, start, end = world
+    short_end = start + 3 * DAY
+    on = bt.compute_signals((cfg, SYMS[0], data[SYMS[0]], start, short_end))
+    off = bt.compute_signals((replace(cfg, structure_confirmed_swings=False), SYMS[0], data[SYMS[0]], start, short_end))
+    assert on["steps"] == off["steps"]
+    assert {i: [s[:3] for s in v[2]] for i, v in on["signals"].items()} != \
+           {i: [s[:3] for s in v[2]] for i, v in off["signals"].items()}
 
 
 def test_sim_slots_zones_and_one_position_per_symbol(world):

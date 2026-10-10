@@ -37,11 +37,18 @@ Each run:
    4h + 1h are timing context only) and then picks the setups for this
    symbol (strategy.limit_setups()): the LAST TWO valid, unmitigated
    order blocks on the 15m entry timeframe in the primary bias direction.
-   "Valid" = the order block caused a BOS or CHoCH; "unmitigated" = price
-   hasn't visited the zone and left it, and no completed candle closed
-   through it (see strategy._apply_mitigation()). The optional entry
-   filters (ENTRY_SYMBOLS, MIN_STOP_DISTANCE_PCT, HTF_TIMING_AGREEMENT --
-   all off by default) then remove setups; they never add any.
+   "Valid" = the order block caused a BOS or CHoCH (the five rules for
+   those are at the top of strategy.py); "unmitigated" = price hasn't
+   visited the zone and left it, and no completed candle closed through
+   it (see strategy._apply_mitigation()). Every setup is then tagged with
+   its smart-money context (BOS or CHoCH, liquidity sweep, displacement,
+   fair value gap, premium/discount, hour -- strategy.add_smc_context()),
+   which goes into the log and the journal. The optional entry filters
+   (ENTRY_SYMBOLS, MIN_STOP_DISTANCE_PCT, HTF_TIMING_AGREEMENT and the
+   smart-money filters OB_STRUCTURE, REQUIRE_LIQUIDITY_SWEEP,
+   MIN_DISPLACEMENT_ATR, REQUIRE_FVG, PREMIUM_DISCOUNT_FILTER,
+   ENTRY_HOURS_UTC -- all off by default) then remove setups; they never
+   add any.
 7. syncs that symbol's resting orders with those setups: orders whose
    order block is no longer one of them (mitigated without a fill,
    invalidated, bias changed, replaced by newer order blocks, zone already
@@ -67,7 +74,7 @@ import traceback
 
 import pandas as pd
 
-from config import load_config
+from config import load_config, smc_filter_settings
 from exchange_client import ExchangeClient
 from strategy import (
     ohlcv_to_df,
@@ -79,6 +86,9 @@ from strategy import (
     next_swing_beyond,
     apply_entry_filters,
     entry_symbol_allowed,
+    add_smc_context,
+    describe_smc,
+    structure_state,
 )
 from risk_manager import RiskManager
 
@@ -124,7 +134,7 @@ def analyze_higher_timeframes(client, cfg, symbol):
         raw = client.fetch_ohlcv(symbol, timeframe=tf, limit=cfg.trend_candle_limit)
         df = ohlcv_to_df(raw)
         trend = detect_trend(df, ema_period=cfg.trend_ema_period)
-        obs = detect_order_blocks(df, n=cfg.fractal_n)
+        obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings)
         unmitigated = sum(1 for ob in obs if not ob["mitigated"])
         is_primary = tf in cfg.primary_htf_timeframes
         if is_primary:
@@ -406,7 +416,7 @@ def _find_setups(client, cfg, symbol, df_cache):
     if df is None:
         return None, htf_detail, False, None
 
-    obs = detect_order_blocks(df, n=cfg.fractal_n)
+    obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings)
     setups = limit_setups(
         df, obs,
         max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL,
@@ -414,16 +424,31 @@ def _find_setups(client, cfg, symbol, df_cache):
         reward_risk_ratio=cfg.reward_risk_ratio,
     )
     if not setups:
-        print(f"[bot] {symbol}: no valid unmitigated order block in the {bias or 'any'} direction.")
+        print(f"[bot] {symbol}: no valid unmitigated order block in the {bias or 'any'} direction ({_structure_note(df, cfg)}).")
+    setups = add_smc_context(df, setups, n=cfg.fractal_n, dealing_range_candles=cfg.dealing_range_candles)
     setups, dropped = apply_entry_filters(
         setups,
         min_stop_distance_pct=cfg.min_stop_distance_pct,
         timing_trends=timing_trends,
         timing_mode=cfg.htf_timing_agreement,
+        **smc_filter_settings(cfg),
     )
     for setup, reason in dropped:
         print(f"[bot] {symbol}: {setup['position_side']} setup @ {setup['entry']:.6g} filtered out -- {reason}.")
     return setups, htf_detail, "OVERRIDE:" in htf_detail, df
+
+
+def _structure_note(df, cfg):
+    """Where the entry timeframe's structure stands, for the log:
+    "15m structure bullish, last break a CHoCH above 64210"."""
+    try:
+        last = structure_state(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings)
+    except Exception:
+        return f"{cfg.timeframe} structure n/a"
+    if last is None:
+        return f"{cfg.timeframe} structure: no break yet"
+    side = "above" if last["direction"] == "bullish" else "below"
+    return f"{cfg.timeframe} structure {last['direction']}, last break a {last['kind']} {side} {last['level']:.6g}"
 
 
 def _find_tp2_level(df, setup, cfg):
@@ -513,6 +538,7 @@ def _sync_symbol_orders(client, risk, cfg, symbol, setups, htf_detail, df, equit
             f" | exits: TP1 {cfg.partial_tp_r_multiple:g}R (mirror of SL), TP2 "
             + (f"{tp2_price:.6g} ({tp2_source})" if tp2_price is not None else "fallback (no swing beyond TP1)")
             + ", runner trails after TP2"
+            + f" | SMC: {describe_smc(setup.get('smc'))}"
         )
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
         trade_id = risk.new_trade_id()
@@ -557,7 +583,7 @@ def _sync_symbol_orders(client, risk, cfg, symbol, setups, htf_detail, df, equit
         print(
             f"[bot] {symbol}: {'DRY_RUN ' if cfg.dry_run else ''}{setup['position_side']} limit placed @ "
             f"{setup['entry']:.6g} SL={setup['stop_loss']:.6g} qty~{qty:.6f} ({ob.get('structure', 'BOS')} OB "
-            f"{ob['bottom']:.6g}-{ob['top']:.6g})"
+            f"{ob['bottom']:.6g}-{ob['top']:.6g}; {describe_smc(setup.get('smc'))})"
         )
     return bool(risk.pending_orders(symbol))
 

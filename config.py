@@ -9,6 +9,10 @@ run environment loads it (the included run.sh does this, or you can
 import os
 from dataclasses import dataclass, field
 
+# Valid values for OB_STRUCTURE (see Config.ob_structure), and the parser
+# for ENTRY_HOURS_UTC.
+from strategy import OB_STRUCTURE_MODES, parse_hour_windows
+
 
 def _env(env_key: str, default: str) -> str:
     """Like os.getenv, but also falls back to `default` when the variable
@@ -69,6 +73,21 @@ DEFAULT_HTF_PRIMARY_TIMEFRAMES = "1w,1d"
 HTF_TIMING_AGREEMENT_MODES = ("off", "not_against", "aligned")
 
 
+def _hour_windows_env(env_key: str) -> list:
+    """Comma-separated UTC hour windows ("7-10,13-16") -> [(7, 10), (13, 16)].
+    Empty = no restriction. Text that isn't a list of START-END hours is
+    reported and treated as empty (off)."""
+    raw = _env(env_key, "")
+    try:
+        return parse_hour_windows(raw)
+    except ValueError as e:
+        print(
+            f"[config] {env_key}={raw!r} is not a list of START-END hours ({e}); "
+            f"using no restriction (off)."
+        )
+        return []
+
+
 @dataclass
 class Config:
     # --- credentials ---
@@ -85,6 +104,18 @@ class Config:
 
     # --- strategy ---
     fractal_n: int = field(default_factory=lambda: int(_env("FRACTAL_N", "2")))
+    # How a swing high/low becomes the level a BOS/CHoCH has to break.
+    # true (default): only once FRACTAL_N candles after it have closed --
+    # the swing is confirmed first, so a break that a completed candle made
+    # never disappears again. false: the behaviour before this setting
+    # existed -- the swing replaced the level at its own candle, which made
+    # an order block (and the order resting in it) vanish one run later
+    # whenever the candle that broke structure turned out to be a swing
+    # itself, and left later BOS/CHoCH labels wrong. Kept so the backtest
+    # can compare the two. See strategy.detect_structure_breaks().
+    structure_confirmed_swings: bool = field(
+        default_factory=lambda: _bool("STRUCTURE_CONFIRMED_SWINGS", True)
+    )
     reward_risk_ratio: float = field(default_factory=lambda: float(_env("REWARD_RISK_RATIO", "2")))
     # Hard rule, not just a default: take-profit is always exactly this
     # multiple of the stop-loss distance. load_config() below forces
@@ -282,6 +313,54 @@ class Config:
         default_factory=lambda: _env("HTF_TIMING_AGREEMENT", "off").strip().lower()
     )
 
+    # --- smart-money entry filters (all OFF by default) ---
+    # Every setup is tagged with these facts about its order block whether
+    # or not a filter is on (strategy.add_smc_context); the tags are written
+    # to the journal's trigger column and broken down in the backtest
+    # report. Turning a filter on makes the fact a condition for the order.
+    #
+    # Which break the order block must have caused:
+    #   any   -- BOS or CHoCH (the behaviour so far)
+    #   bos   -- only continuation order blocks (break WITH the previous break)
+    #   choch -- only reversal order blocks (first break AGAINST it)
+    ob_structure: str = field(
+        default_factory=lambda: _env("OB_STRUCTURE", "any").strip().lower()
+    )
+    # true: no order unless the move that formed the order block first
+    # swept liquidity -- traded beyond an earlier, until then untouched
+    # swing low (LONG) / swing high (SHORT) without a candle closing beyond
+    # it, before breaking structure. (A move that closed beyond the level
+    # is tagged "run", not "sweep", and does not pass.)
+    require_liquidity_sweep: bool = field(
+        default_factory=lambda: _bool("REQUIRE_LIQUIDITY_SWEEP", False)
+    )
+    # Minimum displacement: the biggest candle body between the order block
+    # and the break, in multiples of the 14-candle average true range before
+    # the order block. 0 = off. Example: 1.5.
+    min_displacement_atr: float = field(
+        default_factory=lambda: float(_env("MIN_DISPLACEMENT_ATR", "0"))
+    )
+    # true: no order unless the move out of the order block left a fair
+    # value gap (three candles where the first and third don't overlap).
+    require_fvg: bool = field(default_factory=lambda: _bool("REQUIRE_FVG", False))
+    # true: a LONG's entry must be in the lower half (discount) of the
+    # dealing range, a SHORT's in the upper half (premium). The dealing
+    # range is the highest high / lowest low of the last
+    # DEALING_RANGE_CANDLES entry-timeframe candles (0 = all CANDLE_LIMIT
+    # candles fetched, about 3 days on 15m).
+    premium_discount_filter: bool = field(
+        default_factory=lambda: _bool("PREMIUM_DISCOUNT_FILTER", False)
+    )
+    dealing_range_candles: int = field(
+        default_factory=lambda: int(_env("DEALING_RANGE_CANDLES", "0"))
+    )
+    # Hours (UTC) during which entry orders may rest, e.g. "7-10,13-16"
+    # (start included, end excluded; "22-2" wraps midnight). Outside them
+    # no order is placed and resting ones are cancelled, so entries can only
+    # fill inside the windows. Empty = off (any hour). Note these are UTC:
+    # the London / New York sessions shift by an hour with daylight saving.
+    entry_hours_utc: list = field(default_factory=lambda: _hour_windows_env("ENTRY_HOURS_UTC"))
+
     # --- cost modeling ---
     # DRY_RUN's simulated exits previously assumed a fill at the exact
     # stop/take-profit price with no trading fees at all, which makes
@@ -372,4 +451,35 @@ def load_config() -> Config:
             f"{HTF_TIMING_AGREEMENT_MODES}; using 'off'."
         )
         cfg.htf_timing_agreement = "off"
+    if cfg.ob_structure not in OB_STRUCTURE_MODES:
+        print(
+            f"[config] OB_STRUCTURE={cfg.ob_structure!r} is not one of "
+            f"{OB_STRUCTURE_MODES}; using 'any'."
+        )
+        cfg.ob_structure = "any"
+    if cfg.min_displacement_atr < 0:
+        print(
+            f"[config] MIN_DISPLACEMENT_ATR={cfg.min_displacement_atr} is negative; "
+            f"clamping to 0 (off)."
+        )
+        cfg.min_displacement_atr = 0.0
+    if cfg.dealing_range_candles < 0:
+        print(
+            f"[config] DEALING_RANGE_CANDLES={cfg.dealing_range_candles} is negative; "
+            f"using 0 (all fetched candles)."
+        )
+        cfg.dealing_range_candles = 0
     return cfg
+
+
+def smc_filter_settings(cfg: Config) -> dict:
+    """The smart-money filter settings as the keyword arguments
+    strategy.apply_entry_filters() takes."""
+    return {
+        "ob_structure": cfg.ob_structure,
+        "require_sweep": cfg.require_liquidity_sweep,
+        "min_displacement_atr": cfg.min_displacement_atr,
+        "require_fvg": cfg.require_fvg,
+        "premium_discount": cfg.premium_discount_filter,
+        "entry_hours": cfg.entry_hours_utc,
+    }

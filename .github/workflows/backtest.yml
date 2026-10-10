@@ -63,6 +63,8 @@ jobs:
           TRAIL_R_MULTIPLE: ${{ vars.TRAIL_R_MULTIPLE }}
           TP2_FRACTION: ${{ vars.TP2_FRACTION }}
           TP2_FALLBACK_R_MULTIPLE: ${{ vars.TP2_FALLBACK_R_MULTIPLE }}
+          STRUCTURE_CONFIRMED_SWINGS: ${{ vars.STRUCTURE_CONFIRMED_SWINGS }}
+          DEALING_RANGE_CANDLES: ${{ vars.DEALING_RANGE_CANDLES }}
           BT_DAYS: ${{ inputs.days }}
           BT_END: ${{ inputs.end }}
           BT_SLIPPAGE: ${{ inputs.slippage_pct }}

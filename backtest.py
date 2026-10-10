@@ -14,9 +14,10 @@ What it does
    CANDLE_LIMIT entry candles and the last TREND_CANDLE_LIMIT candles of each
    higher timeframe, each ending in a just-opened, still-forming candle -- and
    calls the bot's own code on it: strategy.detect_order_blocks(),
-   strategy.limit_setups(), strategy.combine_htf_bias(),
-   strategy.weekly_room_pct(), bot._find_tp2_level(). Nothing about the
-   strategy is re-implemented here.
+   strategy.limit_setups(), strategy.add_smc_context(),
+   strategy.combine_htf_bias(), strategy.weekly_room_pct(),
+   bot._find_tp2_level(). Nothing about the strategy is re-implemented
+   here.
 3. SIMULATION (fast, repeated per variant): replays the bot's run loop over
    those signals as one account -- resting limit entries, MAX_CONCURRENT_
    POSITIONS slots, one position per symbol, one trade per zone, the bot's
@@ -25,8 +26,13 @@ What it does
    plan -- and applies the entry filters through the same
    strategy.apply_entry_filters() the live bot calls.
 4. Compares variants: minimum stop distance, symbol set, 4h/1h agreement
-   (each alone and combined), plus resting take-profit orders vs. the old
-   market close on the 15-minute run.
+   (each alone and combined), resting take-profit orders vs. the old
+   market close on the 15-minute run, the smart-money filters (order
+   blocks from a BOS only / a CHoCH only, liquidity sweep, displacement,
+   fair value gap, premium/discount, entry hours) each alone and in a few
+   combinations, and -- with a second signal pass -- swings confirmed
+   before they count as structure vs. the behaviour before
+   (STRUCTURE_CONFIRMED_SWINGS).
 
 Settings come from the same environment variables as the bot (config.py), so
 running it with the bot's variables backtests the bot's live configuration.
@@ -80,6 +86,7 @@ import pandas as pd
 from config import load_config
 from risk_manager import RiskManager
 from strategy import (
+    add_smc_context,
     apply_entry_filters,
     combine_htf_bias,
     detect_order_blocks,
@@ -350,7 +357,8 @@ def analyze_htf(cfg, views, n_done, partials, price):
 def compute_signals(args):
     """Every run's setups for ONE symbol. Returns
     {"symbol", "steps": [t_run, ...], "px": [...], "signals": {i: (is_override, timing_trends, [setup, ...])}}
-    where setup = (position_side, entry, stop, ob_type, ob_top, ob_bottom, tp2_price)."""
+    where setup = (position_side, entry, stop, ob_type, ob_top, ob_bottom, tp2_price, smc)
+    and smc is the setup's smart-money context (strategy.add_smc_context)."""
     cfg, symbol, d, start_ms, end_ms = args
     from bot import _find_tp2_level  # the bot's own TP2 rule
 
@@ -407,17 +415,18 @@ def compute_signals(args):
         # completed ones and the candle that has just opened.
         win = np.vstack([c[i - (cfg.candle_limit - 1):i], [t_run, px, px, px, px, 0.0]])
         df = pd.DataFrame(win, columns=cols)
-        obs = detect_order_blocks(df, n=cfg.fractal_n)
+        obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings)
         setups = limit_setups(df, obs, max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL, direction=bias,
                               reward_risk_ratio=cfg.reward_risk_ratio)
         if not setups:
             continue
+        add_smc_context(df, setups, n=cfg.fractal_n, dealing_range_candles=cfg.dealing_range_candles)
         out = []
         for s in setups:
             tp2, _ = _find_tp2_level(df, s, cfg)
             ob = s["order_block"]
             out.append((s["position_side"], float(s["entry"]), float(s["stop_loss"]),
-                        ob["type"], float(ob["top"]), float(ob["bottom"]), tp2))
+                        ob["type"], float(ob["top"]), float(ob["bottom"]), tp2, dict(s["smc"])))
         timing = tuple(trend_by_tf[tf] for tf in timing_tfs) if cfg.trend_filter_enabled else None
         signals[len(steps) - 1] = (is_override, timing, out)
     return {"symbol": symbol, "steps": steps, "px": prices, "signals": signals}
@@ -442,13 +451,17 @@ class Sim:
                          price beyond the level (the behaviour before)."""
 
     def __init__(self, cfg, costs, start_equity, exit_mode="resting",
-                 min_stop_pct=0.0, timing_mode="off", entry_symbols=None):
+                 min_stop_pct=0.0, timing_mode="off", entry_symbols=None, **smc_filters):
         self.cfg = cfg
         self.costs = costs
         self.exit_mode = exit_mode
         self.min_stop_pct = min_stop_pct
         self.timing_mode = timing_mode
         self.entry_symbols = entry_symbols or []
+        # smart-money filters, as strategy.apply_entry_filters() takes them:
+        # ob_structure, require_sweep, min_displacement_atr, require_fvg,
+        # premium_discount, entry_hours
+        self.smc_filters = smc_filters
         self.cash = start_equity            # realized equity
         self.start_equity = start_equity
         self.positions = {}                 # symbol -> trade dict
@@ -511,7 +524,7 @@ class Sim:
             # what MIN_STOP_DISTANCE_PCT looks at: the setup's limit price to its stop
             "setup_stop_pct": abs(order["entry"] - order["stop"]) / order["entry"] * 100.0,
             "timing": order["timing"], "override": order["override"], "taker_entry": taker,
-            "leverage": order["leverage"],
+            "leverage": order["leverage"], "smc": order.get("smc"),
         }
         self.traded_zones[order["zone"]] = t
         self.pending.pop(symbol, None)       # one position per symbol
@@ -665,10 +678,11 @@ class Sim:
             setups, is_override, timing = [], False, None
             if sig is not None and entry_symbol_allowed(symbol, self.entry_symbols):
                 is_override, timing, raw = sig
-                setups = [{"position_side": s[0], "entry": s[1], "stop_loss": s[2], "_raw": s} for s in raw]
+                setups = [{"position_side": s[0], "entry": s[1], "stop_loss": s[2], "_raw": s,
+                           "smc": s[7] if len(s) > 7 else None} for s in raw]
                 setups, _ = apply_entry_filters(setups, min_stop_distance_pct=self.min_stop_pct,
                                                 timing_trends=list(timing) if timing is not None else None,
-                                                timing_mode=self.timing_mode)
+                                                timing_mode=self.timing_mode, **self.smc_filters)
             item = (symbol, setups, is_override, timing)
             if symbol in self.pending:
                 holding.append(item)
@@ -716,7 +730,8 @@ class Sim:
                 continue
             order = {"symbol": symbol, "ps": raw[0], "entry": raw[1], "stop": raw[2], "tp2": raw[6],
                      "qty": qty, "zone": zone, "placed": t, "leverage": leverage,
-                     "timing": timing, "override": is_override}
+                     "timing": timing, "override": is_override,
+                     "smc": raw[7] if len(raw) > 7 else None}
             price = px[symbol]
             inside = price <= raw[1] if raw[0] == "LONG" else price >= raw[1]
             if inside:
@@ -831,6 +846,100 @@ def stop_bucket(trade):
     return "?"
 
 
+# ---- smart-money context of a trade (the tags its order carried when placed) ----
+
+def structure_tag(trade):
+    return (trade.get("smc") or {}).get("structure") or "n/a"
+
+
+LIQUIDITY_NAMES = {"sweep": "sweep (an earlier swing pierced by wicks only)",
+                   "run": "run (candles closed beyond the earlier swing)",
+                   "none": "none (no earlier swing reached)"}
+
+
+def liquidity_tag(trade):
+    return LIQUIDITY_NAMES.get((trade.get("smc") or {}).get("liquidity"), "n/a")
+
+
+def flag_tag(field):
+    def key(trade):
+        smc = trade.get("smc")
+        return "n/a" if not smc else ("yes" if smc.get(field) else "no")
+    return key
+
+
+DISPLACEMENT_BUCKETS = [(0, 1.0), (1.0, 1.5), (1.5, 2.0), (2.0, 3.0), (3.0, 1e9)]
+
+
+def displacement_label(lo, hi):
+    return f"{lo:g}-{hi:g} ATR" if hi < 1e9 else f">= {lo:g} ATR"
+
+
+def displacement_bucket(trade):
+    d = (trade.get("smc") or {}).get("displacement_atr")
+    if d is None:
+        return "n/a"
+    for lo, hi in DISPLACEMENT_BUCKETS:
+        if lo <= d < hi:
+            return displacement_label(lo, hi)
+    return "n/a"
+
+
+RANGE_RIGHT = "right half (LONG in discount / SHORT in premium)"
+RANGE_WRONG = "wrong half (LONG in premium / SHORT in discount)"
+
+
+def range_half(trade):
+    pos = (trade.get("smc") or {}).get("range_pos")
+    if pos is None:
+        return "n/a"
+    return RANGE_RIGHT if (pos <= 0.5 if trade["ps"] == "LONG" else pos >= 0.5) else RANGE_WRONG
+
+
+SESSIONS = [(0, 7, "00-07 UTC (Asia)"), (7, 12, "07-12 UTC (London morning)"),
+            (12, 16, "12-16 UTC (New York morning)"), (16, 21, "16-21 UTC (New York afternoon)"),
+            (21, 24, "21-24 UTC (late)")]
+
+
+def session_of(trade):
+    """By the hour the entry FILLED."""
+    hour = int(trade["entry_time"] // 3_600_000) % 24
+    for lo, hi, name in SESSIONS:
+        if lo <= hour < hi:
+            return name
+    return "n/a"
+
+
+# Each smart-money filter alone: (row name, Sim keyword arguments).
+SMC_VARIANTS = [
+    ("order blocks from a BOS only (OB_STRUCTURE=bos)", {"ob_structure": "bos"}),
+    ("order blocks from a CHoCH only (OB_STRUCTURE=choch)", {"ob_structure": "choch"}),
+    ("liquidity sweep required (REQUIRE_LIQUIDITY_SWEEP=true)", {"require_sweep": True}),
+    ("displacement >= 1 ATR (MIN_DISPLACEMENT_ATR=1)", {"min_displacement_atr": 1.0}),
+    ("displacement >= 1.5 ATR (MIN_DISPLACEMENT_ATR=1.5)", {"min_displacement_atr": 1.5}),
+    ("displacement >= 2 ATR (MIN_DISPLACEMENT_ATR=2)", {"min_displacement_atr": 2.0}),
+    ("displacement >= 3 ATR (MIN_DISPLACEMENT_ATR=3)", {"min_displacement_atr": 3.0}),
+    ("fair value gap required (REQUIRE_FVG=true)", {"require_fvg": True}),
+    ("premium/discount (PREMIUM_DISCOUNT_FILTER=true)", {"premium_discount": True}),
+    ("entry hours 7-11 UTC (ENTRY_HOURS_UTC=7-11)", {"entry_hours": [(7, 11)]}),
+    ("entry hours 12-16 UTC (ENTRY_HOURS_UTC=12-16)", {"entry_hours": [(12, 16)]}),
+    ("entry hours 7-16 UTC (ENTRY_HOURS_UTC=7-16)", {"entry_hours": [(7, 16)]}),
+]
+
+# A few stacks of them, as the usual smart-money entry models combine them.
+SMC_COMBOS = [
+    ("sweep + fair value gap", {"require_sweep": True, "require_fvg": True}),
+    ("sweep + displacement >= 1.5 ATR", {"require_sweep": True, "min_displacement_atr": 1.5}),
+    ("fair value gap + displacement >= 1.5 ATR", {"require_fvg": True, "min_displacement_atr": 1.5}),
+    ("CHoCH + sweep", {"ob_structure": "choch", "require_sweep": True}),
+    ("BOS + fair value gap", {"ob_structure": "bos", "require_fvg": True}),
+    ("sweep + fair value gap + premium/discount",
+     {"require_sweep": True, "require_fvg": True, "premium_discount": True}),
+    ("sweep + fair value gap + displacement >= 1.5 ATR + premium/discount",
+     {"require_sweep": True, "require_fvg": True, "min_displacement_atr": 1.5, "premium_discount": True}),
+]
+
+
 def md_table(header, rows):
     out = ["| " + " | ".join(header) + " |", "|" + "|".join("---" for _ in header) + "|"]
     out += ["| " + " | ".join(str(x) for x in row) + " |" for row in rows]
@@ -869,13 +978,18 @@ def main(argv=None):
     ap.add_argument("--out", default="backtest_results", help="output folder")
     ap.add_argument("--cache-dir", default=None, help="keep downloaded candles here between runs")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1, help="parallel workers for the signal pass")
+    ap.add_argument("--skip-structure-compare", action="store_true",
+                    help="skip the second signal pass that compares STRUCTURE_CONFIRMED_SWINGS true vs false "
+                         "(saves roughly half the signal time)")
     ap.add_argument("--synthetic", type=int, default=None, metavar="SEED",
                     help="use random-walk candles instead of BingX (offline smoke test; results are meaningless)")
     args = ap.parse_args(argv)
 
     cfg = load_config()
     # The filters under test are applied by the simulation, variant by variant.
-    cfg = replace(cfg, dry_run=True, min_stop_distance_pct=0.0, entry_symbols=[], htf_timing_agreement="off")
+    cfg = replace(cfg, dry_run=True, min_stop_distance_pct=0.0, entry_symbols=[], htf_timing_agreement="off",
+                  ob_structure="any", require_liquidity_sweep=False, min_displacement_atr=0.0,
+                  require_fvg=False, premium_discount_filter=False, entry_hours_utc=[])
     symbols = [s.strip() for s in args.symbols.split(",")] if args.symbols else list(cfg.symbols)
     end = (datetime.datetime.strptime(args.end, "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
            if args.end else datetime.datetime.now(datetime.timezone.utc))
@@ -923,6 +1037,46 @@ def main(argv=None):
     log("Simulating variants...")
     base = run()
     base_stats = stats(base, t_mid)
+
+    # Swing confirmation: the same account on the signals the OTHER setting
+    # of STRUCTURE_CONFIRMED_SWINGS produces (a second, full signal pass).
+    def swing_name(on):
+        return ("true -- a swing counts once it is confirmed" if on
+                else "false -- a swing counts at its own candle (before)")
+
+    rows_swing = [fmt_variant_row(swing_name(cfg.structure_confirmed_swings) + " [this run's setting]", base_stats)]
+    swing_note = ""
+    if args.skip_structure_compare:
+        swing_note = "The other setting was not simulated (--skip-structure-compare)."
+    else:
+        log("Computing signals for the other STRUCTURE_CONFIRMED_SWINGS setting...")
+        t0 = time.time()
+        other_cfg = replace(cfg, structure_confirmed_swings=not cfg.structure_confirmed_swings)
+        other_jobs = [(other_cfg, s, data[s], start_ms, end_ms) for s in symbols]
+        if args.jobs > 1 and len(other_jobs) > 1:
+            with Pool(min(args.jobs, len(other_jobs))) as pool:
+                other_results = pool.map(compute_signals, other_jobs)
+        else:
+            other_results = [compute_signals(j) for j in other_jobs]
+        other_signals = {r["symbol"]: r for r in other_results}
+        other_setups = sum(len(v[2]) for r in other_results for v in r["signals"].values())
+        log(f"Done in {time.time() - t0:.0f}s: {other_setups} setup-observations (this run's setting: {n_setups}).")
+        other = simulate(other_cfg, costs, args.start_equity, other_signals, exec_data, symbols)
+        rows_swing.append(fmt_variant_row(swing_name(other_cfg.structure_confirmed_swings), stats(other, t_mid)))
+        swing_note = (f"Setup-observations (a setup seen at one run): {n_setups} with this run's setting, "
+                      f"{other_setups} with the other.")
+
+    rows_smc = [fmt_variant_row("all smart-money filters off", base_stats)]
+    smc_json = []
+    for name, kw in SMC_VARIANTS:
+        st = stats(run(**kw), t_mid)
+        rows_smc.append(fmt_variant_row(name, st))
+        smc_json.append({"variant": name, **st})
+    rows_smc_combo = [fmt_variant_row("all smart-money filters off", base_stats)]
+    for name, kw in SMC_COMBOS:
+        st = stats(run(**kw), t_mid)
+        rows_smc_combo.append(fmt_variant_row(name, st))
+        smc_json.append({"variant": name, **st})
     rows_exit = [fmt_variant_row("resting TP1/TP2 orders (live now)", base_stats),
                  fmt_variant_row("market close on the 15-min run (before)", stats(run(exit_mode="run"), t_mid))]
 
@@ -953,6 +1107,13 @@ def main(argv=None):
     by_stop = breakdown(base.trades, stop_bucket,
                         order=[f"{lo:.2f}-{hi:.2f}%" if hi < 1e9 else f">= {lo:.2f}%" for lo, hi in STOP_BUCKETS])
     by_timing = breakdown(base.trades, timing_state)
+    by_structure = breakdown(base.trades, structure_tag, order=["BOS", "CHoCH", "n/a"])
+    by_sweep = breakdown(base.trades, liquidity_tag, order=[LIQUIDITY_NAMES[k] for k in ("sweep", "run", "none")] + ["n/a"])
+    by_fvg = breakdown(base.trades, flag_tag("fvg"), order=["yes", "no", "n/a"])
+    by_displacement = breakdown(base.trades, displacement_bucket,
+                                order=[displacement_label(lo, hi) for lo, hi in DISPLACEMENT_BUCKETS] + ["n/a"])
+    by_range = breakdown(base.trades, range_half, order=[RANGE_RIGHT, RANGE_WRONG, "n/a"])
+    by_session = breakdown(base.trades, session_of, order=[name for _, _, name in SESSIONS])
     by_side = breakdown(base.trades, lambda t: t["ps"])
     by_exit = breakdown(base.trades, lambda t: (
         "stopped out before TP1" if not any(e[1] == "tp1" for e in t["exits"])
@@ -1015,6 +1176,35 @@ Baseline trades by symbol:
 
 {md_table(VARIANT_HEADER, [c[1] for c in combos])}
 
+## Market structure: swing confirmation (STRUCTURE_CONFIRMED_SWINGS)
+
+{md_table(VARIANT_HEADER, rows_swing)}
+
+{swing_note}
+With "false", an order block whose breaking candle turns out to be a swing itself disappears again once that swing is confirmed, and its order is cancelled; with "true" it stays. So "true" keeps more order blocks -- more orders and more trades, not the same trades filtered.
+
+## Smart-money filters, each alone (other filters off)
+
+{md_table(VARIANT_HEADER, rows_smc)}
+
+A few of them stacked:
+
+{md_table(VARIANT_HEADER, rows_smc_combo)}
+
+Baseline trades by what their order block looked like when the order was placed -- the same facts the filters above test. BOS = the order block caused a break WITH the previous break (continuation), CHoCH = the first break AGAINST it (reversal):
+
+{brk(by_structure, "order block from a")}
+
+{brk(by_sweep, "liquidity taken before it")}
+
+{brk(by_fvg, "fair value gap left by the move")}
+
+{brk(by_displacement, "displacement")}
+
+{brk(by_range, "entry in the dealing range")}
+
+{brk(by_session, "hour the entry filled")}
+
 ## More baseline detail
 
 {brk(by_side, "side")}
@@ -1026,6 +1216,7 @@ Baseline trades by symbol:
 - These are simulated fills on historical candles, under the assumptions listed at the top of backtest.py. Real results will differ.
 - A filter that only looks good in one half of the period, or that leaves very few trades, is probably fitting noise.
 - Per-symbol results come from few trades each; a symbol set chosen from this table is fitted to this period.
+- Many filters are compared here. With this many tries a few will look good by luck alone; the more rows a table has, the less its best row means. Prefer a filter that makes sense to you beforehand, helps in both halves and still leaves a decent number of trades.
 """
     with open(os.path.join(args.out, "summary.md"), "w") as f:
         f.write(report)
@@ -1033,18 +1224,24 @@ Baseline trades by symbol:
         w = csv.writer(f)
         w.writerow(["symbol", "side", "entry_time_utc", "exit_time_utc", "entry", "initial_stop", "setup_stop_pct", "stop_pct",
                     "qty", "leverage", "risk_usd", "pnl", "r_multiple", "fees", "exit_kind", "timing_4h_1h",
-                    "override", "taker_entry", "exits"])
+                    "override", "taker_entry", "exits", "ob_structure", "liquidity", "fair_value_gap",
+                    "displacement_atr", "range_pos"])
         for t in sorted(base.trades, key=lambda x: x["entry_time"]):
             iso = lambda ms: datetime.datetime.fromtimestamp(ms / 1000, datetime.timezone.utc).isoformat()
+            smc = t.get("smc") or {}
             w.writerow([t["symbol"], t["ps"], iso(t["entry_time"]), iso(t["exit_time"]), t["entry"], t["initial_stop"],
                         round(t["setup_stop_pct"], 4), round(t["stop_pct"], 4), t["initial_qty"], t["leverage"], round(t["risk_usd"], 4),
                         round(t["pnl"], 4), round(t["pnl"] / t["risk_usd"], 3) if t["risk_usd"] else "",
                         round(t["fees"], 4), t["exit_kind"], "/".join(t["timing"]) if t["timing"] else "",
                         t["override"], t["taker_entry"],
-                        "; ".join(f"{k} {q:.6g}@{p:.6g}" for _, k, q, p in t["exits"])])
+                        "; ".join(f"{k} {q:.6g}@{p:.6g}" for _, k, q, p in t["exits"]),
+                        smc.get("structure", ""), smc.get("liquidity", ""), smc.get("fvg", ""),
+                        round(smc["displacement_atr"], 3) if smc.get("displacement_atr") is not None else "",
+                        round(smc["range_pos"], 3) if smc.get("range_pos") is not None else ""])
     with open(os.path.join(args.out, "variants.json"), "w") as f:
         json.dump({"baseline": base_stats,
-                   "combinations": [{"min_stop_pct": c[2], "timing": c[3], "symbols": c[4], **c[5]} for c in combos]},
+                   "combinations": [{"min_stop_pct": c[2], "timing": c[3], "symbols": c[4], **c[5]} for c in combos],
+                   "smart_money": smc_json},
                   f, indent=2, default=str)
     print(report)
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
