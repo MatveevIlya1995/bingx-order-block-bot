@@ -14,7 +14,7 @@
       "position_side": "LONG",
       "qty": 0.1562436,
       "entry_price": 109.876,
-      "stop_loss": 109.876,
+      "stop_loss": 110.16535,
       "take_profit": 110.5473,
       "trigger": "bullish order block limit: zone 109.6500-109.8760 (formed 2026-10-10 14:00 UTC, BOS confirmed 2026-10-10 14:15 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bearish(1 OB) 1h=bearish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 110.314 (next swing high (1.30R)), runner trails after TP2 | filled limit @ 109.876",
       "tp2_price": 110.314,
@@ -161,7 +161,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 237.2702,
+  "last_seen_equity": 237.3344,
   "traded_zones": {
     "BTC/USDT:USDT|bullish|84541.3-84566.9": "2026-10-03T21:15:41.203902+00:00",
     "LTC/USDT:USDT|bullish|69.89-70.14": "2026-10-04T00:15:50.351394+00:00",
@@ -266,30 +266,6 @@
       "trigger": "bullish order block limit: zone 747.8600-748.3600 (formed 2026-10-10 12:15 UTC, BOS confirmed 2026-10-10 13:15 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(2 OB) 4h=bearish(2 OB) 1h=bullish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 750.11 (next swing high (1.40R)), runner trails after TP2"
     },
     {
-      "order_id": "paper-1d333c9ec429",
-      "trade_id": "1d333c9ec429",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 0.670556,
-      "leverage": 10,
-      "entry_price": 745.65,
-      "stop_loss": 744.30495,
-      "take_profit": 748.3401,
-      "tp2_price": 749.12,
-      "tp2_source": "next swing high (2.58R)",
-      "equity": 237.17,
-      "zone_key": "BNB/USDT:USDT|bullish|745.05-745.65",
-      "ob": {
-        "type": "bullish",
-        "top": 745.65,
-        "bottom": 745.05
-      },
-      "placed_time_utc": "2026-10-10T15:01:23.175053+00:00",
-      "trigger": "bullish order block limit: zone 745.0500-745.6500 (formed 2026-10-10 04:15 UTC, BOS confirmed 2026-10-10 04:45 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(2 OB) 4h=bearish(2 OB) 1h=bullish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 749.12 (next swing high (2.58R)), runner trails after TP2"
-    },
-    {
       "order_id": "paper-b56f1bea6c3b",
       "trade_id": "b56f1bea6c3b",
       "mode": "DRY_RUN",
@@ -360,6 +336,30 @@
       },
       "placed_time_utc": "2026-10-10T19:30:57.520147+00:00",
       "trigger": "bullish order block limit: zone 2503.4100-2506.5400 (formed 2026-10-10 16:45 UTC, CHoCH confirmed 2026-10-10 19:00 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bullish(5 OB) 4h=bearish(2 OB) 1h=bullish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 2516.36 (next swing high (1.74R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-62d43607c17f",
+      "trade_id": "62d43607c17f",
+      "mode": "DRY_RUN",
+      "symbol": "BNB/USDT:USDT",
+      "side": "buy",
+      "position_side": "LONG",
+      "qty": 0.111498,
+      "leverage": 10,
+      "entry_price": 750.39,
+      "stop_loss": 748.7904599999999,
+      "take_profit": 753.5890800000001,
+      "tp2_price": 753.77,
+      "tp2_source": "next swing high (2.11R)",
+      "equity": 237.33,
+      "zone_key": "BNB/USDT:USDT|bullish|749.54-750.39",
+      "ob": {
+        "type": "bullish",
+        "top": 750.39,
+        "bottom": 749.54
+      },
+      "placed_time_utc": "2026-10-10T19:46:08.596774+00:00",
+      "trigger": "bullish order block limit: zone 749.5400-750.3900 (formed 2026-10-10 18:00 UTC, BOS confirmed 2026-10-10 19:15 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(2 OB) 4h=bearish(2 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 753.77 (next swing high (2.11R)), runner trails after TP2"
     }
   ]
 }
