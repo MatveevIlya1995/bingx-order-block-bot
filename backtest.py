@@ -6,10 +6,11 @@ Backtest: replays the bot's strategy on BingX history, with fees.
 What it does
 ------------
 1. Downloads public candle history from BingX (no API key needed) for every
-   symbol in SYMBOLS: the entry timeframe (15m), every higher timeframe the
-   trend cascade uses (1w/1d/4h/1h) and a finer "execution" timeframe (5m)
-   used to walk price between two bot runs.
-2. SIGNALS (the slow part, done once): for every 15-minute step it rebuilds
+   symbol in SYMBOLS: the entry timeframe (5m), every higher timeframe the
+   trend cascade uses (1d/4h/1h/15m) and the "execution" timeframe used to
+   walk price between two bot runs (5m, i.e. the entry candles themselves
+   unless TIMEFRAME is set higher).
+2. SIGNALS (the slow part, done once): for every entry-candle step it rebuilds
    exactly what the live bot would have seen at that moment -- the last
    CANDLE_LIMIT entry candles and the last TREND_CANDLE_LIMIT candles of each
    higher timeframe, each ending in a just-opened, still-forming candle -- and
@@ -25,14 +26,15 @@ What it does
    daily-loss circuit breaker, and the TP1 / TP2 / breakeven / trailing exit
    plan -- and applies the entry filters through the same
    strategy.apply_entry_filters() the live bot calls.
-4. Compares variants: minimum stop distance, symbol set, 4h/1h agreement
-   (each alone and combined), resting take-profit orders vs. the old
-   market close on the 15-minute run, the smart-money filters (order
+4. Compares variants: minimum stop distance, symbol set, timing-level
+   agreement (each alone and combined), resting take-profit orders vs. the
+   old market close on the scheduled run, the smart-money filters (order
    blocks from a BOS only / a CHoCH only, liquidity sweep, displacement,
    fair value gap, premium/discount, entry hours) each alone and in a few
-   combinations, and -- with a second signal pass -- swings confirmed
+   combinations, and -- with an extra signal pass each -- swings confirmed
    before they count as structure vs. the behaviour before
-   (STRUCTURE_CONFIRMED_SWINGS).
+   (STRUCTURE_CONFIRMED_SWINGS) and only order blocks at strong swings vs.
+   all of them (REQUIRE_STRONG_SWING).
 
 Settings come from the same environment variables as the bot (config.py), so
 running it with the bot's variables backtests the bot's live configuration.
@@ -83,7 +85,7 @@ from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 
-from config import load_config
+from config import load_config, override_levels
 from risk_manager import RiskManager
 from strategy import (
     add_smc_context,
@@ -341,16 +343,17 @@ def analyze_htf(cfg, views, n_done, partials, price):
     trend_by_tf = {tf: views[tf].trend(n_done[tf], price) for tf in cfg.htf_timeframes}
     bias = combine_htf_bias([trend_by_tf[tf] for tf in cfg.htf_timeframes if tf in cfg.primary_htf_timeframes])
     is_override = False
-    if (bias == "conflict" and set(cfg.primary_htf_timeframes) == {"1w", "1d"}
-            and "1w" in trend_by_tf and "1d" in trend_by_tf):
-        weekly, daily = trend_by_tf["1w"], trend_by_tf["1d"]
-        if weekly in ("bullish", "bearish") and daily in ("bullish", "bearish") and price > 0:
-            level = views["1w"].swing_level(n_done["1w"], partials["1w"], weekly, cfg.fractal_n)
+    pair = override_levels(cfg)
+    if bias == "conflict" and pair and pair[0] in trend_by_tf and pair[1] in trend_by_tf:
+        top = pair[0]
+        higher, lower = trend_by_tf[top], trend_by_tf[pair[1]]
+        if higher in ("bullish", "bearish") and lower in ("bullish", "bearish") and price > 0:
+            level = views[top].swing_level(n_done[top], partials[top], higher, cfg.fractal_n)
             room = None
             if level is not None:
-                room = ((level - price) if weekly == "bullish" else (price - level)) / price * 100.0
+                room = ((level - price) if higher == "bullish" else (price - level)) / price * 100.0
             if room is not None and room >= cfg.weekly_daily_override_min_room_pct:
-                bias, is_override = weekly, True
+                bias, is_override = higher, True
     return bias, is_override, trend_by_tf
 
 
@@ -415,7 +418,8 @@ def compute_signals(args):
         # completed ones and the candle that has just opened.
         win = np.vstack([c[i - (cfg.candle_limit - 1):i], [t_run, px, px, px, px, 0.0]])
         df = pd.DataFrame(win, columns=cols)
-        obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings)
+        obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
+                                  strong_swings_only=cfg.require_strong_swing)
         setups = limit_setups(df, obs, max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL, direction=bias,
                               reward_risk_ratio=cfg.reward_risk_ratio)
         if not setups:
@@ -822,16 +826,17 @@ def breakdown(trades, key, order=None):
 
 
 def timing_state(trade):
-    """How the 4h/1h trends stood relative to the trade when its order was placed."""
+    """How the timing levels' trends (1h/15m by default) stood relative to
+    the trade when its order was placed."""
     timing = trade["timing"]
     if timing is None:
         return "n/a"
     want = "bullish" if trade["ps"] == "LONG" else "bearish"
     against = "bearish" if want == "bullish" else "bullish"
     if against in timing:
-        return "against (4h or 1h opposite)"
+        return "against (a timing level opposite)"
     if all(x == want for x in timing):
-        return "aligned (4h and 1h with the trade)"
+        return "aligned (every timing level with the trade)"
     return "neutral (not against, not both aligned)"
 
 
@@ -979,8 +984,8 @@ def main(argv=None):
     ap.add_argument("--cache-dir", default=None, help="keep downloaded candles here between runs")
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 1, help="parallel workers for the signal pass")
     ap.add_argument("--skip-structure-compare", action="store_true",
-                    help="skip the second signal pass that compares STRUCTURE_CONFIRMED_SWINGS true vs false "
-                         "(saves roughly half the signal time)")
+                    help="skip the two extra signal passes that compare STRUCTURE_CONFIRMED_SWINGS and "
+                         "REQUIRE_STRONG_SWING true vs false (saves roughly two thirds of the signal time)")
     ap.add_argument("--synthetic", type=int, default=None, metavar="SEED",
                     help="use random-walk candles instead of BingX (offline smoke test; results are meaningless)")
     args = ap.parse_args(argv)
@@ -1034,24 +1039,17 @@ def main(argv=None):
     def run(**variant):
         return simulate(cfg, costs, args.start_equity, signals, exec_data, symbols, **variant)
 
+    timing_label = "/".join(tf for tf in cfg.htf_timeframes if tf not in cfg.primary_htf_timeframes) or "timing levels"
     log("Simulating variants...")
     base = run()
     base_stats = stats(base, t_mid)
 
-    # Swing confirmation: the same account on the signals the OTHER setting
-    # of STRUCTURE_CONFIRMED_SWINGS produces (a second, full signal pass).
-    def swing_name(on):
-        return ("true -- a swing counts once it is confirmed" if on
-                else "false -- a swing counts at its own candle (before)")
-
-    rows_swing = [fmt_variant_row(swing_name(cfg.structure_confirmed_swings) + " [this run's setting]", base_stats)]
-    swing_note = ""
-    if args.skip_structure_compare:
-        swing_note = "The other setting was not simulated (--skip-structure-compare)."
-    else:
-        log("Computing signals for the other STRUCTURE_CONFIRMED_SWINGS setting...")
+    # Settings that change which order blocks exist at all need their own
+    # signal pass: the same account on the signals the OTHER value produces.
+    def other_setting(label, **change):
+        log(f"Computing signals for the other {label} setting...")
         t0 = time.time()
-        other_cfg = replace(cfg, structure_confirmed_swings=not cfg.structure_confirmed_swings)
+        other_cfg = replace(cfg, **change)
         other_jobs = [(other_cfg, s, data[s], start_ms, end_ms) for s in symbols]
         if args.jobs > 1 and len(other_jobs) > 1:
             with Pool(min(args.jobs, len(other_jobs))) as pool:
@@ -1059,12 +1057,33 @@ def main(argv=None):
         else:
             other_results = [compute_signals(j) for j in other_jobs]
         other_signals = {r["symbol"]: r for r in other_results}
-        other_setups = sum(len(v[2]) for r in other_results for v in r["signals"].values())
-        log(f"Done in {time.time() - t0:.0f}s: {other_setups} setup-observations (this run's setting: {n_setups}).")
-        other = simulate(other_cfg, costs, args.start_equity, other_signals, exec_data, symbols)
-        rows_swing.append(fmt_variant_row(swing_name(other_cfg.structure_confirmed_swings), stats(other, t_mid)))
+        count = sum(len(v[2]) for r in other_results for v in r["signals"].values())
+        log(f"Done in {time.time() - t0:.0f}s: {count} setup-observations (this run's setting: {n_setups}).")
+        sim = simulate(other_cfg, costs, args.start_equity, other_signals, exec_data, symbols)
+        return stats(sim, t_mid), count
+
+    def swing_name(on):
+        return ("true -- a swing counts once it is confirmed" if on
+                else "false -- a swing counts at its own candle (before)")
+
+    def strong_name(on):
+        return ("true -- only order blocks at a strong swing" if on
+                else "false -- every order block that caused a break (before)")
+
+    rows_swing = [fmt_variant_row(swing_name(cfg.structure_confirmed_swings) + " [this run's setting]", base_stats)]
+    rows_strong = [fmt_variant_row(strong_name(cfg.require_strong_swing) + " [this run's setting]", base_stats)]
+    swing_note = strong_note = ""
+    if args.skip_structure_compare:
+        swing_note = strong_note = "The other setting was not simulated (--skip-structure-compare)."
+    else:
+        st, count = other_setting("STRUCTURE_CONFIRMED_SWINGS",
+                                  structure_confirmed_swings=not cfg.structure_confirmed_swings)
+        rows_swing.append(fmt_variant_row(swing_name(not cfg.structure_confirmed_swings), st))
         swing_note = (f"Setup-observations (a setup seen at one run): {n_setups} with this run's setting, "
-                      f"{other_setups} with the other.")
+                      f"{count} with the other.")
+        st, count = other_setting("REQUIRE_STRONG_SWING", require_strong_swing=not cfg.require_strong_swing)
+        rows_strong.append(fmt_variant_row(strong_name(not cfg.require_strong_swing), st))
+        strong_note = (f"Setup-observations: {n_setups} with this run's setting, {count} with the other.")
 
     rows_smc = [fmt_variant_row("all smart-money filters off", base_stats)]
     smc_json = []
@@ -1078,7 +1097,7 @@ def main(argv=None):
         rows_smc_combo.append(fmt_variant_row(name, st))
         smc_json.append({"variant": name, **st})
     rows_exit = [fmt_variant_row("resting TP1/TP2 orders (live now)", base_stats),
-                 fmt_variant_row("market close on the 15-min run (before)", stats(run(exit_mode="run"), t_mid))]
+                 fmt_variant_row("market close on the scheduled run (before)", stats(run(exit_mode="run"), t_mid))]
 
     rows_stop = [fmt_variant_row("off (0)", base_stats)]
     for m in (0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.75):
@@ -1099,7 +1118,7 @@ def main(argv=None):
             for name, members in SYMBOL_SETS.items():
                 s = stats(run(min_stop_pct=m, timing_mode=mode, entry_symbols=members), t_mid)
                 combos.append((s["net_pnl"], fmt_variant_row(
-                    f"min stop {m:.2f}% + 4h/1h {mode} + {name.split(' (')[0]}", s), m, mode, name, s))
+                    f"min stop {m:.2f}% + {timing_label} {mode} + {name.split(' (')[0]}", s), m, mode, name, s))
     combos.sort(key=lambda x: -x[0])
 
     by_symbol = breakdown(base.trades, lambda t: t["symbol"].split("/")[0])
@@ -1133,7 +1152,8 @@ def main(argv=None):
 
 Data: {source}. {len(symbols)} symbols: {", ".join(s.split("/")[0] for s in symbols)}.
 {note_text}
-Settings (from the bot's configuration): risk {cfg.risk_pct_per_trade * 100:g}% per trade, margin ${cfg.margin_per_trade_usd:g}, leverage ceiling {min(cfg.leverage, cfg.max_leverage_hard_cap)}x, max {cfg.max_concurrent_positions} positions, daily loss limit {cfg.max_daily_loss_pct * 100:g}%, weekly/daily override room {cfg.weekly_daily_override_min_room_pct:g}%, TP1 {cfg.partial_tp_fraction:.0%} at {cfg.partial_tp_r_multiple:g}R, TP2 {cfg.tp2_fraction:.0%}, trail {cfg.trail_r_multiple:g}R.
+Timeframes: entries on {cfg.timeframe}; direction from {"/".join(cfg.primary_htf_timeframes)}; timing levels {timing_label}. Order blocks: {"only at strong swings" if cfg.require_strong_swing else "every one that caused a break"}; swings {"confirmed first" if cfg.structure_confirmed_swings else "counted at their own candle"}.
+Settings (from the bot's configuration): risk {cfg.risk_pct_per_trade * 100:g}% per trade, margin ${cfg.margin_per_trade_usd:g}, leverage ceiling {min(cfg.leverage, cfg.max_leverage_hard_cap)}x, max {cfg.max_concurrent_positions} positions, daily loss limit {cfg.max_daily_loss_pct * 100:g}%, primary-level override room {cfg.weekly_daily_override_min_room_pct:g}%, TP1 {cfg.partial_tp_fraction:.0%} at {cfg.partial_tp_r_multiple:g}R, TP2 {cfg.tp2_fraction:.0%}, trail {cfg.trail_r_multiple:g}R.
 Costs: maker {args.maker_fee_pct}%, taker {args.taker_fee_pct}%, slippage {args.slippage_pct}% on market/triggered fills. Starting equity ${args.start_equity:g}. Execution walked on {exec_tf} candles.
 
 "R" is the amount risked on a trade (size x stop distance); "avg R/trade" is net P/L after fees in units of that. The two halves split the period in the middle ({day(t_mid)}) by entry time.
@@ -1156,13 +1176,13 @@ Baseline trades by the setup's stop distance (limit price to stop -- what the mi
 
 {brk(by_stop, "stop distance")}
 
-## 4h/1h agreement (HTF_TIMING_AGREEMENT), other filters off
+## {timing_label} agreement (HTF_TIMING_AGREEMENT), other filters off
 
 {md_table(VARIANT_HEADER, rows_timing)}
 
-Baseline trades by how 4h/1h stood at entry:
+Baseline trades by how {timing_label} stood at entry:
 
-{brk(by_timing, "4h/1h vs trade")}
+{brk(by_timing, f"{timing_label} vs trade")}
 
 ## Symbol set (ENTRY_SYMBOLS), other filters off
 
@@ -1182,6 +1202,13 @@ Baseline trades by symbol:
 
 {swing_note}
 With "false", an order block whose breaking candle turns out to be a swing itself disappears again once that swing is confirmed, and its order is cancelled; with "true" it stays. So "true" keeps more order blocks -- more orders and more trades, not the same trades filtered.
+
+## Market structure: strong swings (REQUIRE_STRONG_SWING)
+
+{md_table(VARIANT_HEADER, rows_strong)}
+
+{strong_note}
+A strong swing is a swing low/high from which price went on to cause a BOS or CHoCH. With "true", an order block only counts if the move that broke structure started from a real swing point; one that came out of a pause of a candle or two is ignored.
 
 ## Smart-money filters, each alone (other filters off)
 

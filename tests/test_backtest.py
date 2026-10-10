@@ -13,25 +13,44 @@ SYMS = ["AAA/USDT:USDT", "BBB/USDT:USDT"]
 DAY = 86_400_000
 
 
-@pytest.fixture(scope="module")
-def world():
+CLEAN_ENV = ("SYMBOLS", "MIN_STOP_DISTANCE_PCT", "ENTRY_SYMBOLS", "HTF_TIMING_AGREEMENT",
+             "MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT",
+             "STRUCTURE_CONFIRMED_SWINGS", "REQUIRE_STRONG_SWING", "OB_STRUCTURE", "REQUIRE_LIQUIDITY_SWEEP",
+             "MIN_DISPLACEMENT_ATR", "REQUIRE_FVG", "PREMIUM_DISCOUNT_FILTER", "DEALING_RANGE_CANDLES",
+             "ENTRY_HOURS_UTC", "TIMEFRAME", "HTF_TIMEFRAMES", "HTF_PRIMARY_TIMEFRAMES")
+ACCOUNT_ENV = {"MAX_CONCURRENT_POSITIONS": "5", "RISK_PCT_PER_TRADE": "2", "LEVERAGE": "10",
+               "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT": "1"}
+# The cascade the bot ran before the timeframes moved down a level. The
+# simulation tests below were written against it (15m steps, weekly warm-up),
+# and it stays a supported configuration.
+WEEKLY_DAILY_15M = {"TIMEFRAME": "15m", "HTF_TIMEFRAMES": "1w,1d,4h,1h", "HTF_PRIMARY_TIMEFRAMES": "1w,1d"}
+
+
+def build_world(days, seed, **env):
     import os
-    for key in ("SYMBOLS", "MIN_STOP_DISTANCE_PCT", "ENTRY_SYMBOLS", "HTF_TIMING_AGREEMENT",
-                "MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT",
-                "STRUCTURE_CONFIRMED_SWINGS", "OB_STRUCTURE", "REQUIRE_LIQUIDITY_SWEEP", "MIN_DISPLACEMENT_ATR",
-                "REQUIRE_FVG", "PREMIUM_DISCOUNT_FILTER", "DEALING_RANGE_CANDLES", "ENTRY_HOURS_UTC"):
+    for key in CLEAN_ENV:
         os.environ.pop(key, None)
-    os.environ.update({"MAX_CONCURRENT_POSITIONS": "5", "RISK_PCT_PER_TRADE": "2", "LEVERAGE": "10",
-                       "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT": "1"})
+    os.environ.update({**ACCOUNT_ENV, **env})
     cfg = config.load_config()
     end = 1_790_000_000_000 - 1_790_000_000_000 % bt.TF_MS["15m"]
-    start = end - 12 * DAY
-    data = bt.synthetic_history(SYMS, start, end, seed=11, exec_tf="5m",
+    start = end - days * DAY
+    data = bt.synthetic_history(SYMS, start, end, seed=seed, exec_tf="5m",
                                 htf_timeframes=cfg.htf_timeframes, htf_lookback=cfg.trend_candle_limit + 5)
     signals = {s: bt.compute_signals((cfg, s, data[s], start, end)) for s in SYMS}
-    yield cfg, data, signals, start, end
-    for key in ("MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT"):
+    for key in list(ACCOUNT_ENV) + list(env):
         os.environ.pop(key, None)
+    return cfg, data, signals, start, end
+
+
+@pytest.fixture(scope="module")
+def world():
+    return build_world(12, 11, **WEEKLY_DAILY_15M)
+
+
+@pytest.fixture(scope="module")
+def world_5m():
+    """The default cascade: daily + 4h direction, 1h + 15m timing, 5m entries."""
+    return build_world(5, 13)
 
 
 class ClientAt:
@@ -58,6 +77,19 @@ class ClientAt:
 
 
 def test_signals_equal_what_the_live_bot_code_finds(world):
+    assert (world[0].timeframe, world[0].primary_htf_timeframes) == ("15m", ["1w", "1d"])
+    check_signals(world, min_checked=300, min_setups=60)
+
+
+def test_signals_equal_on_the_default_timeframes(world_5m):
+    cfg = world_5m[0]
+    assert (cfg.timeframe, cfg.htf_timeframes, cfg.primary_htf_timeframes) == ("5m", ["1d", "4h", "1h", "15m"], ["1d", "4h"])
+    assert config.override_levels(cfg) == ("1d", "4h")
+    overrides = check_signals(world_5m, min_checked=300, min_setups=60)
+    assert overrides > 0          # the room override works between daily and 4h too
+
+
+def check_signals(world, min_checked, min_setups):
     cfg, data, signals, start, end = world
     rng = np.random.default_rng(3)
     checked = with_setups = overrides = conflicts = 0
@@ -96,10 +128,11 @@ def test_signals_equal_what_the_live_bot_code_finds(world):
                 assert got[1] == tuple(trends[tf] for tf in cfg.htf_timeframes if tf not in cfg.primary_htf_timeframes)
             conflicts += "disagree" in detail or setups == [] and "NOT overridden" in detail
             checked += 1
-    assert checked >= 300 and with_setups >= 60
+    assert checked >= min_checked and with_setups >= min_setups
     # the tags vary across the sample (both kinds of break, every liquidity outcome, gap and no gap)
     assert {t[0] for t in tags} == {"BOS", "CHoCH"} and {t[1] for t in tags} == {"sweep", "run", "none"}
     assert {t[2] for t in tags} == {True, False}
+    return overrides
 
 
 def test_htf_trend_equals_detect_trend(world):

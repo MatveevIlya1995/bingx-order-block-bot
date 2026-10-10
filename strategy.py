@@ -42,6 +42,10 @@ gives fewer, more significant breaks.
 
 ORDER BLOCKS
 ------------
+0. Only order blocks at a STRONG SWING count. A strong swing is a swing
+   low/high from which price went on to cause a BOS or CHoCH; a break
+   made out of a pause that never formed a swing gives no order block
+   (REQUIRE_STRONG_SWING, on by default -- see detect_order_blocks).
 1. The order block is the last opposite-colored candle before the
    impulsive move that produced the break:
    - bullish OB = last bearish (red) candle before a bullish BOS/CHoCH
@@ -69,15 +73,15 @@ risk_manager.py hard-caps the stop-loss risk itself at 3% of equity.
 
 Multi-timeframe use: every function below operates on a single timeframe's
 DataFrame. bot.py calls detect_trend() and detect_order_blocks() once per
-level of its weekly -> daily -> 4h -> 1h cascade (see
-bot.analyze_higher_timeframes()), and again on the 15m entry timeframe for
-generate_signal(). combine_htf_bias() folds the cascade's trend readings
-into one overall directional bias that bot.py then requires the entry
-signal not to contradict -- UNLESS the weekly/daily disagreement override
-applies (see weekly_room_pct() below and bot.analyze_higher_timeframes()):
-when the weekly and daily trends disagree but price still has enough room
-left to run toward the weekly chart's own last confirmed swing high/low,
-the weekly trend is allowed to win instead of blocking the trade outright.
+level of its daily -> 4h -> 1h -> 15m cascade (see
+bot.analyze_higher_timeframes()), and again on the 5m entry timeframe for
+the limit-order setups. combine_htf_bias() folds the primary levels' trend
+readings (daily + 4h) into one overall directional bias that the entry
+must not contradict -- UNLESS the room override applies (see
+weekly_room_pct() below and bot.analyze_higher_timeframes()): when the
+two primary levels disagree but price still has enough room left to run
+toward the higher chart's own last confirmed swing high/low, the higher
+level's trend is allowed to win instead of blocking the trade outright.
 """
 import pandas as pd
 import numpy as np
@@ -269,7 +273,7 @@ def _find_order_block(opens, highs, lows, closes, direction, search_from, bos_id
             return None
         if closes[bos_idx] >= bottom:
             return None
-    return {"formed_idx": ob_idx, "top": top, "bottom": bottom}
+    return {"formed_idx": ob_idx, "top": top, "bottom": bottom, "origin_idx": extreme_idx}
 
 
 def _apply_mitigation(highs, lows, closes, obs):
@@ -414,10 +418,25 @@ def structure_state(df: pd.DataFrame, n: int = 2, confirmed_swings: bool = True)
     return done[-1] if done else None
 
 
-def detect_order_blocks(df: pd.DataFrame, n: int = 2, confirmed_swings: bool = True) -> list[dict]:
+def detect_order_blocks(
+    df: pd.DataFrame, n: int = 2, confirmed_swings: bool = True, strong_swings_only: bool = True,
+) -> list[dict]:
     """Returns a list of order block dicts in chronological order:
     {type, top, bottom, formed_idx, bos_idx, structure, broken_level,
-     swing_idx, first_touch_idx, invalidated, mitigated}
+     swing_idx, origin_idx, strong_swing, first_touch_idx, invalidated,
+     mitigated}
+
+    STRONG SWINGS. A strong swing is a swing low (or high) from which
+    price went on to cause a BOS or CHoCH: the low of the move that closed
+    above the last swing high, or the high of the move that closed below
+    the last swing low. `origin_idx` is that turning point of the move and
+    `strong_swing` says whether it really is a swing -- a confirmed
+    fractal low/high by rule 1 (n candles on each side, the n after it
+    complete). When it isn't, structure was broken out of a pause of a
+    candle or two that never formed a swing, and with
+    strong_swings_only=True (the default) that order block does not count:
+    it is not returned at all, so it also never takes one of the "last two
+    order blocks" places.
 
     An order block is only recorded when it CAUSED a structure break (see
     _find_order_block): either a BOS (break in the same direction as the
@@ -437,6 +456,9 @@ def detect_order_blocks(df: pd.DataFrame, n: int = 2, confirmed_swings: bool = T
     highs = df["high"].values
     lows = df["low"].values
     closes = df["close"].values
+    swing_highs = df["swing_high"].values
+    swing_lows = df["swing_low"].values
+    last = len(df) - 1
     obs: list[dict] = []
 
     for brk in detect_structure_breaks(df, n=n, confirmed_swings=confirmed_swings):
@@ -444,6 +466,14 @@ def detect_order_blocks(df: pd.DataFrame, n: int = 2, confirmed_swings: bool = T
             opens, highs, lows, closes, brk["direction"], brk["swing_idx"], brk["idx"]
         )
         if found is None:
+            continue
+        origin = found["origin_idx"]
+        # a real swing point, with the n candles after it complete (the
+        # last candle is still forming and could yet undo it)
+        strong = origin + n < last and bool(
+            swing_lows[origin] if brk["direction"] == "bullish" else swing_highs[origin]
+        )
+        if strong_swings_only and not strong:
             continue
         obs.append(
             {
@@ -455,6 +485,8 @@ def detect_order_blocks(df: pd.DataFrame, n: int = 2, confirmed_swings: bool = T
                 "structure": brk["kind"],
                 "broken_level": brk["level"],
                 "swing_idx": brk["swing_idx"],
+                "origin_idx": origin,
+                "strong_swing": strong,
                 "mitigated": False,
             }
         )

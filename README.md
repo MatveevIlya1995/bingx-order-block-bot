@@ -2,40 +2,67 @@
 
 A rule-based bot for BingX USDT-M perpetual futures that trades an "order
 block" (smart-money-concept) strategy with a top-down multi-timeframe
-filter: the weekly and daily trend (the "primary" levels) set the
-allowed direction, then it looks for an order-block retest on the 15m
-chart in that direction, using the 4h and 1h trend as entry-timing
-context rather than a veto. Every entry gets an automatic stop-loss
+filter: the daily and 4h trend (the "primary" levels) set the allowed
+direction, then it rests limit orders in order blocks on the 5m chart in
+that direction, using the 1h and 15m trend as entry-timing context rather
+than a veto. Every entry gets an automatic stop-loss
 (hard-capped at 3% of equity) sized so it also never asks for more
 margin than the account can actually support. At 1R (the stop-loss mirrored) half the position takes profit and the
 stop for the rest moves to breakeven; 30% more closes at the next swing
 high/low (TP2), and the last 20% trails with no fixed cap. A daily-loss circuit
 breaker halts new entries if losses get too large for the day.
 
+## Timeframes
+
+The three levels of a smart-money top-down read:
+
+| Role | Timeframes | Setting |
+|---|---|---|
+| Direction (bias) | daily, 4h | `HTF_PRIMARY_TIMEFRAMES=1d,4h` |
+| Zone / timing context | 1h, 15m | the rest of `HTF_TIMEFRAMES=1d,4h,1h,15m` |
+| Entry | 5m | `TIMEFRAME=5m` |
+
+- **5m is the floor.** A `TIMEFRAME` below 5m (1m, 3m) is refused and 5m is
+  used instead.
+- **The bot has to run every 5 minutes** for 5m entries: it only sees new
+  order blocks, moves stops and (in DRY_RUN) checks paper exits when it
+  runs. Set the scheduler / external timer that starts the workflow to 5
+  minutes. That is three times as many runs as with 15m entries.
+- **Stops are much tighter on 5m** than on 15m, so the same fees are a
+  much larger share of what each trade risks. Check the backtest's
+  stop-distance table and `MIN_STOP_DISTANCE_PCT` before trading it live.
+- BingX keeps roughly 45 days of 5m candles, so a backtest of 5m entries
+  covers at most about that.
+- The previous cascade is still available: `TIMEFRAME=15m`,
+  `HTF_TIMEFRAMES=1w,1d,4h,1h`, `HTF_PRIMARY_TIMEFRAMES=1w,1d`.
+
 ## How a trade gets taken
 
-1. **Weekly** -- trend is read from an EMA of weekly closes, and weekly
+1. **Daily** -- trend is read from an EMA of daily closes, and daily
    order blocks are located for context. This is a **primary** level: it
    sets the allowed trade direction.
-2. **Daily** -- same analysis. Also **primary**: if the daily trend
-   clearly contradicts the weekly trend, the symbol is skipped entirely
-   for this cycle -- the bot never trades against its primary timeframes'
-   trend. If weekly and daily agree (or either/both are neutral), that
-   becomes the one direction (or "either direction") a trade is allowed
-   to take below.
-3. **4h** -- same analysis again, but this level is for **timing** only:
+2. **4h** -- same analysis. Also **primary**: if the 4h trend clearly
+   contradicts the daily trend, the symbol is skipped for this cycle --
+   unless price still has enough room left to the daily chart's last swing
+   high/low (`WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT`; the name dates from when
+   these two levels were weekly and daily), in which case the daily trend
+   wins. If daily and 4h agree (or either/both are neutral), that becomes
+   the one direction (or "either direction") a trade is allowed to take
+   below.
+3. **1h** -- same analysis again, but this level is for **timing** only:
    it's still fetched, analyzed, and logged every cycle, but it can never
-   veto a trade on its own. A 4h pullback against a strong weekly/daily
-   uptrend is normal -- often exactly the retracement this strategy is
-   trying to trade -- not a reason to skip it.
-4. **1h** -- same analysis again, also timing-only, same reasoning as 4h.
-5. **15m (entry timeframe)** -- the bot reads market structure (every BOS
+   veto a trade on its own (`HTF_TIMING_AGREEMENT` can make it one). A 1h
+   pullback against the daily/4h trend is normal -- often exactly the
+   retracement this strategy is trying to trade.
+4. **15m** -- same analysis again, also timing-only, same reasoning as 1h.
+5. **5m (entry timeframe)** -- the bot reads market structure (every BOS
    and CHoCH, see "Market structure" below), keeps the order blocks that
-   caused one, and rests a limit order in each of the last two that price
-   has not come back to yet. The order's direction must match the PRIMARY
-   (weekly/daily) bias established in steps 1-2. An all-neutral primary
-   read imposes no directional constraint at all.
-6. **Stop-loss & take-profit** -- the stop-loss sits just beyond the 15m
+   sit at a strong swing -- a swing that went on to cause a BOS or CHoCH --
+   and rests a limit order in each of the last two that price has not come
+   back to yet. The order's direction must match the PRIMARY (daily/4h)
+   bias established in steps 1-2. An all-neutral primary read imposes no
+   directional constraint at all.
+6. **Stop-loss & take-profit** -- the stop-loss sits just beyond the 5m
    order block that produced the signal (below it for a LONG, above it
    for a SHORT). Every trade commits a FIXED margin
    (`MARGIN_PER_TRADE_USD`, $50 by default); the LEVERAGE is then
@@ -76,7 +103,7 @@ trailing-stop mechanics, and `config.py` for every hard cap and default.
 
 ## Market structure: BOS and CHoCH
 
-Everything the bot trades starts from two events on the 15m chart. They are
+Everything the bot trades starts from two events on the entry (5m) chart. They are
 the same thing -- **a candle closes beyond a swing point** -- and differ only
 in which way structure was pointing before:
 
@@ -121,18 +148,24 @@ The five rules that make this exact (`strategy.detect_structure_breaks`):
 
 What the bot does with them:
 
-- **An order block only exists if it caused a BOS or a CHoCH.** It is the
-  last opposite-coloured candle before the move that made the break. No
-  break, no order block, no order.
+- **An order block only counts at a strong swing.** A strong swing is a
+  swing low (or high) from which price went on to cause a BOS or CHoCH: the
+  low of the move that closed above the last swing high, or the high of the
+  move that closed below the last swing low. The order block is the last
+  opposite-coloured candle at that swing. No break, no order block -- and
+  if structure was broken out of a pause of a candle or two that never
+  formed a swing (rule 1), that order block does not count either
+  (`REQUIRE_STRONG_SWING`, on by default; in random test data about one
+  order block in five came from such a pause).
 - **Each order carries its label.** The journal's `trigger` column says
-  whether the order block came from a BOS (a trade with the 15m trend) or a
+  whether the order block came from a BOS (a trade with the 5m trend) or a
   CHoCH (a reversal trade, earlier and riskier), and the backtest report
   splits the results by it. `OB_STRUCTURE=bos` or `choch` trades only one
   kind.
 - **The log shows where structure stands** for a symbol with nothing to
-  trade: `15m structure bearish, last break a CHoCH below 64210`.
+  trade: `5m structure bearish, last break a CHoCH below 64210`.
 
-With `FRACTAL_N=2` these are the small ("internal") swings of the 15m chart.
+With `FRACTAL_N=2` these are the small ("internal") swings of the 5m chart.
 A larger `FRACTAL_N` reads bigger ("external") structure: fewer breaks, each
 more significant. `FRACTAL_N` is also used for the higher-timeframe swings
 and for TP2, so changing it changes those too.
@@ -152,6 +185,7 @@ the backtest report compares the two.
 | Concept | How the bot reads it | Where it is used |
 |---|---|---|
 | Market structure (BOS / CHoCH) | Closes beyond confirmed swing highs/lows, see above | An order block must have caused one. Tag + `OB_STRUCTURE` |
+| Strong swing | A swing low/high from which price went on to cause a BOS or CHoCH | Only order blocks at one count (`REQUIRE_STRONG_SWING`) |
 | Order block | Last opposite-coloured candle before the move that broke structure; the zone is its high-low | The entry zone: limit order at the edge price reaches first, stop just beyond the far edge |
 | Mitigation | Price visited the zone and left, or a completed candle closed through it | A mitigated order block gets no order; each zone is traded once |
 | Liquidity sweep | Before breaking structure, the move traded beyond an earlier swing low (LONG) / high (SHORT) that nothing had touched since -- with wicks only. If candles also closed beyond it, it is a "run", not a sweep | Tag + `REQUIRE_LIQUIDITY_SWEEP` |
@@ -159,7 +193,7 @@ the backtest report compares the two.
 | Fair value gap | Three candles in the move where the first and third do not overlap | Tag + `REQUIRE_FVG` |
 | Premium / discount | Where the entry sits between the lowest low and highest high of the last `DEALING_RANGE_CANDLES` candles: lower half = discount, upper half = premium | Tag + `PREMIUM_DISCOUNT_FILTER` (LONG only in discount, SHORT only in premium) |
 | Sessions | The UTC hour | `ENTRY_HOURS_UTC`: entry orders rest only during these hours |
-| Higher-timeframe bias | EMA trend of the weekly and daily chart | Sets the allowed direction (steps 1-2 above) |
+| Higher-timeframe bias | EMA trend of the daily and 4h chart | Sets the allowed direction (steps 1-2 above) |
 
 "Tag" means the fact is worked out for every order and written to the journal
 (`... | SMC: CHoCH, liquidity swept (wick only), fair value gap yes,
@@ -212,7 +246,7 @@ exchange -- the take-profits appear with that run.
 |---|---|
 | `MIN_STOP_DISTANCE_PCT` | No order for a setup whose stop is closer to the entry than this % of the entry price. `0` = off. |
 | `ENTRY_SYMBOLS` | Only these symbols may take new entries (`BTC,ETH` or full symbols). Empty = all. Symbols left out are still watched, so their open positions keep being managed -- use this rather than shrinking `SYMBOLS`. |
-| `HTF_TIMING_AGREEMENT` | `off`: 4h/1h never block a trade. `not_against`: no order if 4h or 1h trends against the trade. `aligned`: no order unless 4h and 1h both trend with it. |
+| `HTF_TIMING_AGREEMENT` | `off`: the timing levels (1h/15m) never block a trade. `not_against`: no order if one of them trends against the trade. `aligned`: no order unless both trend with it. |
 | `OB_STRUCTURE` | `any`: order blocks from a BOS or a CHoCH. `bos`: continuation order blocks only. `choch`: reversal order blocks only. |
 | `REQUIRE_LIQUIDITY_SWEEP` | `true`: no order unless the move swept an earlier swing (wicks only) before breaking structure. |
 | `MIN_DISPLACEMENT_ATR` | No order unless the biggest candle body of the move is at least this many average true ranges. `0` = off. |
@@ -232,8 +266,8 @@ bot uses.
 `backtest.py` replays the strategy on BingX history with fees and compares
 the entry filters -- including each smart-money filter alone, a few of them
 stacked, the baseline's trades split by BOS/CHoCH, liquidity, fair value gap,
-displacement, premium/discount and session, and swing confirmation on vs.
-off:
+displacement, premium/discount and session, and swing confirmation and the
+strong-swing rule on vs. off:
 
 ```
 python3 backtest.py --days 180
@@ -241,7 +275,7 @@ python3 backtest.py --days 180
 
 or run the **Backtest** workflow from the Actions tab (the report lands on
 the run's summary page). It needs no API key (public candles only) and uses
-the bot's settings from the same environment variables. For every 15-minute
+the bot's settings from the same environment variables. For every entry-candle
 step it rebuilds the candles the bot would have fetched at that moment and
 calls the bot's own strategy code, then simulates one account: resting limit
 entries, position slots, sizing, the margin cap, the daily-loss breaker and
@@ -270,7 +304,7 @@ setups the bot's own code finds.
 
 | File | Purpose |
 |---|---|
-| `bot.py` | Entry point -- runs one full check-and-maybe-trade cycle, including the weekly/daily (primary) + 4h/1h (timing) cascade and per-cycle trade management |
+| `bot.py` | Entry point -- runs one full check-and-maybe-trade cycle, including the daily/4h (primary) + 1h/15m (timing) cascade and per-cycle trade management |
 | `strategy.py` | Market structure (BOS / CHoCH), order block detection, limit-order setups, the smart-money tags, EMA trend detection, the multi-timeframe bias combiner, and the optional entry filters |
 | `risk_manager.py` | Position sizing (risk + margin caps), leverage cap, daily-loss circuit breaker, LIVE exit orders (per-part stops, resting TP1/TP2, breakeven, trailing) with real-fill journalling, DRY_RUN P/L simulation (with an estimated fee deduction) |
 | `exchange_client.py` | Thin wrapper around ccxt's BingX integration: entries with attached stop, stop / take-profit orders, fill and fee lookup |
@@ -332,32 +366,34 @@ cp .env.example .env
 
 3. Validate before trading real money, in this order:
 
-- Run `python3 bot.py` a few times with `DRY_RUN=true` (the default) and confirm it reads your balance, fetches weekly/daily/4h/1h/15m candles, and logs sensible trend/signal output without error.
+- Run `python3 bot.py` a few times with `DRY_RUN=true` (the default) and confirm it reads your balance, fetches daily/4h/1h/15m/5m candles, and logs sensible trend/signal output without error.
 - If you can, point `SYMBOLS`/test against BingX's demo trading (VST) environment first, or at minimum keep `RISK_PCT_PER_TRADE` very small for the first week live.
 - Open a Python REPL and place one manual small test order through `ExchangeClient` to confirm `positionSide` and stop-order params match your account's position mode (BingX supports both "one-way" and "hedge" mode, which changes some order parameters), and confirm `fetch_trade_exit()`'s field-name assumptions (`reduceOnly`, `positionSide`, `realizedPnl`) against a real closed trade. Also specifically exercise a partial take-profit once live (or watch closely the first time one fires): confirm `close_partial_position()` reduces the position by the expected amount and `replace_stop_order()` cancels the correct existing order (not the take-profit) and re-places the stop at breakeven. This is the one set of steps that could not be verified from this environment -- do not skip it.
 - Only then set `DRY_RUN=false`.
 
-4. Schedule it. The strategy runs on the `TIMEFRAME` candle (default 15m), so a cron entry that fires a bit more often than that is enough -- the bot itself is idempotent per cycle (it checks existing positions before opening a new one):
+4. Schedule it. The strategy runs on the `TIMEFRAME` candle (default 5m), so a cron entry that fires once per candle is what it needs -- the bot itself is idempotent per cycle (it checks existing positions before opening a new one):
 
 ```
 */5 * * * * /path/to/bingx-order-block-bot/run.sh >> /path/to/bingx-order-block-bot/data/cron.log 2>&1
 ```
 
-Or use the included `.github/workflows/bot.yml` (runs every 15 minutes via GitHub Actions; needs `BINGX_API_KEY`/`BINGX_API_SECRET` as repo Secrets and the config knobs below as repo Variables).
+Or use the included `.github/workflows/bot.yml` (GitHub Actions, started by its own schedule or by an external timer calling `workflow_dispatch` -- every 5 minutes for 5m entries; needs `BINGX_API_KEY`/`BINGX_API_SECRET` as repo Secrets and the config knobs below as repo Variables).
 
 ## Configuration (`.env`)
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `SYMBOLS` | (15-symbol default basket) | Comma-separated ccxt unified symbols for the USDT-M perpetuals to scan, highest-priority first |
-| `TIMEFRAME` | `15m` | Entry candle timeframe -- where the order-block retest signal itself fires |
+| `TIMEFRAME` | `5m` | Entry candle timeframe -- where structure is read and the limit orders rest. Never below 5m: a smaller value is replaced by 5m |
 | `CANDLE_LIMIT` | `300` | How many entry-timeframe candles to fetch per cycle |
 | `FRACTAL_N` | `2` | Fractal window (bars each side) used for swing-high/low detection, on every timeframe |
+| `REQUIRE_STRONG_SWING` | `true` | Count only order blocks at a strong swing -- a swing low/high that went on to cause a BOS or CHoCH. `false` = every order block that caused a break |
 | `STRUCTURE_CONFIRMED_SWINGS` | `true` | A swing becomes the level a BOS/CHoCH must break only once `FRACTAL_N` candles after it have closed. `false` = the behaviour before (see "Market structure") |
 | `REWARD_RISK_RATIO` | `2` | Ignored: always forced to `2` (the fixed take-profit is twice the stop-loss distance -- see partial-TP/trailing above for what usually happens before that fixed target is reached) |
-| `TREND_FILTER_ENABLED` | `true` | Master toggle for the weekly/daily/4h/1h cascade |
-| `HTF_TIMEFRAMES` | `1w,1d,4h,1h` | Every level analyzed and logged each cycle, highest timeframe first |
-| `HTF_PRIMARY_TIMEFRAMES` | `1w,1d` | Which of the levels above can actually veto a trade on disagreement; the rest are timing-only context |
+| `TREND_FILTER_ENABLED` | `true` | Master toggle for the daily/4h/1h/15m cascade |
+| `HTF_TIMEFRAMES` | `1d,4h,1h,15m` | Every level analyzed and logged each cycle, highest timeframe first |
+| `HTF_PRIMARY_TIMEFRAMES` | `1d,4h` | Which of the levels above set the direction and can veto a trade on disagreement; the rest are timing-only context |
+| `WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT` | `3` | When the two primary levels disagree, the higher one wins if price has at least this much room (%) left to that chart's last swing high/low; otherwise no trade. Named for the weekly/daily pair it was written for |
 | `TREND_EMA_PERIOD` | `50` | EMA period used for the trend read at every cascade level |
 | `TREND_CANDLE_LIMIT` | `150` | How many candles to fetch per cascade level |
 | `MARGIN_PER_TRADE_USD` | `50` | Fixed margin (USDT) committed to every trade; leverage is solved per trade from the stop-loss distance to hit `RISK_PCT_PER_TRADE` (see `risk_manager.position_size()`) |
@@ -374,7 +410,7 @@ Or use the included `.github/workflows/bot.yml` (runs every 15 minutes via GitHu
 | `RESTING_TP_ORDERS` | `true` | LIVE: rest TP1/TP2 on BingX with one stop per part of the position (see "Exit orders on the exchange"). `false` = market closes on the scheduled run, as before |
 | `MIN_STOP_DISTANCE_PCT` | `0` | Entry filter: minimum stop distance in % of the entry price; `0` = off |
 | `ENTRY_SYMBOLS` | (empty) | Entry filter: symbols allowed to take new entries; empty = all |
-| `HTF_TIMING_AGREEMENT` | `off` | Entry filter: `off` / `not_against` / `aligned` -- whether 4h/1h must agree with the trade |
+| `HTF_TIMING_AGREEMENT` | `off` | Entry filter: `off` / `not_against` / `aligned` -- whether the timing levels (1h/15m) must agree with the trade |
 | `OB_STRUCTURE` | `any` | Smart-money filter: `any` / `bos` / `choch` -- which break the order block must have caused |
 | `REQUIRE_LIQUIDITY_SWEEP` | `false` | Smart-money filter: the move must have swept an earlier swing first |
 | `MIN_DISPLACEMENT_ATR` | `0` | Smart-money filter: minimum displacement in average true ranges; `0` = off |
@@ -390,7 +426,7 @@ Or use the included `.github/workflows/bot.yml` (runs every 15 minutes via GitHu
 - Leverage amplifies losses, including to zero (liquidation). A 3x leveraged position can be liquidated by a ~33% adverse move; the code's hard leverage cap (10x) and margin-utilization cap are backstops, not a recommendation to use them.
 - Order blocks, as implemented here, are one reasonable interpretation of a discretionary trading concept, not a guaranteed edge. `backtest.py` replays the strategy on BingX history, but a backtest is a simulation under stated assumptions, not proof of future results. DRY_RUN's simulated P/L nets out an estimated trading fee, but still doesn't model slippage -- real fills on a fast-moving stop or trailing exit can be worse than the simulated price.
 - API/library details can drift. BingX's position-mode handling (`positionSide`, one-way vs. hedge accounts) and ccxt's exact param names for `STOP_MARKET`/`TAKE_PROFIT_MARKET` orders, the `info` field names `exchange_client.fetch_trade_exit()` reads for exit fills (`reduceOnly`, `positionSide`, `realizedPnl`), and the stop / take-profit order calls are the most likely things to need a small adjustment for your account -- this is what Step 3 above is for.
-- The weekly/daily/4h/1h cascade means the bot needs more historical candles and more API calls per symbol per cycle (five timeframes instead of one), and trade management (checking every open position's candle for a partial-TP/trailing trigger) adds one more fetch per open symbol per cycle. If you watch many symbols on a tight schedule, keep an eye on BingX's rate limits.
+- The daily/4h/1h/15m cascade means the bot needs more historical candles and more API calls per symbol per cycle (five timeframes instead of one), and trade management (checking every open position's candle for a partial-TP/trailing trigger) adds one more fetch per open symbol per cycle. If you watch many symbols on a tight schedule, keep an eye on BingX's rate limits.
 - The margin-utilization cap is a heuristic based on each open trade's entry price, not a live mark-to-market margin read from the exchange -- it substantially reduces the risk of a rejected order or an unexpectedly over-leveraged account, but isn't a guarantee BingX's own margin calculation will match exactly.
 - Nothing here is financial advice, and I'm not a financial advisor -- this is software that automates a rule set you should understand and agree with before it trades your money.
 - Keep `.env` out of version control and off any machine you don't control; anyone with the API key/secret can trade on your account (not withdraw, since that permission is off).

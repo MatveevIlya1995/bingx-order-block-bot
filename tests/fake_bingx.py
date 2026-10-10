@@ -293,7 +293,7 @@ class FakeBingX:
     def fetch_ohlcv(self, symbol, timeframe="15m", since=None, limit=None, params=None):
         """Flat candles at the current price: no order blocks, no trend."""
         px = self.price[symbol]
-        step = {"15m": 900, "1h": 3600, "4h": 14400, "1d": 86400, "1w": 604800}[timeframe] * 1000
+        step = {"5m": 300, "15m": 900, "1h": 3600, "4h": 14400, "1d": 86400, "1w": 604800}[timeframe] * 1000
         n = limit or 300
         end = self.clock - self.clock % step
         return [[end - (n - 1 - i) * step, px, px, px, px, 1.0] for i in range(n)]

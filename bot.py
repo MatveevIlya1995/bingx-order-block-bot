@@ -32,13 +32,14 @@ Each run:
 5. checks the daily-loss circuit breaker (account-wide); if tripped, every
    resting limit order is cancelled and no new ones are placed
 6. for every symbol without an open position, runs the top-down
-   multi-timeframe analysis (see analyze_higher_timeframes(): weekly +
-   daily are primary/directional with the weekly/daily room override,
-   4h + 1h are timing context only) and then picks the setups for this
-   symbol (strategy.limit_setups()): the LAST TWO valid, unmitigated
-   order blocks on the 15m entry timeframe in the primary bias direction.
-   "Valid" = the order block caused a BOS or CHoCH (the five rules for
-   those are at the top of strategy.py); "unmitigated" = price hasn't
+   multi-timeframe analysis (see analyze_higher_timeframes(): daily + 4h
+   are primary/directional with the room override between them, 1h + 15m
+   are timing context only) and then picks the setups for this symbol
+   (strategy.limit_setups()): the LAST TWO valid, unmitigated order
+   blocks on the 5m entry timeframe in the primary bias direction.
+   "Valid" = the order block sits at a strong swing -- a swing low/high
+   that went on to cause a BOS or CHoCH (the five rules for those are at
+   the top of strategy.py); "unmitigated" = price hasn't
    visited the zone and left it, and no completed candle closed through
    it (see strategy._apply_mitigation()). Every setup is then tagged with
    its smart-money context (BOS or CHoCH, liquidity sweep, displacement,
@@ -63,7 +64,7 @@ Each run:
    position), and its largest order's notional is reserved against the
    margin cap. Symbols already holding resting orders keep their slot;
    free slots go to clean (no-override) setups first, then to setups
-   that only qualified through the weekly/daily override.
+   that only qualified through the primary-level room override.
 10. DRY_RUN=true: orders are simulated -- a resting paper order "fills"
     once a candle since it was placed traded through its limit price, and
     then follows the same paper-trade management as before.
@@ -74,7 +75,7 @@ import traceback
 
 import pandas as pd
 
-from config import load_config, smc_filter_settings
+from config import load_config, override_levels, smc_filter_settings
 from exchange_client import ExchangeClient
 from strategy import (
     ohlcv_to_df,
@@ -98,7 +99,7 @@ MAX_LIMIT_ORDERS_PER_SYMBOL = 2
 
 
 def analyze_higher_timeframes(client, cfg, symbol):
-    """Top-down weekly -> daily -> 4h -> 1h analysis for one symbol.
+    """Top-down daily -> 4h -> 1h -> 15m analysis for one symbol.
 
     Fetches each timeframe in cfg.htf_timeframes (highest first) and
     computes its trend (EMA-based, see strategy.detect_trend) and its
@@ -108,13 +109,13 @@ def analyze_higher_timeframes(client, cfg, symbol):
     analyzed and included in `detail` for visibility, but never
     contribute to `bias` -- they can't veto a trade.
 
-    Weekly/daily disagreement override: if combine_htf_bias() comes back
-    "conflict" and the primary set is exactly weekly+daily, this checks
-    strategy.weekly_room_pct() -- how far price still has to run, in the
-    weekly trend's direction, before it reaches the weekly chart's own
-    last confirmed swing high/low. If there's still at least
+    Room override: if combine_htf_bias() comes back "conflict" and there
+    are exactly two primary levels (config.override_levels: daily and 4h
+    by default), this checks strategy.weekly_room_pct() -- how far price
+    still has to run, in the HIGHER level's trend direction, before it
+    reaches that chart's own last confirmed swing high/low. If there's still at least
     cfg.weekly_daily_override_min_room_pct percent of room left, the
-    weekly trend is used as the bias instead of blocking the trade.
+    higher level's trend is used as the bias instead of blocking the trade.
     Below that room threshold the disagreement still blocks the trade.
 
     Returns (bias, detail, trend_by_tf):
@@ -122,7 +123,7 @@ def analyze_higher_timeframes(client, cfg, symbol):
                        opinion, don't filter) / "conflict" (skip the symbol)
         detail      -- a short human-readable summary of every level's trend
                        and unmitigated order-block count, plus a note when
-                       the weekly/daily override was evaluated
+                       the room override was evaluated
         trend_by_tf -- {timeframe: trend} for every level, used by the
                        optional HTF_TIMING_AGREEMENT entry filter
     """
@@ -134,7 +135,8 @@ def analyze_higher_timeframes(client, cfg, symbol):
         raw = client.fetch_ohlcv(symbol, timeframe=tf, limit=cfg.trend_candle_limit)
         df = ohlcv_to_df(raw)
         trend = detect_trend(df, ema_period=cfg.trend_ema_period)
-        obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings)
+        obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
+                                  strong_swings_only=cfg.require_strong_swing)
         unmitigated = sum(1 for ob in obs if not ob["mitigated"])
         is_primary = tf in cfg.primary_htf_timeframes
         if is_primary:
@@ -147,30 +149,27 @@ def analyze_higher_timeframes(client, cfg, symbol):
     bias = combine_htf_bias(primary_trends)
     note = ""
 
-    if (
-        bias == "conflict"
-        and set(cfg.primary_htf_timeframes) == {"1w", "1d"}
-        and "1w" in trend_by_tf
-        and "1d" in trend_by_tf
-    ):
-        weekly_trend = trend_by_tf["1w"]
-        daily_trend = trend_by_tf["1d"]
-        if weekly_trend in ("bullish", "bearish") and daily_trend in ("bullish", "bearish"):
-            current_price = float(df_by_tf["1d"].iloc[-1]["close"])
-            room = weekly_room_pct(df_by_tf["1w"], weekly_trend, current_price, n=cfg.fractal_n)
+    pair = override_levels(cfg)
+    if bias == "conflict" and pair and pair[0] in trend_by_tf and pair[1] in trend_by_tf:
+        top, lower = pair
+        top_trend = trend_by_tf[top]
+        lower_trend = trend_by_tf[lower]
+        if top_trend in ("bullish", "bearish") and lower_trend in ("bullish", "bearish"):
+            current_price = float(df_by_tf[lower].iloc[-1]["close"])
+            room = weekly_room_pct(df_by_tf[top], top_trend, current_price, n=cfg.fractal_n)
             threshold = cfg.weekly_daily_override_min_room_pct
             if room is not None and room >= threshold:
-                bias = weekly_trend
+                bias = top_trend
                 note = (
-                    f" | OVERRIDE: weekly={weekly_trend} vs daily={daily_trend} disagreed, but "
-                    f"{room:.2f}% room left to the weekly "
-                    f"{'high' if weekly_trend == 'bullish' else 'low'} "
-                    f"(>= {threshold:.2f}% threshold) -- trading with the weekly trend."
+                    f" | OVERRIDE: {top}={top_trend} vs {lower}={lower_trend} disagreed, but "
+                    f"{room:.2f}% room left to the {top} "
+                    f"{'high' if top_trend == 'bullish' else 'low'} "
+                    f"(>= {threshold:.2f}% threshold) -- trading with the {top} trend."
                 )
             else:
-                room_desc = f"{room:.2f}%" if room is not None else "no confirmed weekly swing yet"
+                room_desc = f"{room:.2f}%" if room is not None else f"no confirmed {top} swing yet"
                 note = (
-                    f" | weekly={weekly_trend} vs daily={daily_trend} disagreement NOT overridden "
+                    f" | {top}={top_trend} vs {lower}={lower_trend} disagreement NOT overridden "
                     f"(room={room_desc}, need >= {threshold:.2f}%) -- no trade."
                 )
 
@@ -416,7 +415,8 @@ def _find_setups(client, cfg, symbol, df_cache):
     if df is None:
         return None, htf_detail, False, None
 
-    obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings)
+    obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
+                              strong_swings_only=cfg.require_strong_swing)
     setups = limit_setups(
         df, obs,
         max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL,

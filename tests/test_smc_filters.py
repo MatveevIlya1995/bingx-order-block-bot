@@ -26,7 +26,8 @@ from strategy import (
 from test_structure import candles, df_of
 
 SMC_ENV = ("OB_STRUCTURE", "REQUIRE_LIQUIDITY_SWEEP", "MIN_DISPLACEMENT_ATR", "REQUIRE_FVG",
-           "PREMIUM_DISCOUNT_FILTER", "DEALING_RANGE_CANDLES", "ENTRY_HOURS_UTC", "STRUCTURE_CONFIRMED_SWINGS")
+           "PREMIUM_DISCOUNT_FILTER", "DEALING_RANGE_CANDLES", "ENTRY_HOURS_UTC", "STRUCTURE_CONFIRMED_SWINGS",
+           "REQUIRE_STRONG_SWING")
 
 # Swing low at 101 (low 100.8), rally to 105, pullback to 101, rally through
 # 105. What the pullback does at the old low decides the liquidity tag.
@@ -173,7 +174,7 @@ def test_smart_money_filters_are_off_by_default(monkeypatch):
     for key in SMC_ENV:
         monkeypatch.delenv(key, raising=False)
     cfg = config.load_config()
-    assert cfg.structure_confirmed_swings is True
+    assert cfg.structure_confirmed_swings is True and cfg.require_strong_swing is True
     settings = config.smc_filter_settings(cfg)
     assert settings == {"ob_structure": "any", "require_sweep": False, "min_displacement_atr": 0.0,
                         "require_fvg": False, "premium_discount": False, "entry_hours": []}
@@ -302,14 +303,16 @@ def test_find_setups_tags_and_filters(monkeypatch, capsys):
     # STRUCTURE_CONFIRMED_SWINGS reaches the detection
     modes = []
 
-    def spy(df, n, confirmed_swings):
-        modes.append(confirmed_swings)
-        return strategy.detect_order_blocks(df, n=n, confirmed_swings=confirmed_swings)
+    def spy(df, n, confirmed_swings, strong_swings_only):
+        modes.append((confirmed_swings, strong_swings_only))
+        return strategy.detect_order_blocks(df, n=n, confirmed_swings=confirmed_swings,
+                                            strong_swings_only=strong_swings_only)
 
     monkeypatch.setattr(bot, "detect_order_blocks", spy)
     find()
     find(STRUCTURE_CONFIRMED_SWINGS="false")
-    assert modes == [True, False]
+    find(REQUIRE_STRONG_SWING="false")
+    assert modes == [(True, True), (False, True), (True, False)]
 
 
 def test_a_full_bot_run_journals_the_tags_and_obeys_the_filters(make_harness):
@@ -322,7 +325,7 @@ def test_a_full_bot_run_journals_the_tags_and_obeys_the_filters(make_harness):
     flat = h.ex.fetch_ohlcv
 
     def fetch_ohlcv(symbol, timeframe="15m", since=None, limit=None, params=None):
-        if timeframe == "15m":
+        if timeframe == h.cfg.timeframe:
             return [list(r) for r in rows]
         return flat(symbol, timeframe, since, limit, params)       # flat higher timeframes: no bias
 

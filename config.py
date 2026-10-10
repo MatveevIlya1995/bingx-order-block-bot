@@ -49,25 +49,36 @@ DEFAULT_SYMBOLS = (
     "DOT/USDT:USDT,TRX/USDT:USDT,NEAR/USDT:USDT,ATOM/USDT:USDT,APT/USDT:USDT"
 )
 
-# Full top-down cascade, highest timeframe first -- every level here is
-# fetched and logged each cycle (see bot.analyze_higher_timeframes()), so
-# you always see weekly through 1h trend context. Override with the
+# The three levels of a smart-money top-down read, each one notch below
+# where this bot started (weekly/daily -> 4h/1h -> 15m):
+#
+#   direction  1d + 4h   the PRIMARY levels: they set the trade's allowed
+#                        bias, and a disagreement between them blocks the
+#                        trade (unless the room override below applies)
+#   zone       1h + 15m  timing context: analyzed and logged every cycle,
+#                        never a veto by themselves (HTF_TIMING_AGREEMENT
+#                        can make them one)
+#   entry      5m        TIMEFRAME: where market structure is read, order
+#                        blocks are found and the limit orders rest
+#
+# 5m is the floor: load_config() refuses an entry timeframe below
+# MIN_ENTRY_TIMEFRAME and uses 5m instead.
+#
+# Full cascade, highest timeframe first -- every level here is fetched and
+# logged each cycle (see bot.analyze_higher_timeframes()). Override with the
 # HTF_TIMEFRAMES repo variable (comma-separated, highest timeframe first).
-DEFAULT_HTF_TIMEFRAMES = "1w,1d,4h,1h"
+DEFAULT_HTF_TIMEFRAMES = "1d,4h,1h,15m"
 
-# Of the levels above, only these are DIRECTIONAL/AUTHORITATIVE: they set
-# the trade's allowed bias, and a disagreement between them blocks the
-# trade outright (see strategy.combine_htf_bias() and
-# bot.analyze_higher_timeframes()) -- unless the weekly/daily room
-# override below kicks in. The remaining HTF_TIMEFRAMES levels are
-# "refinement" levels -- still fetched, analyzed and logged every cycle,
-# but purely informational: they never veto a trade. This mirrors how
-# most top-down multi-timeframe traders actually work -- the higher
-# timeframe sets direction, lower ones are for timing entries, not for
-# overruling the primary trend on every small pullback. Override with the
-# HTF_PRIMARY_TIMEFRAMES repo variable if you want a different split (e.g.
-# just the weekly, or weekly+daily+4h).
-DEFAULT_HTF_PRIMARY_TIMEFRAMES = "1w,1d"
+# Of the levels above, only these are DIRECTIONAL/AUTHORITATIVE (see
+# strategy.combine_htf_bias()). The remaining HTF_TIMEFRAMES levels are
+# timing levels. Override with the HTF_PRIMARY_TIMEFRAMES repo variable
+# (e.g. "1w,1d" for the previous weekly/daily bias).
+DEFAULT_HTF_PRIMARY_TIMEFRAMES = "1d,4h"
+
+DEFAULT_TIMEFRAME = "5m"
+MIN_ENTRY_TIMEFRAME = "5m"
+TIMEFRAME_MINUTES = {"1m": 1, "3m": 3, "5m": 5, "15m": 15, "30m": 30, "1h": 60, "2h": 120, "4h": 240,
+                     "6h": 360, "8h": 480, "12h": 720, "1d": 1440, "3d": 4320, "1w": 10080}
 
 # Valid values for HTF_TIMING_AGREEMENT (see Config.htf_timing_agreement).
 HTF_TIMING_AGREEMENT_MODES = ("off", "not_against", "aligned")
@@ -99,7 +110,7 @@ class Config:
     # "BTC/USDT:USDT". The bot scans all of them each cycle, in order,
     # until it either runs out of symbols or hits max_concurrent_positions.
     symbols: list = field(default_factory=lambda: _env_list("SYMBOLS", DEFAULT_SYMBOLS))
-    timeframe: str = field(default_factory=lambda: _env("TIMEFRAME", "15m"))
+    timeframe: str = field(default_factory=lambda: _env("TIMEFRAME", DEFAULT_TIMEFRAME).strip())
     candle_limit: int = field(default_factory=lambda: int(_env("CANDLE_LIMIT", "300")))
 
     # --- strategy ---
@@ -127,8 +138,18 @@ class Config:
     # is set to 0, disabling partials).
     required_reward_risk_ratio: float = 2.0
 
+    # Count only order blocks at a STRONG SWING: a swing low/high from which
+    # price went on to cause a BOS or CHoCH. The turning point of the move
+    # that broke structure has to be a real swing (FRACTAL_N candles on each
+    # side); an order block from a pause of a candle or two that never
+    # formed a swing is ignored. false = every order block that caused a
+    # break counts, as before. See strategy.detect_order_blocks().
+    require_strong_swing: bool = field(
+        default_factory=lambda: _bool("REQUIRE_STRONG_SWING", True)
+    )
+
     # --- top-down higher-timeframe trend filter ---
-    # Weekly -> daily -> 4h -> 1h, highest timeframe first (see
+    # Daily -> 4h -> 1h -> 15m, highest timeframe first (see
     # DEFAULT_HTF_TIMEFRAMES/DEFAULT_HTF_PRIMARY_TIMEFRAMES above and
     # bot.analyze_higher_timeframes()). A signal is only vetoed when a
     # PRIMARY level's trend clearly contradicts another primary level's,
@@ -143,25 +164,21 @@ class Config:
     trend_ema_period: int = field(default_factory=lambda: int(_env("TREND_EMA_PERIOD", "50")))
     trend_candle_limit: int = field(default_factory=lambda: int(_env("TREND_CANDLE_LIMIT", "150")))
 
-    # If the weekly and daily primary trends disagree, the default
-    # behavior (see strategy.combine_htf_bias()) is to treat that as a
-    # hard "conflict" and skip the symbol for the cycle entirely. This
-    # setting relaxes that specifically for weekly vs. daily:
-    # bot.analyze_higher_timeframes() locates the most recently
-    # CONFIRMED weekly swing high/low (the top/bottom of the weekly
-    # range as far as N-bar fractal confirmation can currently tell --
-    # see strategy.weekly_room_pct()), and if price still has at least
-    # this much room (%) left to run toward that level in the WEEKLY
-    # trend's direction, the weekly trend wins outright and the daily
-    # disagreement is overridden (still logged, just not vetoed on).
-    # Below this room threshold -- price is already close to the
-    # weekly range's edge -- a weekly/daily disagreement still blocks
-    # the trade as before, since there's more reason to think the
-    # weekly move itself is running out of room. Only ever applies
-    # when HTF_PRIMARY_TIMEFRAMES is exactly weekly+daily (the default);
-    # a differently configured primary set falls back to the original
-    # hard-conflict behavior. Set to a very large number (e.g. 999) to
-    # disable the override entirely.
+    # If the two primary trends disagree (daily vs. 4h by default), the
+    # default behavior (see strategy.combine_htf_bias()) is to treat that
+    # as a hard "conflict" and skip the symbol for the cycle. This setting
+    # relaxes it: bot.analyze_higher_timeframes() locates the most recently
+    # CONFIRMED swing high/low of the HIGHER of the two (see
+    # strategy.weekly_room_pct()), and if price still has at least this
+    # much room (%) left to run toward that level in the higher level's
+    # trend direction, the higher level wins outright and the lower one's
+    # disagreement is overridden (still logged, just not vetoed on). Below
+    # this room threshold a disagreement still blocks the trade. Applies
+    # only when there are exactly two primary levels (config.override_levels).
+    # The variable is still called WEEKLY_DAILY_... from when those two
+    # levels were weekly and daily; a value tuned for the weekly chart is a
+    # much higher bar on the daily one. Set to a very large number (e.g.
+    # 999) to disable the override entirely.
     weekly_daily_override_min_room_pct: float = field(
         default_factory=lambda: float(_env("WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT", "3"))
     )
@@ -304,11 +321,11 @@ class Config:
     # removed symbol is open.
     entry_symbols: list = field(default_factory=lambda: _env_list("ENTRY_SYMBOLS", ""))
     # Whether the timing levels (the HTF_TIMEFRAMES that are not primary --
-    # 4h and 1h by default) must agree with the trade direction:
+    # 1h and 15m by default) must agree with the trade direction:
     #   off         -- they never block a trade (the behaviour so far)
-    #   not_against -- no order if 4h or 1h trends AGAINST the trade
-    #                  (a neutral 4h/1h is fine)
-    #   aligned     -- no order unless 4h AND 1h both trend WITH the trade
+    #   not_against -- no order if a timing level trends AGAINST the trade
+    #                  (a neutral one is fine)
+    #   aligned     -- no order unless every timing level trends WITH the trade
     htf_timing_agreement: str = field(
         default_factory=lambda: _env("HTF_TIMING_AGREEMENT", "off").strip().lower()
     )
@@ -409,6 +426,12 @@ def load_config() -> Config:
             f"uses a fixed {cfg.required_reward_risk_ratio}:1 reward:risk ratio."
         )
         cfg.reward_risk_ratio = cfg.required_reward_risk_ratio
+    if TIMEFRAME_MINUTES.get(cfg.timeframe, 0) < TIMEFRAME_MINUTES[MIN_ENTRY_TIMEFRAME]:
+        print(
+            f"[config] TIMEFRAME={cfg.timeframe!r} is below the {MIN_ENTRY_TIMEFRAME} floor (or not a "
+            f"timeframe this bot knows); using {MIN_ENTRY_TIMEFRAME}."
+        )
+        cfg.timeframe = MIN_ENTRY_TIMEFRAME
     if not (0.0 < cfg.max_margin_utilization_pct <= 1.0):
         print(
             f"[config] MAX_MARGIN_UTILIZATION_PCT={cfg.max_margin_utilization_pct * 100:.0f}% "
@@ -470,6 +493,15 @@ def load_config() -> Config:
         )
         cfg.dealing_range_candles = 0
     return cfg
+
+
+def override_levels(cfg: Config):
+    """The two timeframes the room override works on: (higher, lower) when
+    there are exactly two primary levels, else None. With the defaults
+    that is ("1d", "4h"); with HTF_PRIMARY_TIMEFRAMES=1w,1d it is the
+    weekly/daily pair the override was first written for."""
+    primary = [tf for tf in cfg.htf_timeframes if tf in cfg.primary_htf_timeframes]
+    return (primary[0], primary[1]) if len(primary) == 2 else None
 
 
 def smc_filter_settings(cfg: Config) -> dict:

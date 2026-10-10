@@ -177,3 +177,39 @@ def test_order_blocks_never_vanish_between_runs():
                     checked += 1
         previous = now
     assert checked > 5000
+
+
+# ---- strong swings: only order blocks at a swing that caused a BOS/CHoCH ----
+
+# Swing high at 104, a two-candle pause (103.5, 103.9) that never makes a
+# swing low, then a close above 104. Structure breaks -- but not from a swing.
+BREAK_FROM_A_PAUSE = [100, 101, 102, 103, 104, 103.5, 103.9, 105, 106, 105.8, 105.9, 106.2]
+
+
+def test_a_strong_swing_is_a_swing_that_caused_a_break():
+    """Every order block of the zigzag starts at a swing low/high (rule 1)
+    from which price went on to close beyond the last swing: its origin is
+    exactly one of the fractals."""
+    df = df_of(candles(ZIGZAG))
+    fr = find_fractals(df, n=2)
+    obs = detect_order_blocks(df, n=2)
+    assert [(o["origin_idx"], o["strong_swing"]) for o in obs] == [(5, True), (11, True), (15, True), (23, True), (27, True)]
+    for o in obs:
+        assert fr["swing_low" if o["type"] == "bullish" else "swing_high"].iloc[o["origin_idx"]]
+
+
+def test_an_order_block_from_a_pause_that_never_formed_a_swing_does_not_count():
+    df = df_of(candles(BREAK_FROM_A_PAUSE))
+    assert brief(detect_structure_breaks(df, n=2)) == [(7, "bullish", "BOS")]       # the break itself is real
+    assert detect_order_blocks(df, n=2) == []                                        # ...but there is no strong swing under it
+    weak = detect_order_blocks(df, n=2, strong_swings_only=False)                   # REQUIRE_STRONG_SWING=false: as before
+    assert [(o["formed_idx"], o["bos_idx"], o["origin_idx"], o["strong_swing"]) for o in weak] == [(5, 7, 5, False)]
+
+
+def test_a_strong_swing_needs_its_candles_complete_and_then_stays():
+    # low at candle 5, and candle 6 already closes above the swing high
+    closes = [100, 101, 102, 103, 102, 101, 104, 105, 104.5, 104.8]
+    assert detect_order_blocks(df_of(candles(closes[:8])), n=2) == []      # candle 7, the 2nd after the low, is still forming
+    for length in (9, 10):
+        obs = detect_order_blocks(df_of(candles(closes[:length])), n=2)
+        assert [(o["formed_idx"], o["bos_idx"], o["origin_idx"]) for o in obs] == [(5, 6, 5)], length
