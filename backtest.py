@@ -465,7 +465,8 @@ class Sim:
                          price beyond the level (the behaviour before)."""
 
     def __init__(self, cfg, costs, start_equity, exit_mode="resting",
-                 min_stop_pct=0.0, timing_mode="off", entry_symbols=None, stop_placement=None, **smc_filters):
+                 min_stop_pct=0.0, timing_mode="off", entry_symbols=None, stop_placement=None,
+                 tp1_r=None, tp2_r=None, **smc_filters):
         self.cfg = cfg
         self.costs = costs
         self.exit_mode = exit_mode
@@ -475,6 +476,11 @@ class Sim:
         # None: the stop the signals were computed with (cfg.stop_placement);
         # otherwise the stop (and its TP2) under that STOP_PLACEMENT
         self.stop_placement = stop_placement
+        # Exit targets in multiples of the initial risk. tp1_r None: the
+        # bot's PARTIAL_TP_R_MULTIPLE. tp2_r None: the bot's TP2 (the next
+        # swing beyond TP1, or its fallback); a number: TP2 fixed there.
+        self.tp1_r = tp1_r
+        self.tp2_r = tp2_r
         # smart-money filters, as strategy.apply_entry_filters() takes them:
         # ob_structure, require_sweep, min_displacement_atr, require_fvg,
         # premium_discount, entry_hours
@@ -525,9 +531,10 @@ class Sim:
         self.cash -= fee
         self.realized_today -= fee
         risk_per_unit = abs(price - order["stop"])
-        tp1 = price + d * risk_per_unit * self.cfg.partial_tp_r_multiple
-        tp2 = order["tp2"]
-        fallback_r = max(self.cfg.tp2_fallback_r_multiple, self.cfg.partial_tp_r_multiple + 0.5)
+        tp1_r = self.tp1_r if self.tp1_r else self.cfg.partial_tp_r_multiple
+        tp1 = price + d * risk_per_unit * tp1_r
+        tp2 = price + d * risk_per_unit * self.tp2_r if self.tp2_r else order["tp2"]
+        fallback_r = max(self.cfg.tp2_fallback_r_multiple, tp1_r + 0.5)
         if tp2 is None or not (tp2 > tp1 if d == 1 else tp2 < tp1):
             tp2 = price + d * risk_per_unit * fallback_r        # RiskManager._arm_partial_and_trail
         symbol = order["symbol"]
@@ -934,6 +941,29 @@ def session_of(trade):
     return "n/a"
 
 
+# The combined candidate, fixed BEFORE it was run: the three changes that lost
+# least in every earlier backtest (a stop beyond the previous swing, no stops
+# tighter than 0.5%, timing levels not against the trade) plus bigger targets
+# (TP1 at 2x the risk and TP2 at 3x, instead of 1x and the next swing). It
+# passes only if it is profitable in BOTH halves of the period.
+CANDIDATE_PARTS = [
+    ("stop beyond the previous swing", {"stop_placement": "previous_swing"}),
+    ("minimum stop 0.5%", {"min_stop_pct": 0.5}),
+    ("timing levels not against the trade", {"timing_mode": "not_against"}),
+    ("targets at 2R and 3R", {"tp1_r": 2.0, "tp2_r": 3.0}),
+]
+
+
+def exit_kind(trade):
+    kinds = [e[1] for e in trade["exits"]]
+    if "tp1" not in kinds:
+        return "stopped out before TP1"
+    return "TP1 + TP2, runner trailed" if "tp2" in kinds else "TP1 only, rest at breakeven/stop"
+
+
+EXIT_KINDS = ["TP1 + TP2, runner trailed", "TP1 only, rest at breakeven/stop", "stopped out before TP1"]
+
+
 # Each smart-money filter alone: (row name, Sim keyword arguments).
 SMC_VARIANTS = [
     ("order blocks from a BOS only (OB_STRUCTURE=bos)", {"ob_structure": "bos"}),
@@ -1123,6 +1153,22 @@ def main(argv=None):
                                 f"{st['fees'] / risked * 100:.0f}%" if risked > 0 else "n/a"])
         stop_json.append({"stop_placement": mode, **st})
 
+    # The combined candidate and what each of its parts does alone.
+    rows_candidate = [fmt_variant_row("baseline (as the bot is set now)", base_stats)]
+    for name, kw in CANDIDATE_PARTS:
+        rows_candidate.append(fmt_variant_row("only: " + name, stats(run(**kw), t_mid)))
+    no_targets = {k: v for name, kw in CANDIDATE_PARTS[:3] for k, v in kw.items()}
+    rows_candidate.append(fmt_variant_row("the first three together (targets unchanged)", stats(run(**no_targets), t_mid)))
+    candidate_kw = {k: v for name, kw in CANDIDATE_PARTS for k, v in kw.items()}
+    candidate = run(**candidate_kw)
+    candidate_stats = stats(candidate, t_mid)
+    rows_candidate.append(fmt_variant_row("CANDIDATE: all four", candidate_stats))
+    passed = candidate_stats["pnl_h1"] > 0 and candidate_stats["pnl_h2"] > 0
+    verdict = (f"**{'PASSED' if passed else 'FAILED'}**: the candidate made {candidate_stats['pnl_h1']:+.2f} in the first half "
+               f"and {candidate_stats['pnl_h2']:+.2f} in the second ({candidate_stats['trades_h1']} and "
+               f"{candidate_stats['trades_h2']} trades). It passes only if both are above zero.")
+    candidate_exits = breakdown(candidate.trades, exit_kind, order=EXIT_KINDS)
+
     rows_smc = [fmt_variant_row("all smart-money filters off", base_stats)]
     smc_json = []
     for name, kw in SMC_VARIANTS:
@@ -1172,10 +1218,7 @@ def main(argv=None):
     by_range = breakdown(base.trades, range_half, order=[RANGE_RIGHT, RANGE_WRONG, "n/a"])
     by_session = breakdown(base.trades, session_of, order=[name for _, _, name in SESSIONS])
     by_side = breakdown(base.trades, lambda t: t["ps"])
-    by_exit = breakdown(base.trades, lambda t: (
-        "stopped out before TP1" if not any(e[1] == "tp1" for e in t["exits"])
-        else "TP1 only, rest at breakeven/stop" if not any(e[1] == "tp2" for e in t["exits"])
-        else "TP1 + TP2, runner trailed"))
+    by_exit = breakdown(base.trades, exit_kind, order=EXIT_KINDS)
 
     def brk(rows, first):
         return md_table([first, "trades", "win rate", "net P/L $", "avg R/trade", "fees $"],
@@ -1201,6 +1244,18 @@ Costs: maker {args.maker_fee_pct}%, taker {args.taker_fee_pct}%, slippage {args.
 {md_table(VARIANT_HEADER, [fmt_variant_row("baseline", base_stats)])}
 
 Daily-loss breaker active on {base_stats["breaker_runs"]} of {len(base.equity_curve)} runs.
+
+## Combined candidate
+
+{md_table(VARIANT_HEADER, rows_candidate)}
+
+{verdict}
+
+The candidate was fixed before this run: stop beyond the previous swing, no stop tighter than 0.5%, timing levels ({timing_label}) not against the trade, TP1 at 2x the risk (half the position, stop to breakeven) and TP2 at 3x (30%), runner trailing as before.
+
+How the candidate's trades ended:
+
+{brk(candidate_exits, "how the trade ended")}
 
 ## Exit handling
 
@@ -1314,7 +1369,8 @@ Baseline trades by what their order block looked like when the order was placed 
     with open(os.path.join(args.out, "variants.json"), "w") as f:
         json.dump({"baseline": base_stats,
                    "combinations": [{"min_stop_pct": c[2], "timing": c[3], "symbols": c[4], **c[5]} for c in combos],
-                   "smart_money": smc_json, "stop_placement": stop_json},
+                   "smart_money": smc_json, "stop_placement": stop_json,
+                   "candidate": {"settings": candidate_kw, "passed": passed, **candidate_stats}},
                   f, indent=2, default=str)
     print(report)
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")

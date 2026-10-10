@@ -316,6 +316,39 @@ def test_sim_stop_placement(world):
     assert len(wide.pending[S]) == 1
 
 
+def test_sim_targets_in_multiples_of_the_risk(world):
+    """tp1_r / tp2_r move the take-profits: TP1 at 2R (half off, stop to
+    breakeven at the next run), TP2 at 3R, whatever TP2 the signal carried."""
+    sim = make_sim(world, tp1_r=2.0, tp2_r=3.0)
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])           # entry 100, stop 99.5: risk 0.5
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    t = sim.positions[S]
+    qty = t["qty"]
+    assert (t["tp1"], t["tp2"]) == (pytest.approx(101.0), pytest.approx(101.5))
+    sim.run(2, {S: 100.2}, {}, [S])
+    sim.walk(S, [[3, 100.2, 100.9, 100.1, 100.8, 0]], 4)     # 1R (100.5) is no longer a target
+    assert not t["tp1_done"] and t["qty"] == qty
+    sim.walk(S, [[5, 100.8, 101.1, 100.7, 101.0, 0]], 6)     # TP1 at 101.0
+    assert t["tp1_done"] and t["qty"] == pytest.approx(qty * 0.5)
+    sim.run(6, {S: 101.0}, {}, [S])
+    assert t["stop"] == 100.0
+    sim.walk(S, [[7, 101.0, 101.6, 100.9, 101.5, 0]], 8)     # TP2 at 101.5
+    assert t["tp2_done"] and t["qty"] == pytest.approx(qty * 0.2)
+    # only TP1 moved: TP2 stays the signal's (101.0) unless it is no longer beyond TP1
+    sim = make_sim(world, tp1_r=1.5)
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    t = sim.positions[S]
+    assert t["tp1"] == pytest.approx(100.75) and t["tp2"] == 101.0
+    sim = make_sim(world, tp1_r=2.0)                          # TP1 101.0 reaches the signal's TP2: fallback beyond it
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    t = sim.positions[S]
+    assert t["tp1"] == pytest.approx(101.0) and t["tp2"] == pytest.approx(101.25)     # 2R + 0.5R
+    assert bt.exit_kind({"exits": [(0, "stop", 1, 1)]}) == "stopped out before TP1"
+    assert bt.exit_kind({"exits": [(0, "tp1", 1, 1), (1, "tp2", 1, 1), (2, "stop", 1, 1)]}) == "TP1 + TP2, runner trailed"
+
+
 def test_swing_confirmation_changes_the_signals(world):
     """STRUCTURE_CONFIRMED_SWINGS reaches the signal pass: the two settings
     do not find the same setups."""
