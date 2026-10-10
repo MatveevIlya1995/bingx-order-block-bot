@@ -23,6 +23,18 @@ on:
       exec_timeframe:
         description: "Candles to walk price between runs: auto, 5m or 15m"
         default: "auto"
+      timeframe:
+        description: "Entry timeframe (empty = the bot's setting, 5m by default)"
+        default: ""
+      htf_timeframes:
+        description: "All higher timeframes, highest first (empty = the bot's setting)"
+        default: ""
+      htf_primary_timeframes:
+        description: "Direction timeframes (empty = the bot's setting)"
+        default: ""
+      skip_structure_compare:
+        description: "true = skip the two extra signal passes (about 3x faster)"
+        default: "false"
 
 permissions:
   contents: read
@@ -43,7 +55,7 @@ jobs:
       - name: Run the backtest
         env:
           SYMBOLS: ${{ vars.SYMBOLS }}
-          TIMEFRAME: ${{ vars.TIMEFRAME }}
+          TIMEFRAME: ${{ inputs.timeframe || vars.TIMEFRAME }}
           MARGIN_PER_TRADE_USD: ${{ vars.MARGIN_PER_TRADE_USD }}
           RISK_PCT_PER_TRADE: ${{ vars.RISK_PCT_PER_TRADE }}
           LEVERAGE: ${{ vars.LEVERAGE }}
@@ -52,8 +64,8 @@ jobs:
           MAX_CONCURRENT_POSITIONS: ${{ vars.MAX_CONCURRENT_POSITIONS }}
           REWARD_RISK_RATIO: ${{ vars.REWARD_RISK_RATIO }}
           TREND_FILTER_ENABLED: ${{ vars.TREND_FILTER_ENABLED }}
-          HTF_TIMEFRAMES: ${{ vars.HTF_TIMEFRAMES }}
-          HTF_PRIMARY_TIMEFRAMES: ${{ vars.HTF_PRIMARY_TIMEFRAMES }}
+          HTF_TIMEFRAMES: ${{ inputs.htf_timeframes || vars.HTF_TIMEFRAMES }}
+          HTF_PRIMARY_TIMEFRAMES: ${{ inputs.htf_primary_timeframes || vars.HTF_PRIMARY_TIMEFRAMES }}
           TREND_EMA_PERIOD: ${{ vars.TREND_EMA_PERIOD }}
           TREND_CANDLE_LIMIT: ${{ vars.TREND_CANDLE_LIMIT }}
           WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT: ${{ vars.WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT }}
@@ -63,14 +75,21 @@ jobs:
           TRAIL_R_MULTIPLE: ${{ vars.TRAIL_R_MULTIPLE }}
           TP2_FRACTION: ${{ vars.TP2_FRACTION }}
           TP2_FALLBACK_R_MULTIPLE: ${{ vars.TP2_FALLBACK_R_MULTIPLE }}
+          STRUCTURE_CONFIRMED_SWINGS: ${{ vars.STRUCTURE_CONFIRMED_SWINGS }}
+          REQUIRE_STRONG_SWING: ${{ vars.REQUIRE_STRONG_SWING }}
+          STOP_PLACEMENT: ${{ vars.STOP_PLACEMENT }}
+          ENTRY_MODEL: ${{ vars.ENTRY_MODEL }}
+          DEALING_RANGE_CANDLES: ${{ vars.DEALING_RANGE_CANDLES }}
           BT_DAYS: ${{ inputs.days }}
           BT_END: ${{ inputs.end }}
           BT_SLIPPAGE: ${{ inputs.slippage_pct }}
           BT_EQUITY: ${{ inputs.start_equity }}
           BT_EXEC: ${{ inputs.exec_timeframe }}
+          BT_SKIP: ${{ inputs.skip_structure_compare }}
         run: |
           ARGS="--days ${BT_DAYS:-180} --slippage-pct ${BT_SLIPPAGE:-0.02} --start-equity ${BT_EQUITY:-230} --exec-timeframe ${BT_EXEC:-auto} --out backtest_results"
           if [ -n "$BT_END" ]; then ARGS="$ARGS --end $BT_END"; fi
+          if [ "$BT_SKIP" = "true" ]; then ARGS="$ARGS --skip-structure-compare"; fi
           python3 backtest.py $ARGS
 
       - name: Keep the report

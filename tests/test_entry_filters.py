@@ -91,8 +91,9 @@ def test_find_setups_applies_the_filters(monkeypatch, capsys):
     monkeypatch.setattr(bot, "analyze_higher_timeframes", lambda client, cfg, symbol: (
         "bullish", "detail", {"1w": "bullish", "1d": "bullish", "4h": "bullish", "1h": "bearish"}))
     monkeypatch.setattr(bot, "_fetch_df", lambda client, symbol, cache: object())
-    monkeypatch.setattr(bot, "detect_order_blocks", lambda df, n: [])
+    monkeypatch.setattr(bot, "detect_order_blocks", lambda df, n, **k: [])
     monkeypatch.setattr(bot, "limit_setups", lambda *a, **k: [tight, wide])
+    monkeypatch.setattr(bot, "add_smc_context", lambda df, setups, **k: setups)
 
     def find(**env):
         for k, v in env.items():

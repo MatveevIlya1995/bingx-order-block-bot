@@ -54,6 +54,17 @@ jobs:
           MIN_STOP_DISTANCE_PCT: ${{ vars.MIN_STOP_DISTANCE_PCT }}
           ENTRY_SYMBOLS: ${{ vars.ENTRY_SYMBOLS }}
           HTF_TIMING_AGREEMENT: ${{ vars.HTF_TIMING_AGREEMENT }}
+          STRUCTURE_CONFIRMED_SWINGS: ${{ vars.STRUCTURE_CONFIRMED_SWINGS }}
+          REQUIRE_STRONG_SWING: ${{ vars.REQUIRE_STRONG_SWING }}
+          STOP_PLACEMENT: ${{ vars.STOP_PLACEMENT }}
+          ENTRY_MODEL: ${{ vars.ENTRY_MODEL }}
+          OB_STRUCTURE: ${{ vars.OB_STRUCTURE }}
+          REQUIRE_LIQUIDITY_SWEEP: ${{ vars.REQUIRE_LIQUIDITY_SWEEP }}
+          MIN_DISPLACEMENT_ATR: ${{ vars.MIN_DISPLACEMENT_ATR }}
+          REQUIRE_FVG: ${{ vars.REQUIRE_FVG }}
+          PREMIUM_DISCOUNT_FILTER: ${{ vars.PREMIUM_DISCOUNT_FILTER }}
+          DEALING_RANGE_CANDLES: ${{ vars.DEALING_RANGE_CANDLES }}
+          ENTRY_HOURS_UTC: ${{ vars.ENTRY_HOURS_UTC }}
           DRY_RUN: ${{ vars.DRY_RUN }}
         run: python3 bot.py
 
