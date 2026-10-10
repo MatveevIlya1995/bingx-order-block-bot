@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 
 # Valid values for OB_STRUCTURE (see Config.ob_structure), and the parser
 # for ENTRY_HOURS_UTC.
-from strategy import OB_STRUCTURE_MODES, parse_hour_windows
+from strategy import OB_STRUCTURE_MODES, STOP_PLACEMENTS, parse_hour_windows
 
 
 def _env(env_key: str, default: str) -> str:
@@ -146,6 +146,22 @@ class Config:
     # break counts, as before. See strategy.detect_order_blocks().
     require_strong_swing: bool = field(
         default_factory=lambda: _bool("REQUIRE_STRONG_SWING", True)
+    )
+
+    # Where the stop-loss goes, always 0.1% of the price beyond the level
+    # (see strategy.stop_prices):
+    #   swing           beyond the last swing -- below the swing low the
+    #                   order block belongs to for a LONG, above the swing
+    #                   high for a SHORT (default)
+    #   order_block     beyond the order block candle's own low/high: the
+    #                   behaviour before, and the tightest
+    #   previous_swing  beyond the swing before that one that lies further
+    #                   out still: the widest
+    # A wider stop means a smaller position for the same risk, a further
+    # TP1 (it mirrors the stop), and fees that are a smaller share of what
+    # the trade risks.
+    stop_placement: str = field(
+        default_factory=lambda: _env("STOP_PLACEMENT", "swing").strip().lower()
     )
 
     # --- top-down higher-timeframe trend filter ---
@@ -474,6 +490,12 @@ def load_config() -> Config:
             f"{HTF_TIMING_AGREEMENT_MODES}; using 'off'."
         )
         cfg.htf_timing_agreement = "off"
+    if cfg.stop_placement not in STOP_PLACEMENTS:
+        print(
+            f"[config] STOP_PLACEMENT={cfg.stop_placement!r} is not one of "
+            f"{STOP_PLACEMENTS}; using 'swing'."
+        )
+        cfg.stop_placement = "swing"
     if cfg.ob_structure not in OB_STRUCTURE_MODES:
         print(
             f"[config] OB_STRUCTURE={cfg.ob_structure!r} is not one of "

@@ -54,6 +54,8 @@ Each run:
    order block is no longer one of them (mitigated without a fill,
    invalidated, bias changed, replaced by newer order blocks, zone already
    traded) are cancelled; setups without an order get one.
+   The stop-loss goes beyond the last swing -- the swing low/high the
+   order block belongs to (STOP_PLACEMENT, strategy.stop_prices()).
 8. sizes each new order exactly like before (fixed margin, per-trade
    leverage solved from the stop distance to hit RISK_PCT_PER_TRADE,
    10x ceiling, shared margin-utilization cap -- see
@@ -96,6 +98,9 @@ from risk_manager import RiskManager
 # How many of the most recent valid, unmitigated order blocks get a
 # resting limit order per symbol.
 MAX_LIMIT_ORDERS_PER_SYMBOL = 2
+
+# STOP_PLACEMENT, as written into the journal's trigger column.
+STOP_NAMES = {"order_block": "order block", "swing": "last swing", "previous_swing": "previous swing"}
 
 
 def analyze_higher_timeframes(client, cfg, symbol):
@@ -422,6 +427,7 @@ def _find_setups(client, cfg, symbol, df_cache):
         max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL,
         direction=bias,
         reward_risk_ratio=cfg.reward_risk_ratio,
+        stop_placement=cfg.stop_placement,
     )
     if not setups:
         print(f"[bot] {symbol}: no valid unmitigated order block in the {bias or 'any'} direction ({_structure_note(df, cfg)}).")
@@ -538,6 +544,7 @@ def _sync_symbol_orders(client, risk, cfg, symbol, setups, htf_detail, df, equit
             f" | exits: TP1 {cfg.partial_tp_r_multiple:g}R (mirror of SL), TP2 "
             + (f"{tp2_price:.6g} ({tp2_source})" if tp2_price is not None else "fallback (no swing beyond TP1)")
             + ", runner trails after TP2"
+            + f" | stop beyond the {STOP_NAMES.get(setup.get('stop_placement'), 'order block')}"
             + f" | SMC: {describe_smc(setup.get('smc'))}"
         )
         now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()

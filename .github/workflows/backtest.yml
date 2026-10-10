@@ -65,6 +65,7 @@ jobs:
           TP2_FALLBACK_R_MULTIPLE: ${{ vars.TP2_FALLBACK_R_MULTIPLE }}
           STRUCTURE_CONFIRMED_SWINGS: ${{ vars.STRUCTURE_CONFIRMED_SWINGS }}
           REQUIRE_STRONG_SWING: ${{ vars.REQUIRE_STRONG_SWING }}
+          STOP_PLACEMENT: ${{ vars.STOP_PLACEMENT }}
           DEALING_RANGE_CANDLES: ${{ vars.DEALING_RANGE_CANDLES }}
           BT_DAYS: ${{ inputs.days }}
           BT_END: ${{ inputs.end }}

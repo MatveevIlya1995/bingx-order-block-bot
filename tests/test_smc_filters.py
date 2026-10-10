@@ -336,7 +336,7 @@ def test_a_full_bot_run_journals_the_tags_and_obeys_the_filters(make_harness):
     assert len(orders) == 1 and orders[0]["entry_price"] == pytest.approx(102.1)
     placed = [r for r in h.journal("DRY_RUN") if r["event"] == "LIMIT_PLACED"]
     assert len(placed) == 1
-    assert "BOS confirmed" in placed[0]["trigger"]
+    assert "BOS confirmed" in placed[0]["trigger"] and "| stop beyond the last swing |" in placed[0]["trigger"]
     assert ("| SMC: BOS, liquidity swept (wick only), fair value gap yes, displacement 0.8 ATR, "
             "entry at 30% of the range (discount)") in placed[0]["trigger"]
 

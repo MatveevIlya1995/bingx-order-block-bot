@@ -65,8 +65,9 @@ value gap, where the entry sits in the dealing range (premium/discount),
 and the UTC hour. Every one of those can be made a condition for placing
 the order; all are OFF by default so they can be backtested first.
 
-Stop-loss is placed just beyond the OB zone (below it for a LONG, above it
-for a SHORT); take-profit is a fixed risk multiple -- config.py hard-
+Stop-loss is placed beyond the last swing -- below the swing low the order
+block belongs to for a LONG, above the swing high for a SHORT (STOP_PLACEMENT,
+see stop_prices); take-profit is a fixed risk multiple -- config.py hard-
 enforces a 2:1 reward:risk ratio regardless of what REWARD_RISK_RATIO is
 set to (see required_reward_risk_ratio there), and the position sizer in
 risk_manager.py hard-caps the stop-loss risk itself at 3% of equity.
@@ -423,8 +424,14 @@ def detect_order_blocks(
 ) -> list[dict]:
     """Returns a list of order block dicts in chronological order:
     {type, top, bottom, formed_idx, bos_idx, structure, broken_level,
-     swing_idx, origin_idx, strong_swing, first_touch_idx, invalidated,
-     mitigated}
+     swing_idx, origin_idx, strong_swing, swing_price, prev_swing_price,
+     first_touch_idx, invalidated, mitigated}
+
+    swing_price is the low (bullish) / high (bearish) of the swing the
+    order block belongs to -- the turning point of the move, or the order
+    block's own far edge if that is further out. prev_swing_price is the
+    most recent EARLIER swing low/high that lies beyond it, or None. They
+    are the levels the stop can be placed beyond (see stop_prices).
 
     STRONG SWINGS. A strong swing is a swing low (or high) from which
     price went on to cause a BOS or CHoCH: the low of the move that closed
@@ -458,6 +465,7 @@ def detect_order_blocks(
     closes = df["close"].values
     swing_highs = df["swing_high"].values
     swing_lows = df["swing_low"].values
+    low_idx, high_idx = np.flatnonzero(swing_lows), np.flatnonzero(swing_highs)
     last = len(df) - 1
     obs: list[dict] = []
 
@@ -475,6 +483,17 @@ def detect_order_blocks(
         )
         if strong_swings_only and not strong:
             continue
+        # The swing the order block belongs to, and the swing before it that
+        # lies further out than both -- the levels a stop can sit beyond.
+        if brk["direction"] == "bullish":
+            swing_price = min(float(lows[origin]), found["bottom"])
+            earlier = lows[low_idx[low_idx < origin]]
+            further = earlier[earlier < swing_price]
+        else:
+            swing_price = max(float(highs[origin]), found["top"])
+            earlier = highs[high_idx[high_idx < origin]]
+            further = earlier[earlier > swing_price]
+        prev_swing_price = float(further[-1]) if len(further) else None
         obs.append(
             {
                 "type": brk["direction"],
@@ -487,6 +506,8 @@ def detect_order_blocks(
                 "swing_idx": brk["swing_idx"],
                 "origin_idx": origin,
                 "strong_swing": strong,
+                "swing_price": swing_price,
+                "prev_swing_price": prev_swing_price,
                 "mitigated": False,
             }
         )
@@ -495,20 +516,51 @@ def detect_order_blocks(
     return obs
 
 
-def _setup_from_ob(ob: dict, reward_risk_ratio: float):
+STOP_PLACEMENTS = ("order_block", "swing", "previous_swing")
+STOP_BUFFER = 0.001   # the stop sits this fraction of the price beyond its level
+
+
+def stop_prices(ob: dict) -> dict:
+    """Where the stop-loss would sit for this order block under each
+    STOP_PLACEMENT, always STOP_BUFFER (0.1% of the price) beyond the level:
+
+      order_block     beyond the order block candle's far edge (its low for
+                      a LONG, its high for a SHORT) -- the tightest
+      swing           beyond the last swing: the swing low (LONG) / swing
+                      high (SHORT) the order block belongs to, i.e. the
+                      turning point of the move that broke structure. The
+                      same price as order_block when the order block candle
+                      made that low/high itself, wider when a later candle
+                      did
+      previous_swing  beyond the most recent earlier swing low/high that
+                      lies further out still; the same as swing when the
+                      fetched candles hold no such swing -- the widest
+    """
+    bullish = ob["type"] == "bullish"
+    edge = ob["bottom"] if bullish else ob["top"]
+    swing = ob.get("swing_price")
+    swing = edge if swing is None else (min(edge, swing) if bullish else max(edge, swing))
+    prev = ob.get("prev_swing_price")
+    prev = swing if prev is None else (min(swing, prev) if bullish else max(swing, prev))
+    k = 1 - STOP_BUFFER if bullish else 1 + STOP_BUFFER
+    return {"order_block": edge * k, "swing": swing * k, "previous_swing": prev * k}
+
+
+def _setup_from_ob(ob: dict, reward_risk_ratio: float, stop_placement: str = "swing"):
     """Limit-order setup for one order block: entry at the zone edge price
-    reaches first (top of a bullish OB, bottom of a bearish OB), stop just
-    beyond the far edge, fixed reward:risk take-profit. None if the
-    stop distance comes out non-positive."""
+    reaches first (top of a bullish OB, bottom of a bearish OB), stop
+    where `stop_placement` puts it (see stop_prices), fixed reward:risk
+    take-profit. setup["stops"] holds the stop under every placement.
+    None if the stop distance comes out non-positive."""
+    stops = stop_prices(ob)
+    stop = stops.get(stop_placement, stops["swing"])
     if ob["type"] == "bullish":
         entry = float(ob["top"])
-        stop = ob["bottom"] * 0.999
         risk = entry - stop
         side, position_side = "buy", "LONG"
         target = entry + risk * reward_risk_ratio
     else:
         entry = float(ob["bottom"])
-        stop = ob["top"] * 1.001
         risk = stop - entry
         side, position_side = "sell", "SHORT"
         target = entry - risk * reward_risk_ratio
@@ -521,6 +573,8 @@ def _setup_from_ob(ob: dict, reward_risk_ratio: float):
         "stop_loss": stop,
         "take_profit": target,
         "order_block": ob,
+        "stop_placement": stop_placement if stop_placement in stops else "swing",
+        "stops": stops,
     }
 
 
@@ -534,9 +588,11 @@ def limit_setups(
     max_setups: int = 2,
     direction: str | None = None,
     reward_risk_ratio: float = 2.0,
+    stop_placement: str = "swing",
 ) -> list[dict]:
     """The most recent `max_setups` valid, unmitigated order blocks, as
-    resting limit-order setups (newest first).
+    resting limit-order setups (newest first). `stop_placement` says where
+    each setup's stop-loss goes (see stop_prices).
 
     - only order blocks that caused a BOS/CHoCH exist at all (see
       detect_order_blocks)
@@ -559,7 +615,7 @@ def limit_setups(
             continue
         if any(_zones_overlap(ob, p["order_block"]) for p in picks):
             continue
-        setup = _setup_from_ob(ob, reward_risk_ratio)
+        setup = _setup_from_ob(ob, reward_risk_ratio, stop_placement)
         if setup is None:
             continue
         picks.append(setup)

@@ -17,7 +17,7 @@ CLEAN_ENV = ("SYMBOLS", "MIN_STOP_DISTANCE_PCT", "ENTRY_SYMBOLS", "HTF_TIMING_AG
              "MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT",
              "STRUCTURE_CONFIRMED_SWINGS", "REQUIRE_STRONG_SWING", "OB_STRUCTURE", "REQUIRE_LIQUIDITY_SWEEP",
              "MIN_DISPLACEMENT_ATR", "REQUIRE_FVG", "PREMIUM_DISCOUNT_FILTER", "DEALING_RANGE_CANDLES",
-             "ENTRY_HOURS_UTC", "TIMEFRAME", "HTF_TIMEFRAMES", "HTF_PRIMARY_TIMEFRAMES")
+             "ENTRY_HOURS_UTC", "TIMEFRAME", "HTF_TIMEFRAMES", "HTF_PRIMARY_TIMEFRAMES", "STOP_PLACEMENT")
 ACCOUNT_ENV = {"MAX_CONCURRENT_POSITIONS": "5", "RISK_PCT_PER_TRADE": "2", "LEVERAGE": "10",
                "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT": "1"}
 # The cascade the bot ran before the timeframes moved down a level. The
@@ -92,7 +92,7 @@ def test_signals_equal_on_the_default_timeframes(world_5m):
 def check_signals(world, min_checked, min_setups):
     cfg, data, signals, start, end = world
     rng = np.random.default_rng(3)
-    checked = with_setups = overrides = conflicts = 0
+    checked = with_setups = overrides = conflicts = widened = 0
     tags = set()
     for symbol in SYMS:
         sig = signals[symbol]
@@ -123,6 +123,13 @@ def check_signals(world, min_checked, min_setups):
                     for key, value in s["smc"].items():
                         assert raw[7][key] == (pytest.approx(value) if isinstance(value, float) else value), key
                     tags.add((raw[7]["structure"], raw[7]["liquidity"], raw[7]["fvg"]))
+                    # every stop placement, with the TP2 that goes with it
+                    assert raw[2] == pytest.approx(s["stops"][cfg.stop_placement])
+                    for placement, stop in s["stops"].items():
+                        alt_tp2, _ = bot._find_tp2_level(df, {**s, "stop_loss": stop}, cfg)
+                        assert raw[8][placement][0] == pytest.approx(stop)
+                        assert raw[8][placement][1] == (pytest.approx(alt_tp2) if alt_tp2 is not None else None)
+                    widened += raw[8]["swing"][0] != raw[8]["order_block"][0]
                 # and the 4h/1h trends the timing filter uses
                 _, _, trends = bot.analyze_higher_timeframes(client, cfg, symbol)
                 assert got[1] == tuple(trends[tf] for tf in cfg.htf_timeframes if tf not in cfg.primary_htf_timeframes)
@@ -132,6 +139,7 @@ def check_signals(world, min_checked, min_setups):
     # the tags vary across the sample (both kinds of break, every liquidity outcome, gap and no gap)
     assert {t[0] for t in tags} == {"BOS", "CHoCH"} and {t[1] for t in tags} == {"sweep", "run", "none"}
     assert {t[2] for t in tags} == {True, False}
+    assert widened > 10            # the swing stop differs from the order-block stop often enough to matter
     return overrides
 
 
@@ -281,6 +289,31 @@ def test_sim_smart_money_filters(world):
     sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
     sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
     assert bt.structure_tag(sim.positions[S]) == "n/a" and bt.liquidity_tag(sim.positions[S]) == "n/a"
+
+
+def test_sim_stop_placement(world):
+    """One signal carries the stop under every placement; the simulation
+    uses the one its variant asks for, with the matching TP2 and size."""
+    sig = long_signal()                                   # entry 100, stop 99.5, TP2 101
+    stops = {"order_block": (99.8, 100.9), "swing": (99.5, 101.0), "previous_swing": (99.0, 102.5)}
+    signal = (sig[0], sig[1], [sig[2][0] + (None, stops)])
+    for placement, (stop, tp2) in list(stops.items()) + [(None, (99.5, 101.0))]:
+        sim = make_sim(world, stop_placement=placement)
+        sim.run(0, {S: 100.6}, {S: signal}, [S])
+        order = sim.pending[S][0]
+        assert (order["stop"], order["tp2"]) == (stop, tp2), placement
+        sim.walk(S, [[1, 100.6, 100.7, 99.95, 100.2, 0]], 2)
+        trade = sim.positions[S]
+        assert trade["stop"] == stop and trade["tp2"] == tp2
+        assert trade["tp1"] == pytest.approx(100.0 + (100.0 - stop))      # TP1 mirrors the stop
+        assert trade["setup_stop_pct"] == pytest.approx(100.0 - stop)
+    # the minimum-stop filter sees the placement's stop
+    tight = make_sim(world, stop_placement="order_block", min_stop_pct=0.3)
+    tight.run(0, {S: 100.6}, {S: signal}, [S])
+    assert S not in tight.pending
+    wide = make_sim(world, stop_placement="previous_swing", min_stop_pct=0.3)
+    wide.run(0, {S: 100.6}, {S: signal}, [S])
+    assert len(wide.pending[S]) == 1
 
 
 def test_swing_confirmation_changes_the_signals(world):

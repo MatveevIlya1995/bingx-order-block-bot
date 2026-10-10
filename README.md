@@ -62,9 +62,14 @@ The three levels of a smart-money top-down read:
    back to yet. The order's direction must match the PRIMARY (daily/4h)
    bias established in steps 1-2. An all-neutral primary read imposes no
    directional constraint at all.
-6. **Stop-loss & take-profit** -- the stop-loss sits just beyond the 5m
-   order block that produced the signal (below it for a LONG, above it
-   for a SHORT). Every trade commits a FIXED margin
+6. **Stop-loss & take-profit** -- the stop-loss sits beyond the last
+   swing: 0.1% below the swing low the order block belongs to for a LONG,
+   0.1% above the swing high for a SHORT (`STOP_PLACEMENT=swing`). That is
+   the turning point of the move that broke structure. When the order
+   block candle made that low/high itself, this is the same price as
+   before; when a later candle did, the stop is wider than the order
+   block. `order_block` puts it back just beyond the order block candle,
+   `previous_swing` moves it out to the swing before. Every trade commits a FIXED margin
    (`MARGIN_PER_TRADE_USD`, $50 by default); the LEVERAGE is then
    solved per trade from the stop-loss distance so the trade's dollar
    risk hits `RISK_PCT_PER_TRADE` of equity (hard-capped at 3%
@@ -186,7 +191,7 @@ the backtest report compares the two.
 |---|---|---|
 | Market structure (BOS / CHoCH) | Closes beyond confirmed swing highs/lows, see above | An order block must have caused one. Tag + `OB_STRUCTURE` |
 | Strong swing | A swing low/high from which price went on to cause a BOS or CHoCH | Only order blocks at one count (`REQUIRE_STRONG_SWING`) |
-| Order block | Last opposite-coloured candle before the move that broke structure; the zone is its high-low | The entry zone: limit order at the edge price reaches first, stop just beyond the far edge |
+| Order block | Last opposite-coloured candle before the move that broke structure; the zone is its high-low | The entry zone: limit order at the edge price reaches first; the stop goes beyond the swing it belongs to (`STOP_PLACEMENT`) |
 | Mitigation | Price visited the zone and left, or a completed candle closed through it | A mitigated order block gets no order; each zone is traded once |
 | Liquidity sweep | Before breaking structure, the move traded beyond an earlier swing low (LONG) / high (SHORT) that nothing had touched since -- with wicks only. If candles also closed beyond it, it is a "run", not a sweep | Tag + `REQUIRE_LIQUIDITY_SWEEP` |
 | Displacement | The biggest candle body between the order block and the break, in average true ranges (14 candles) | Tag + `MIN_DISPLACEMENT_ATR` |
@@ -266,8 +271,8 @@ bot uses.
 `backtest.py` replays the strategy on BingX history with fees and compares
 the entry filters -- including each smart-money filter alone, a few of them
 stacked, the baseline's trades split by BOS/CHoCH, liquidity, fair value gap,
-displacement, premium/discount and session, and swing confirmation and the
-strong-swing rule on vs. off:
+displacement, premium/discount and session, the three stop placements, and
+swing confirmation and the strong-swing rule on vs. off:
 
 ```
 python3 backtest.py --days 180
@@ -387,6 +392,7 @@ Or use the included `.github/workflows/bot.yml` (GitHub Actions, started by its 
 | `TIMEFRAME` | `5m` | Entry candle timeframe -- where structure is read and the limit orders rest. Never below 5m: a smaller value is replaced by 5m |
 | `CANDLE_LIMIT` | `300` | How many entry-timeframe candles to fetch per cycle |
 | `FRACTAL_N` | `2` | Fractal window (bars each side) used for swing-high/low detection, on every timeframe |
+| `STOP_PLACEMENT` | `swing` | Where the stop-loss goes, 0.1% beyond the level: `swing` = the swing low/high the order block belongs to; `order_block` = the order block candle's own low/high (before, tightest); `previous_swing` = the earlier swing further out (widest) |
 | `REQUIRE_STRONG_SWING` | `true` | Count only order blocks at a strong swing -- a swing low/high that went on to cause a BOS or CHoCH. `false` = every order block that caused a break |
 | `STRUCTURE_CONFIRMED_SWINGS` | `true` | A swing becomes the level a BOS/CHoCH must break only once `FRACTAL_N` candles after it have closed. `false` = the behaviour before (see "Market structure") |
 | `REWARD_RISK_RATIO` | `2` | Ignored: always forced to `2` (the fixed take-profit is twice the stop-loss distance -- see partial-TP/trailing above for what usually happens before that fixed target is reached) |

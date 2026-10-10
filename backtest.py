@@ -31,7 +31,8 @@ What it does
    old market close on the scheduled run, the smart-money filters (order
    blocks from a BOS only / a CHoCH only, liquidity sweep, displacement,
    fair value gap, premium/discount, entry hours) each alone and in a few
-   combinations, and -- with an extra signal pass each -- swings confirmed
+   combinations, the three stop placements (beyond the order block, the
+   last swing, the swing before it), and -- with an extra signal pass each -- swings confirmed
    before they count as structure vs. the behaviour before
    (STRUCTURE_CONFIRMED_SWINGS) and only order blocks at strong swings vs.
    all of them (REQUIRE_STRONG_SWING).
@@ -360,8 +361,11 @@ def analyze_htf(cfg, views, n_done, partials, price):
 def compute_signals(args):
     """Every run's setups for ONE symbol. Returns
     {"symbol", "steps": [t_run, ...], "px": [...], "signals": {i: (is_override, timing_trends, [setup, ...])}}
-    where setup = (position_side, entry, stop, ob_type, ob_top, ob_bottom, tp2_price, smc)
-    and smc is the setup's smart-money context (strategy.add_smc_context)."""
+    where setup = (position_side, entry, stop, ob_type, ob_top, ob_bottom, tp2_price, smc, stops):
+    smc is the setup's smart-money context (strategy.add_smc_context) and
+    stops is {STOP_PLACEMENT: (stop, tp2_price)} -- the stop and the TP2
+    that goes with it under every stop placement, so the simulation can
+    compare them without another signal pass."""
     cfg, symbol, d, start_ms, end_ms = args
     from bot import _find_tp2_level  # the bot's own TP2 rule
 
@@ -421,7 +425,7 @@ def compute_signals(args):
         obs = detect_order_blocks(df, n=cfg.fractal_n, confirmed_swings=cfg.structure_confirmed_swings,
                                   strong_swings_only=cfg.require_strong_swing)
         setups = limit_setups(df, obs, max_setups=MAX_LIMIT_ORDERS_PER_SYMBOL, direction=bias,
-                              reward_risk_ratio=cfg.reward_risk_ratio)
+                              reward_risk_ratio=cfg.reward_risk_ratio, stop_placement=cfg.stop_placement)
         if not setups:
             continue
         add_smc_context(df, setups, n=cfg.fractal_n, dealing_range_candles=cfg.dealing_range_candles)
@@ -429,8 +433,14 @@ def compute_signals(args):
         for s in setups:
             tp2, _ = _find_tp2_level(df, s, cfg)
             ob = s["order_block"]
+            stops, tp2_at = {}, {float(s["stop_loss"]): tp2}
+            for placement, stop in s["stops"].items():
+                stop = float(stop)
+                if stop not in tp2_at:
+                    tp2_at[stop], _ = _find_tp2_level(df, {**s, "stop_loss": stop}, cfg)
+                stops[placement] = (stop, tp2_at[stop])
             out.append((s["position_side"], float(s["entry"]), float(s["stop_loss"]),
-                        ob["type"], float(ob["top"]), float(ob["bottom"]), tp2, dict(s["smc"])))
+                        ob["type"], float(ob["top"]), float(ob["bottom"]), tp2, dict(s["smc"]), stops))
         timing = tuple(trend_by_tf[tf] for tf in timing_tfs) if cfg.trend_filter_enabled else None
         signals[len(steps) - 1] = (is_override, timing, out)
     return {"symbol": symbol, "steps": steps, "px": prices, "signals": signals}
@@ -455,13 +465,16 @@ class Sim:
                          price beyond the level (the behaviour before)."""
 
     def __init__(self, cfg, costs, start_equity, exit_mode="resting",
-                 min_stop_pct=0.0, timing_mode="off", entry_symbols=None, **smc_filters):
+                 min_stop_pct=0.0, timing_mode="off", entry_symbols=None, stop_placement=None, **smc_filters):
         self.cfg = cfg
         self.costs = costs
         self.exit_mode = exit_mode
         self.min_stop_pct = min_stop_pct
         self.timing_mode = timing_mode
         self.entry_symbols = entry_symbols or []
+        # None: the stop the signals were computed with (cfg.stop_placement);
+        # otherwise the stop (and its TP2) under that STOP_PLACEMENT
+        self.stop_placement = stop_placement
         # smart-money filters, as strategy.apply_entry_filters() takes them:
         # ob_structure, require_sweep, min_displacement_atr, require_fvg,
         # premium_discount, entry_hours
@@ -682,8 +695,13 @@ class Sim:
             setups, is_override, timing = [], False, None
             if sig is not None and entry_symbol_allowed(symbol, self.entry_symbols):
                 is_override, timing, raw = sig
-                setups = [{"position_side": s[0], "entry": s[1], "stop_loss": s[2], "_raw": s,
-                           "smc": s[7] if len(s) > 7 else None} for s in raw]
+                setups = []
+                for s in raw:
+                    stop, tp2 = s[2], s[6]
+                    if self.stop_placement and len(s) > 8 and self.stop_placement in s[8]:
+                        stop, tp2 = s[8][self.stop_placement]
+                    setups.append({"position_side": s[0], "entry": s[1], "stop_loss": stop, "_raw": s,
+                                   "_tp2": tp2, "smc": s[7] if len(s) > 7 else None})
                 setups, _ = apply_entry_filters(setups, min_stop_distance_pct=self.min_stop_pct,
                                                 timing_trends=list(timing) if timing is not None else None,
                                                 timing_mode=self.timing_mode, **self.smc_filters)
@@ -729,10 +747,11 @@ class Sim:
             if seen is not None and t - seen < ZONE_MEMORY_MS:
                 continue
             raw = s["_raw"]
-            qty, leverage = self.rm.position_size(equity, raw[1], raw[2], existing_notional=existing)
+            stop = s["stop_loss"]
+            qty, leverage = self.rm.position_size(equity, raw[1], stop, existing_notional=existing)
             if qty <= 0 or qty * raw[1] < cfg.min_notional_usdt:
                 continue
-            order = {"symbol": symbol, "ps": raw[0], "entry": raw[1], "stop": raw[2], "tp2": raw[6],
+            order = {"symbol": symbol, "ps": raw[0], "entry": raw[1], "stop": stop, "tp2": s.get("_tp2", raw[6]),
                      "qty": qty, "zone": zone, "placed": t, "leverage": leverage,
                      "timing": timing, "override": is_override,
                      "smc": raw[7] if len(raw) > 7 else None}
@@ -1085,6 +1104,25 @@ def main(argv=None):
         rows_strong.append(fmt_variant_row(strong_name(not cfg.require_strong_swing), st))
         strong_note = (f"Setup-observations: {n_setups} with this run's setting, {count} with the other.")
 
+    # Stop placement: the same setups with the stop beyond the order block,
+    # the last swing, or the swing before it (all three are in the signals).
+    stop_names = {"order_block": "order_block -- beyond the order block candle (before)",
+                  "swing": "swing -- beyond the last swing",
+                  "previous_swing": "previous_swing -- beyond the swing before it"}
+    rows_stop_place, rows_stop_width, stop_json = [], [], []
+    for mode, name in stop_names.items():
+        sim = base if mode == cfg.stop_placement else run(stop_placement=mode)
+        st = base_stats if mode == cfg.stop_placement else stats(sim, t_mid)
+        if mode == cfg.stop_placement:
+            name += " [this run's setting]"
+        rows_stop_place.append(fmt_variant_row(name, st))
+        widths = sorted(t["setup_stop_pct"] for t in sim.trades)
+        risked = sum(t["risk_usd"] for t in sim.trades)
+        rows_stop_width.append([name, f"{widths[len(widths) // 2]:.2f}%" if widths else "n/a",
+                                f"${risked / len(sim.trades):.2f}" if sim.trades else "n/a",
+                                f"{st['fees'] / risked * 100:.0f}%" if risked > 0 else "n/a"])
+        stop_json.append({"stop_placement": mode, **st})
+
     rows_smc = [fmt_variant_row("all smart-money filters off", base_stats)]
     smc_json = []
     for name, kw in SMC_VARIANTS:
@@ -1152,7 +1190,7 @@ def main(argv=None):
 
 Data: {source}. {len(symbols)} symbols: {", ".join(s.split("/")[0] for s in symbols)}.
 {note_text}
-Timeframes: entries on {cfg.timeframe}; direction from {"/".join(cfg.primary_htf_timeframes)}; timing levels {timing_label}. Order blocks: {"only at strong swings" if cfg.require_strong_swing else "every one that caused a break"}; swings {"confirmed first" if cfg.structure_confirmed_swings else "counted at their own candle"}.
+Timeframes: entries on {cfg.timeframe}; direction from {"/".join(cfg.primary_htf_timeframes)}; timing levels {timing_label}. Stop: beyond the {cfg.stop_placement.replace("_", " ")}. Order blocks: {"only at strong swings" if cfg.require_strong_swing else "every one that caused a break"}; swings {"confirmed first" if cfg.structure_confirmed_swings else "counted at their own candle"}.
 Settings (from the bot's configuration): risk {cfg.risk_pct_per_trade * 100:g}% per trade, margin ${cfg.margin_per_trade_usd:g}, leverage ceiling {min(cfg.leverage, cfg.max_leverage_hard_cap)}x, max {cfg.max_concurrent_positions} positions, daily loss limit {cfg.max_daily_loss_pct * 100:g}%, primary-level override room {cfg.weekly_daily_override_min_room_pct:g}%, TP1 {cfg.partial_tp_fraction:.0%} at {cfg.partial_tp_r_multiple:g}R, TP2 {cfg.tp2_fraction:.0%}, trail {cfg.trail_r_multiple:g}R.
 Costs: maker {args.maker_fee_pct}%, taker {args.taker_fee_pct}%, slippage {args.slippage_pct}% on market/triggered fills. Starting equity ${args.start_equity:g}. Execution walked on {exec_tf} candles.
 
@@ -1195,6 +1233,14 @@ Baseline trades by symbol:
 ## Combinations (best net P/L first)
 
 {md_table(VARIANT_HEADER, [c[1] for c in combos])}
+
+## Stop placement (STOP_PLACEMENT), other filters off
+
+{md_table(VARIANT_HEADER, rows_stop_place)}
+
+{md_table(["stop placement", "median stop distance", "average $ risked per trade", "fees as a share of what was risked"], rows_stop_width)}
+
+The stop is always 0.1% of the price beyond its level. "swing" is the swing low (LONG) / swing high (SHORT) the order block belongs to; it equals "order_block" whenever the order block candle made that low/high itself. A wider stop also moves TP1 further away (TP1 mirrors the stop).
 
 ## Market structure: swing confirmation (STRUCTURE_CONFIRMED_SWINGS)
 
@@ -1268,7 +1314,7 @@ Baseline trades by what their order block looked like when the order was placed 
     with open(os.path.join(args.out, "variants.json"), "w") as f:
         json.dump({"baseline": base_stats,
                    "combinations": [{"min_stop_pct": c[2], "timing": c[3], "symbols": c[4], **c[5]} for c in combos],
-                   "smart_money": smc_json},
+                   "smart_money": smc_json, "stop_placement": stop_json},
                   f, indent=2, default=str)
     print(report)
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
