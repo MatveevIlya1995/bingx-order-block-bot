@@ -1,7 +1,7 @@
 {
   "date": "2026-10-10",
   "day_start_equity": 236.4247,
-  "realized_pnl_today": -4.471329114116103,
+  "realized_pnl_today": -3.621668797788297,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -33,7 +33,7 @@
       "symbol": "LINK/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 19.3963845,
+      "qty": 7.7585538,
       "entry_price": 12.889,
       "stop_loss": 12.889,
       "take_profit": 12.984708000000001,
@@ -45,7 +45,8 @@
       "risk_per_unit": 0.04785400000000095,
       "partial_tp_price": 12.936854,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 0.04785400000000095
     },
     {
       "trade_id": "a5e3464cdb1a",
@@ -54,7 +55,7 @@
       "symbol": "NEAR/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 9.8711855,
+      "qty": 3.9484742,
       "entry_price": 5.236,
       "stop_loss": 5.236,
       "take_profit": 5.316401999999999,
@@ -66,7 +67,8 @@
       "risk_per_unit": 0.04020099999999971,
       "partial_tp_price": 5.2762009999999995,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 0.04020099999999971
     }
   ],
   "dry_run_signaled": {
@@ -202,7 +204,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 237.0045,
+  "last_seen_equity": 236.9353,
   "traded_zones": {
     "BTC/USDT:USDT|bullish|84541.3-84566.9": "2026-10-03T21:15:41.203902+00:00",
     "LTC/USDT:USDT|bullish|69.89-70.14": "2026-10-04T00:15:50.351394+00:00",
