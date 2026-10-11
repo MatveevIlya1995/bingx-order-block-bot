@@ -1,7 +1,7 @@
 {
   "date": "2026-10-11",
   "day_start_equity": 237.1604,
-  "realized_pnl_today": 1.4440367778992742,
+  "realized_pnl_today": 2.1886549114480527,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -33,7 +33,7 @@
       "symbol": "ETH/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.096759,
+      "qty": 0.0387036,
       "entry_price": 2497.99,
       "stop_loss": 2497.99,
       "take_profit": 2508.959999999999,
@@ -45,7 +45,8 @@
       "risk_per_unit": 5.484999999999673,
       "partial_tp_price": 2503.4749999999995,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 5.484999999999673
     },
     {
       "trade_id": "21ead5aa1d23",
@@ -54,9 +55,9 @@
       "symbol": "SOL/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 4.57511,
+      "qty": 2.287555,
       "entry_price": 109.287,
-      "stop_loss": 108.963927,
+      "stop_loss": 109.287,
       "take_profit": 109.93314600000002,
       "trigger": "bullish order block limit: zone 109.0730-109.2870 (formed 2026-10-09 23:45 UTC, CHoCH confirmed 2026-10-10 01:00 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bearish(1 OB) 1h=bearish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 109.685 (next swing high (1.23R)), runner trails after TP2 | filled limit @ 109.287",
       "tp2_price": 109.685,
@@ -65,7 +66,7 @@
       "initial_qty": 4.57511,
       "risk_per_unit": 0.32307300000000794,
       "partial_tp_price": 109.61007300000001,
-      "partial_taken": false,
+      "partial_taken": true,
       "tp2_taken": false
     }
   ],
@@ -202,7 +203,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 236.9854,
+  "last_seen_equity": 237.1757,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|787.76-788.55": "2026-10-04T11:01:18.748270+00:00",
     "LINK/USDT:USDT|bullish|14.023-14.056": "2026-10-04T12:15:49.594998+00:00",
