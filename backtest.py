@@ -25,8 +25,10 @@ What it does
    plan -- and applies the entry filters through the same
    strategy.apply_entry_filters() the live bot calls.
 4. Compares variants: minimum stop distance, symbol set, 4h/1h agreement
-   (each alone and combined), plus resting take-profit orders vs. the old
-   market close on the 15-minute run.
+   (each alone and combined), resting take-profit orders vs. the old
+   market close on the 15-minute run, and the exit plan -- how the position
+   is split between TP1, TP2 and the runner, and how far away TP2 may sit
+   (TP2_MIN_R_MULTIPLE) -- each change alone and together.
 
 Settings come from the same environment variables as the bot (config.py), so
 running it with the bot's variables backtests the bot's live configuration.
@@ -81,6 +83,7 @@ from config import load_config
 from risk_manager import RiskManager
 from strategy import (
     apply_entry_filters,
+    apply_tp2_floor,
     combine_htf_bias,
     detect_order_blocks,
     entry_symbol_allowed,
@@ -442,7 +445,8 @@ class Sim:
                          price beyond the level (the behaviour before)."""
 
     def __init__(self, cfg, costs, start_equity, exit_mode="resting",
-                 min_stop_pct=0.0, timing_mode="off", entry_symbols=None):
+                 min_stop_pct=0.0, timing_mode="off", entry_symbols=None,
+                 tp1_fraction=None, tp2_fraction=None, tp2_min_r=None):
         self.cfg = cfg
         self.costs = costs
         self.exit_mode = exit_mode
@@ -462,8 +466,13 @@ class Sim:
         self.breaker_runs = 0
         self.rm = RiskManager.__new__(RiskManager)   # the bot's own sizing code
         self.rm.cfg = cfg
-        f1 = min(max(cfg.partial_tp_fraction, 0.0), 1.0)
-        self.f1, self.f2 = f1, min(max(cfg.tp2_fraction, 0.0), 1.0 - f1)
+        # The exit plan. None = the bot's own setting (PARTIAL_TP_FRACTION,
+        # TP2_FRACTION, TP2_MIN_R_MULTIPLE); the runner is what is left.
+        f1 = cfg.partial_tp_fraction if tp1_fraction is None else tp1_fraction
+        f2 = cfg.tp2_fraction if tp2_fraction is None else tp2_fraction
+        f1 = min(max(f1, 0.0), 1.0)
+        self.f1, self.f2 = f1, min(max(f2, 0.0), 1.0 - f1)
+        self.tp2_min_r = cfg.tp2_min_r_multiple if tp2_min_r is None else tp2_min_r
 
     # ---- bookkeeping ----
     def _book(self, trade, qty, price, fee, kind, t):
@@ -497,9 +506,13 @@ class Sim:
         risk_per_unit = abs(price - order["stop"])
         tp1 = price + d * risk_per_unit * self.cfg.partial_tp_r_multiple
         tp2 = order["tp2"]
+        if tp2 is not None:                  # bot._find_tp2_level: the floor on the limit price
+            tp2, _ = apply_tp2_floor(order["entry"], abs(order["entry"] - order["stop"]), d == 1, tp2, self.tp2_min_r)
         fallback_r = max(self.cfg.tp2_fallback_r_multiple, self.cfg.partial_tp_r_multiple + 0.5)
         if tp2 is None or not (tp2 > tp1 if d == 1 else tp2 < tp1):
             tp2 = price + d * risk_per_unit * fallback_r        # RiskManager._arm_partial_and_trail
+        # ... and again on the price the entry really filled at
+        tp2, _ = apply_tp2_floor(price, risk_per_unit, d == 1, tp2, self.tp2_min_r)
         symbol = order["symbol"]
         self.positions[symbol] = {
             "symbol": symbol, "ps": order["ps"], "dir": d, "entry": price, "entry_time": t,
@@ -782,6 +795,16 @@ def stats(sim, t_mid=None):
         "fees": sum(t["fees"] for t in trades),
         "breaker_runs": sim.breaker_runs,
     }
+    # how big the wins and the losses are, in R (net of fees)
+    win_r = [x for x in r if x > 0]
+    loss_r = [x for x in r if x <= 0]
+    out["avg_win_r"] = float(np.mean(win_r)) if win_r else 0.0
+    out["avg_loss_r"] = float(np.mean(loss_r)) if loss_r else 0.0
+    out["best_r"] = max(r) if r else 0.0
+    out["wins_2r_plus"] = sum(1 for x in r if x >= 2.0)
+    span = out["avg_win_r"] - out["avg_loss_r"]
+    # the share of trades that must win for the result to be zero
+    out["breakeven_win_rate"] = (-out["avg_loss_r"] / span * 100) if span > 0 else 100.0
     if t_mid is not None:
         out["pnl_h1"] = sum(t["pnl"] for t in trades if t["entry_time"] < t_mid)
         out["pnl_h2"] = sum(t["pnl"] for t in trades if t["entry_time"] >= t_mid)
@@ -847,6 +870,34 @@ def fmt_variant_row(name, s):
 VARIANT_HEADER = ["variant", "trades", "win rate", "net P/L $", "return", "avg R/trade", "profit factor",
                   "max drawdown", "fees $", "net P/L 1st half / 2nd half"]
 
+def exit_kind(trade):
+    """How far a trade got through the exit plan."""
+    if not any(e[1] == "tp1" for e in trade["exits"]):
+        return "stopped out before TP1"
+    if not any(e[1] == "tp2" for e in trade["exits"]):
+        return "TP1 only, rest at breakeven/stop"
+    return "TP1 + TP2, runner trailed"
+
+
+# Exit plans compared with the bot's current one. The four changes were fixed
+# before the run: keep stops from being so tight that fees eat the trade, keep
+# TP2 from sitting almost on top of TP1, close less at TP1, leave more to run.
+MIN_STOP_PLAN = 0.6      # % of the entry price
+TP2_MIN_R_PLAN = 2.0     # TP2 at least this many R from the entry
+EXIT_PLANS = [
+    (f"only: no stop tighter than {MIN_STOP_PLAN:g}% (MIN_STOP_DISTANCE_PCT)", {"min_stop_pct": MIN_STOP_PLAN}),
+    (f"only: TP2 at least {TP2_MIN_R_PLAN:g}R away (TP2_MIN_R_MULTIPLE)", {"tp2_min_r": TP2_MIN_R_PLAN}),
+    ("only: TP1 closes 30% (TP2 50%, runner 20%)", {"tp1_fraction": 0.3, "tp2_fraction": 0.5}),
+    ("only: runner 40% (TP1 50%, TP2 10%)", {"tp1_fraction": 0.5, "tp2_fraction": 0.1}),
+    ("TP1 30% / TP2 30% / runner 40%", {"tp1_fraction": 0.3, "tp2_fraction": 0.3}),
+    (f"TP1 30% / TP2 30% / runner 40% + TP2 at least {TP2_MIN_R_PLAN:g}R",
+     {"tp1_fraction": 0.3, "tp2_fraction": 0.3, "tp2_min_r": TP2_MIN_R_PLAN}),
+    (f"ALL FOUR: 30/30/40 + TP2 at least {TP2_MIN_R_PLAN:g}R + no stop tighter than {MIN_STOP_PLAN:g}%",
+     {"tp1_fraction": 0.3, "tp2_fraction": 0.3, "tp2_min_r": TP2_MIN_R_PLAN, "min_stop_pct": MIN_STOP_PLAN}),
+]
+SIZE_HEADER = ["exit plan", "trades", "win rate", "win rate needed to break even", "average win", "average loss",
+               "biggest win", "wins of 2R or more"]
+
 SYMBOL_SETS = {
     "all": [],
     "top 8 (BTC ETH SOL BNB XRP DOGE ADA LINK)": ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "LINK"],
@@ -901,7 +952,10 @@ def main(argv=None):
 
     log(f"Computing signals with {args.jobs} worker(s)...")
     t0 = time.time()
-    jobs = [(cfg, s, data[s], start_ms, end_ms) for s in symbols]
+    # Signals keep the raw next swing as TP2; TP2_MIN_R_MULTIPLE is applied by
+    # the simulation, so the exit plans below can be compared on one signal pass.
+    signal_cfg = replace(cfg, tp2_min_r_multiple=0.0)
+    jobs = [(signal_cfg, s, data[s], start_ms, end_ms) for s in symbols]
     if args.jobs > 1 and len(jobs) > 1:
         with Pool(min(args.jobs, len(jobs))) as pool:
             results = pool.map(compute_signals, jobs)
@@ -925,6 +979,30 @@ def main(argv=None):
     base_stats = stats(base, t_mid)
     rows_exit = [fmt_variant_row("resting TP1/TP2 orders (live now)", base_stats),
                  fmt_variant_row("market close on the 15-min run (before)", stats(run(exit_mode="run"), t_mid))]
+
+    # ---- exit plan: bigger wins ----
+    f1, f2 = base.f1, base.f2
+    now_min = f", TP2 at least {base.tp2_min_r:g}R away" if base.tp2_min_r > 0 else ""
+    plan_now = (f"now: TP1 {f1:.0%} at {cfg.partial_tp_r_multiple:g}R, TP2 {f2:.0%} at the next swing{now_min}, "
+                f"runner {max(1 - f1 - f2, 0):.0%}")
+    plan_stats = [(plan_now, base_stats, base)]
+    for name, kw in EXIT_PLANS:
+        sim = run(**kw)
+        plan_stats.append((name, stats(sim, t_mid), sim))
+    rows_plan = [fmt_variant_row(name, st) for name, st, _ in plan_stats]
+    rows_size = [[name, st["trades"], f"{st['win_rate']:.1f}%", f"{st['breakeven_win_rate']:.1f}%",
+                  f"{st['avg_win_r']:+.2f}R", f"{st['avg_loss_r']:+.2f}R", f"{st['best_r']:+.2f}R",
+                  st["wins_2r_plus"]] for name, st, _ in plan_stats]
+    all_name, all_stats, all_sim = plan_stats[-1]
+    plan_ok = all_stats.get("pnl_h1", 0) > 0 and all_stats.get("pnl_h2", 0) > 0
+    plan_verdict = (
+        f"{'PASSED' if plan_ok else 'FAILED'}: all four together made {all_stats.get('pnl_h1', 0):+.2f} in the first half "
+        f"and {all_stats.get('pnl_h2', 0):+.2f} in the second ({all_stats.get('trades_h1', 0)} and "
+        f"{all_stats.get('trades_h2', 0)} trades). It passes only if both are above zero."
+    )
+    exit_order = ["TP1 + TP2, runner trailed", "TP1 only, rest at breakeven/stop", "stopped out before TP1"]
+    plan_ends_now = breakdown(base.trades, exit_kind, order=exit_order)
+    plan_ends_all = breakdown(all_sim.trades, exit_kind, order=exit_order)
 
     rows_stop = [fmt_variant_row("off (0)", base_stats)]
     for m in (0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.75):
@@ -954,10 +1032,7 @@ def main(argv=None):
                         order=[f"{lo:.2f}-{hi:.2f}%" if hi < 1e9 else f">= {lo:.2f}%" for lo, hi in STOP_BUCKETS])
     by_timing = breakdown(base.trades, timing_state)
     by_side = breakdown(base.trades, lambda t: t["ps"])
-    by_exit = breakdown(base.trades, lambda t: (
-        "stopped out before TP1" if not any(e[1] == "tp1" for e in t["exits"])
-        else "TP1 only, rest at breakeven/stop" if not any(e[1] == "tp2" for e in t["exits"])
-        else "TP1 + TP2, runner trailed"))
+    by_exit = breakdown(base.trades, exit_kind)
 
     def brk(rows, first):
         return md_table([first, "trades", "win rate", "net P/L $", "avg R/trade", "fees $"],
@@ -972,7 +1047,7 @@ def main(argv=None):
 
 Data: {source}. {len(symbols)} symbols: {", ".join(s.split("/")[0] for s in symbols)}.
 {note_text}
-Settings (from the bot's configuration): risk {cfg.risk_pct_per_trade * 100:g}% per trade, margin ${cfg.margin_per_trade_usd:g}, leverage ceiling {min(cfg.leverage, cfg.max_leverage_hard_cap)}x, max {cfg.max_concurrent_positions} positions, daily loss limit {cfg.max_daily_loss_pct * 100:g}%, weekly/daily override room {cfg.weekly_daily_override_min_room_pct:g}%, TP1 {cfg.partial_tp_fraction:.0%} at {cfg.partial_tp_r_multiple:g}R, TP2 {cfg.tp2_fraction:.0%}, trail {cfg.trail_r_multiple:g}R.
+Settings (from the bot's configuration): risk {cfg.risk_pct_per_trade * 100:g}% per trade, margin ${cfg.margin_per_trade_usd:g}, leverage ceiling {min(cfg.leverage, cfg.max_leverage_hard_cap)}x, max {cfg.max_concurrent_positions} positions, daily loss limit {cfg.max_daily_loss_pct * 100:g}%, weekly/daily override room {cfg.weekly_daily_override_min_room_pct:g}%, TP1 {cfg.partial_tp_fraction:.0%} at {cfg.partial_tp_r_multiple:g}R, TP2 {cfg.tp2_fraction:.0%}{f" (at least {cfg.tp2_min_r_multiple:g}R away)" if cfg.tp2_min_r_multiple > 0 else ""}, trail {cfg.trail_r_multiple:g}R.
 Costs: maker {args.maker_fee_pct}%, taker {args.taker_fee_pct}%, slippage {args.slippage_pct}% on market/triggered fills. Starting equity ${args.start_equity:g}. Execution walked on {exec_tf} candles.
 
 "R" is the amount risked on a trade (size x stop distance); "avg R/trade" is net P/L after fees in units of that. The two halves split the period in the middle ({day(t_mid)}) by entry time.
@@ -982,6 +1057,28 @@ Costs: maker {args.maker_fee_pct}%, taker {args.taker_fee_pct}%, slippage {args.
 {md_table(VARIANT_HEADER, [fmt_variant_row("baseline", base_stats)])}
 
 Daily-loss breaker active on {base_stats["breaker_runs"]} of {len(base.equity_curve)} runs.
+
+## Exit plan: bigger wins
+
+The first row is how the bot exits now. Each "only" row changes one thing; the last rows put them together.
+
+{md_table(VARIANT_HEADER, rows_plan)}
+
+{plan_verdict}
+
+How big the wins and the losses are, in R after fees. "Win rate needed to break even" is the share of trades that must end in profit for the plan to make nothing and lose nothing, given its average win and average loss -- compare it with the win rate beside it:
+
+{md_table(SIZE_HEADER, rows_size)}
+
+How the trades ended -- now:
+
+{brk(plan_ends_now, "how the trade ended")}
+
+How the trades ended -- {all_name}:
+
+{brk(plan_ends_all, "how the trade ended")}
+
+Closing less at TP1 and moving TP2 further away makes the trades that run pay more, but more of them come back to breakeven or to the stop first. The minimum stop distance does not move any stop: it leaves out the setups whose stop is closer than that.
 
 ## Exit handling
 
@@ -1044,6 +1141,7 @@ Baseline trades by symbol:
                         "; ".join(f"{k} {q:.6g}@{p:.6g}" for _, k, q, p in t["exits"])])
     with open(os.path.join(args.out, "variants.json"), "w") as f:
         json.dump({"baseline": base_stats,
+                   "exit_plans": [{"plan": name, **st} for name, st, _ in plan_stats],
                    "combinations": [{"min_stop_pct": c[2], "timing": c[3], "symbols": c[4], **c[5]} for c in combos]},
                   f, indent=2, default=str)
     print(report)

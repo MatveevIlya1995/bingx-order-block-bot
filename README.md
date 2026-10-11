@@ -57,7 +57,9 @@ breaker halts new entries if losses get too large for the day.
    - **TP2** is the next swing high (LONG) / swing low (SHORT) beyond TP1
      on the entry timeframe (or `TP2_FALLBACK_R_MULTIPLE`, 2R, if there
      is none). `TP2_FRACTION` of the original position (30%) closes
-     there. The stop stays at breakeven between TP1 and TP2.
+     there. The stop stays at breakeven between TP1 and TP2. The next swing
+     is often only 1.0-1.4R away; `TP2_MIN_R_MULTIPLE` (off by default)
+     keeps TP2 at least that many R from the entry.
    - **Runner** -- the remaining 20% trails `TRAIL_R_MULTIPLE` behind the
      best price reached, with no fixed take-profit cap, starting after TP2.
    In LIVE mode TP1 and TP2 rest on BingX as reduce-only take-profit
@@ -138,6 +140,13 @@ candle touches both stop and take-profit, no amount rounding, no funding)
 are listed at the top of `backtest.py`. Choosing the best-looking filter
 values from one stretch of history over-fits; the report splits the period
 in two halves so you can check a filter helps in both.
+
+The report's "Exit plan: bigger wins" section compares how the bot exits now
+with four changes, each alone and together: no stop tighter than 0.6%
+(`MIN_STOP_DISTANCE_PCT`), TP2 at least 2R away (`TP2_MIN_R_MULTIPLE`), 30%
+instead of 50% closed at TP1 (`PARTIAL_TP_FRACTION`) and a 40% runner
+(`TP2_FRACTION`). It also shows the average win and loss in R and the win
+rate each plan needs just to break even.
 
 ## Tests
 
@@ -256,6 +265,7 @@ Or use the included `.github/workflows/bot.yml` (runs every 15 minutes via GitHu
 | `TRAIL_R_MULTIPLE` | `1.0` | How many R behind the best price reached so far the trailing stop sits, once armed |
 | `TP2_FRACTION` | `0.3` | Fraction of the ORIGINAL position closed at TP2 -- the next swing high (LONG) / swing low (SHORT) beyond TP1 on the entry timeframe. The trailing stop only arms for what is left after TP2 (20% by default). Set to 0 to skip TP2 and trail right after TP1 |
 | `TP2_FALLBACK_R_MULTIPLE` | `2.0` | Where TP2 goes, in multiples of the initial risk, when there is no swing beyond TP1 in the fetched candles |
+| `TP2_MIN_R_MULTIPLE` | `0` | The closest TP2 may sit to the entry, in multiples of the initial risk. A next swing closer than this is ignored and TP2 sits at this multiple instead; a swing further away is used as it is. `0` = off. Example: `2` keeps TP2 at least 2R away |
 | `RESTING_TP_ORDERS` | `true` | LIVE: rest TP1/TP2 on BingX with one stop per part of the position (see "Exit orders on the exchange"). `false` = market closes on the scheduled run, as before |
 | `MIN_STOP_DISTANCE_PCT` | `0` | Entry filter: minimum stop distance in % of the entry price; `0` = off |
 | `ENTRY_SYMBOLS` | (empty) | Entry filter: symbols allowed to take new entries; empty = all |

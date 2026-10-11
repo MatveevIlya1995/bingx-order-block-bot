@@ -77,6 +77,7 @@ from strategy import (
     combine_htf_bias,
     weekly_room_pct,
     next_swing_beyond,
+    apply_tp2_floor,
     apply_entry_filters,
     entry_symbol_allowed,
 )
@@ -428,7 +429,8 @@ def _find_setups(client, cfg, symbol, df_cache):
 
 def _find_tp2_level(df, setup, cfg):
     """TP2 = the next swing high (LONG) / swing low (SHORT) beyond TP1 on
-    the entry timeframe. Returns (price, description), or (None, None) when
+    the entry timeframe -- or TP2_MIN_R_MULTIPLE x risk when that swing is
+    closer than that. Returns (price, description), or (None, None) when
     there's no such swing -- RiskManager then falls back to
     TP2_FALLBACK_R_MULTIPLE x risk."""
     entry = setup["entry"]
@@ -442,6 +444,12 @@ def _find_tp2_level(df, setup, cfg):
     if level is None:
         return None, None
     r_multiple = abs(level - entry) / risk_per_unit
+    floored, moved = apply_tp2_floor(entry, risk_per_unit, is_long, level, cfg.tp2_min_r_multiple)
+    if moved:
+        return floored, (
+            f"{cfg.tp2_min_r_multiple:g}R minimum (next swing {'high' if is_long else 'low'} "
+            f"was only {r_multiple:.2f}R away)"
+        )
     return level, f"next swing {'high' if is_long else 'low'} ({r_multiple:.2f}R)"
 
 

@@ -245,6 +245,16 @@ class Config:
     tp2_fallback_r_multiple: float = field(
         default_factory=lambda: float(_env("TP2_FALLBACK_R_MULTIPLE", "2.0"))
     )
+    # The closest TP2 may sit to the entry, in multiples of the initial risk.
+    # The next swing beyond TP1 is often only 1.0-1.4R away, which closes the
+    # TP2 part almost at TP1 and caps what a winning trade can pay. With
+    # this set, a swing closer than that is ignored and TP2 sits at this
+    # multiple instead (a swing further away is still used as it is). 0 =
+    # off (TP2 at the next swing however close, the behaviour so far).
+    # Example: 2 puts TP2 at least 2R from the entry.
+    tp2_min_r_multiple: float = field(
+        default_factory=lambda: float(_env("TP2_MIN_R_MULTIPLE", "0"))
+    )
 
     # --- resting take-profit orders (LIVE) ---
     # True (default): once the bot sees a filled entry it places TP1 and TP2
@@ -366,6 +376,12 @@ def load_config() -> Config:
             f"clamping to 0 (off)."
         )
         cfg.min_stop_distance_pct = 0.0
+    if cfg.tp2_min_r_multiple < 0:
+        print(
+            f"[config] TP2_MIN_R_MULTIPLE={cfg.tp2_min_r_multiple} is negative; "
+            f"clamping to 0 (off)."
+        )
+        cfg.tp2_min_r_multiple = 0.0
     if cfg.htf_timing_agreement not in HTF_TIMING_AGREEMENT_MODES:
         print(
             f"[config] HTF_TIMING_AGREEMENT={cfg.htf_timing_agreement!r} is not one of "

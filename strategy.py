@@ -485,6 +485,24 @@ def next_swing_beyond(df: pd.DataFrame, direction: str, beyond_price: float, n: 
     return None
 
 
+def apply_tp2_floor(entry: float, risk_per_unit: float, is_long: bool, tp2_price, min_r_multiple: float):
+    """TP2_MIN_R_MULTIPLE: TP2 may not sit closer to the entry than
+    min_r_multiple x the initial risk. Returns (tp2_price, moved): the
+    price to use and whether the floor moved it. A TP2 at or beyond the
+    floor, a missing TP2 (None -- the caller's fallback applies) and
+    min_r_multiple <= 0 (off) all come back unchanged.
+
+    The one rule for the bot (bot._find_tp2_level,
+    RiskManager._arm_partial_and_trail) and the backtest (Sim._open)."""
+    if tp2_price is None or min_r_multiple <= 0 or risk_per_unit <= 0:
+        return tp2_price, False
+    direction = 1 if is_long else -1
+    floor = entry + direction * risk_per_unit * min_r_multiple
+    if (tp2_price < floor) if is_long else (tp2_price > floor):
+        return floor, True
+    return tp2_price, False
+
+
 # ---------------------------------------------------------------------------
 # entry filters (all off by default -- see config.py)
 # ---------------------------------------------------------------------------

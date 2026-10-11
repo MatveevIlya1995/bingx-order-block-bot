@@ -38,6 +38,8 @@ import os
 import uuid
 import datetime
 
+from strategy import apply_tp2_floor
+
 TRADE_JOURNAL_FIELDS = [
     "event", "trade_id", "timestamp_utc", "mode", "symbol", "side",
     "position_side", "qty", "price", "stop_loss", "take_profit",
@@ -405,9 +407,10 @@ class RiskManager:
         TP2    -- the next swing high (LONG) / swing low (SHORT) beyond TP1
                   on the entry timeframe, found by bot.py and passed in as
                   trade["tp2_price"]; TP2_FALLBACK_R_MULTIPLE x risk (2R)
-                  when there is no such swing. Closes TP2_FRACTION of the
-                  original position (30%). The stop stays at breakeven
-                  between TP1 and TP2.
+                  when there is no such swing; never closer to the entry
+                  than TP2_MIN_R_MULTIPLE x risk (0 = no minimum). Closes
+                  TP2_FRACTION of the original position (30%). The stop
+                  stays at breakeven between TP1 and TP2.
         Runner -- whatever is left (20%) trails TRAIL_R_MULTIPLE x risk
                   behind the best price reached, with no fixed cap, and
                   only starts trailing after TP2.
@@ -425,6 +428,13 @@ class RiskManager:
         if not beyond_tp1:
             tp2_price = trade["entry_price"] + direction * risk_per_unit * self._tp2_fallback_r()
             tp2_source = f"{self._tp2_fallback_r():g}R fallback (no swing beyond TP1)"
+        # TP2_MIN_R_MULTIPLE: a TP2 closer than that many R moves out to it.
+        # bot._find_tp2_level already applied this to the limit price; here it
+        # is applied to the price the entry really filled at.
+        min_r = self.cfg.tp2_min_r_multiple
+        tp2_price, moved = apply_tp2_floor(trade["entry_price"], risk_per_unit, is_long, tp2_price, min_r)
+        if moved and not str(tp2_source or "").startswith(f"{min_r:g}R minimum"):
+            tp2_source = f"{min_r:g}R minimum (was {tp2_source})"
 
         return {
             **trade,

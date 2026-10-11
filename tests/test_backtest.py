@@ -233,6 +233,68 @@ def test_whole_period_accounting_identity(world):
     assert all(t["setup_stop_pct"] >= 0.3 for t in filtered.trades)
 
 
+def test_sim_tp2_minimum_moves_a_close_swing_out(world):
+    # 1R = 0.5: a swing at 100.7 is 1.4R away -- used as it is by default ...
+    sim = make_sim(world)
+    sim.run(0, {S: 100.6}, {S: long_signal(tp2=100.7)}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    assert sim.positions[S]["tp2"] == 100.7
+    # ... and moved out to 2R with the minimum set
+    sim = make_sim(world, tp2_min_r=2.0)
+    sim.run(0, {S: 100.6}, {S: long_signal(tp2=100.7)}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    assert sim.positions[S]["tp2"] == pytest.approx(101.0)
+    # a swing further away than the minimum stays where it is
+    sim = make_sim(world, tp2_min_r=2.0)
+    sim.run(0, {S: 100.6}, {S: long_signal(tp2=101.8)}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    assert sim.positions[S]["tp2"] == 101.8
+    # SHORT: mirrored
+    sim = make_sim(world, tp2_min_r=2.0)
+    short = (False, ("bearish", "bearish"), [("SHORT", 100.0, 100.5, "bearish", 100.5 / 1.001, 100.0, 99.4)])
+    sim.run(0, {S: 99.4}, {S: short}, [S])
+    sim.walk(S, [[1, 99.4, 100.1, 99.3, 99.8, 0]], 2)
+    assert sim.positions[S]["tp2"] == pytest.approx(99.0)
+
+
+def test_sim_exit_plan_fractions(world):
+    sim = make_sim(world, tp1_fraction=0.3, tp2_fraction=0.3)
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    qty = sim.pending[S][0]["qty"]
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    t = sim.positions[S]
+    sim.run(2, {S: 100.2}, {}, [S])
+    sim.walk(S, [[3, 100.2, 100.55, 100.1, 100.4, 0]], 4)   # TP1: 30% off
+    assert t["qty"] == pytest.approx(qty * 0.7)
+    sim.run(4, {S: 100.4}, {}, [S])
+    sim.walk(S, [[5, 100.4, 101.05, 100.3, 101.0, 0]], 6)   # TP2: another 30%
+    assert t["qty"] == pytest.approx(qty * 0.4)             # 40% left to run
+    sim.run(6, {S: 101.0}, {}, [S])
+    sim.walk(S, [[7, 101.0, 101.1, 100.4, 100.6, 0]], 8)    # runner stopped at 100.5
+    gross = qty * 0.3 * 0.5 + qty * 0.3 * 1.0 + qty * 0.4 * 0.5
+    fees = qty * 100.0 * 0.0002 + (qty * 0.3 * 100.5 + qty * 0.3 * 101.0 + qty * 0.4 * 100.5) * 0.0005
+    assert sim.trades[0]["pnl"] == pytest.approx(gross - fees)
+
+
+def test_exit_plans_keep_the_books_straight(world):
+    cfg, data, signals, start, end = world
+    costs = bt.Costs(0.02, 0.05, 0.02)
+    exec_data = {s: data[s]["5m"] for s in SYMS}
+    for name, variant in bt.EXIT_PLANS:
+        sim = bt.simulate(cfg, costs, 230.0, signals, exec_data, SYMS, **variant)
+        booked_open = sum(t["pnl"] for t in sim.positions.values())
+        assert sim.cash == pytest.approx(230.0 + sum(t["pnl"] for t in sim.trades) + booked_open), name
+        for t in sim.trades:
+            assert sum(e[2] for e in t["exits"]) == pytest.approx(t["initial_qty"]), name
+            if "tp2_min_r" in variant:   # TP2 never closer than the minimum
+                assert abs(t["tp2"] - t["entry"]) >= variant["tp2_min_r"] * t["risk_per_unit"] * (1 - 1e-9), name
+            if "min_stop_pct" in variant:
+                assert t["setup_stop_pct"] >= variant["min_stop_pct"], name
+        st = bt.stats(sim, (start + end) // 2)
+        if st["trades"]:
+            assert st["avg_loss_r"] <= 0 <= st["avg_win_r"] and 0 <= st["breakeven_win_rate"] <= 100
+
+
 def test_period_shrinks_to_the_history_bingx_actually_has(world):
     cfg, data, signals, start, end = world
     step = bt.TF_MS["15m"]
