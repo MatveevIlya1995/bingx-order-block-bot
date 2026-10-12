@@ -1,7 +1,7 @@
 {
   "date": "2026-10-12",
   "day_start_equity": 238.6896,
-  "realized_pnl_today": -0.27863167429881097,
+  "realized_pnl_today": -0.22423811371990093,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -12,9 +12,9 @@
       "symbol": "BNB/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 0.170335,
+      "qty": 0.0851675,
       "entry_price": 749.25,
-      "stop_loss": 747.86139,
+      "stop_loss": 749.25,
       "take_profit": 752.0272199999999,
       "trigger": "bullish order block limit: zone 748.6100-749.2500 (formed 2026-10-11 14:00 UTC, BOS confirmed 2026-10-11 14:30 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(2 OB) 4h=bearish(2 OB) 1h=bullish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 751.11 (next swing high (1.34R)), runner trails after TP2 | filled limit @ 749.25",
       "tp2_price": 751.11,
@@ -23,7 +23,7 @@
       "initial_qty": 0.170335,
       "risk_per_unit": 1.3886099999999715,
       "partial_tp_price": 750.63861,
-      "partial_taken": false,
+      "partial_taken": true,
       "tp2_taken": false
     }
   ],
@@ -160,7 +160,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 232.6175,
+  "last_seen_equity": 232.7373,
   "traded_zones": {
     "LINK/USDT:USDT|bullish|14.119-14.162": "2026-10-05T11:45:51.884005+00:00",
     "SOL/USDT:USDT|bullish|119.96-120.301": "2026-10-05T12:45:55.373589+00:00",
