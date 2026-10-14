@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 621.0773056,
       "entry_price": 0.08471,
-      "stop_loss": 0.08298561,
+      "stop_loss": 0.08284561,
       "take_profit": 0.08273878,
       "trigger": "bearish order block limit: zone 0.0847-0.0856 (formed 2026-10-14 08:00 UTC, BOS confirmed 2026-10-14 08:45 UTC) | HTF: 1w*=bearish(0 OB) 1d*=bearish(2 OB) 4h=bearish(3 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.08365 (next swing low (1.08R)), runner trails after TP2 | filled limit @ 0.08471",
       "tp2_price": 0.08365,
@@ -161,7 +161,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 229.6455,
+  "last_seen_equity": 229.4975,
   "traded_zones": {
     "BTC/USDT:USDT|bullish|83095.3-83209.2": "2026-10-08T00:15:50.460306+00:00",
     "ETH/USDT:USDT|bullish|2565.78-2569.76": "2026-10-08T00:15:50.833775+00:00",
