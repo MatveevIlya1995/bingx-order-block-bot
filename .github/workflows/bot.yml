@@ -14,15 +14,33 @@ permissions:
 
 jobs:
   run-bot:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is migrating to Ubuntu 26 from 2026-10-19.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
+        id: py
         with:
           python-version: "3.11"
 
-      - run: pip install -r requirements.txt
+      # Reuse the installed packages between runs instead of reinstalling
+      # pandas/numpy/ccxt every cycle (saved ~20-30s per run, which keeps
+      # each run under the 1 billed minute GitHub rounds up to).
+      - uses: actions/cache@v4
+        id: venv-cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.ImageOS }}-py${{ steps.py.outputs.python-version }}-${{ hashFiles('requirements.txt') }}
+
+      - name: Install dependencies (only when cache missed)
+        if: steps.venv-cache.outputs.cache-hit != 'true'
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements.txt
+
+      - name: Put venv on PATH
+        run: echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Run one bot cycle
         env:
