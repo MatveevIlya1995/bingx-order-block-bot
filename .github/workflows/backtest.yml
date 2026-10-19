@@ -78,10 +78,30 @@ jobs:
       - name: Post the report as run annotations
         if: always()
         run: |
-          esc() { python3 -c 'import sys;d=sys.stdin.read()[:60000];print(d.replace("%","%25").replace("\r","").replace("\n","%0A"))'; }
-          [ -f backtest_results/summary.md ] && echo "::notice title=Backtest summary::$(esc < backtest_results/summary.md)"
-          [ -f backtest_results/trades_baseline.csv ] && echo "::notice title=Backtest trades::$(esc < backtest_results/trades_baseline.csv)"
-          true
+          python3 - <<'PY'
+          import csv, os
+          # Annotations are capped at ~4 KB each, so split into chunks.
+          def post(title, text, size=3800, limit=9):
+              lines, chunks, cur = text.splitlines(), [], ""
+              for ln in lines:
+                  if len(cur) + len(ln) + 1 > size:
+                      chunks.append(cur); cur = ""
+                  cur += ln + "\n"
+              if cur: chunks.append(cur)
+              for i, c in enumerate(chunks[:limit], 1):
+                  c = c.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+                  print(f"::notice title={title} {i}/{len(chunks)}::{c}")
+          d = "backtest_results"
+          p = os.path.join(d, "trades_baseline.csv")
+          if os.path.exists(p):
+              keep = ["symbol", "side", "entry_time_utc", "exit_time_utc", "pnl", "r_multiple", "fees", "exit_kind"]
+              rows = list(csv.DictReader(open(p)))
+              out = [",".join(keep)] + [",".join(r.get(k, "") for k in keep) for r in rows]
+              post("Backtest trades", "\n".join(out))
+          p = os.path.join(d, "summary.md")
+          if os.path.exists(p):
+              post("Backtest summary", open(p).read(), limit=1)  # max 10 notices per step
+          PY
 
       - name: Keep the report
         if: always()
