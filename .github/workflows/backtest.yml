@@ -73,6 +73,16 @@ jobs:
           if [ -n "$BT_END" ]; then ARGS="$ARGS --end $BT_END"; fi
           python3 backtest.py $ARGS
 
+      # Also attach the report and trade list to the run as annotations, so
+      # they can be read through the API without downloading the artifact.
+      - name: Post the report as run annotations
+        if: always()
+        run: |
+          esc() { python3 -c 'import sys;d=sys.stdin.read()[:60000];print(d.replace("%","%25").replace("\r","").replace("\n","%0A"))'; }
+          [ -f backtest_results/summary.md ] && echo "::notice title=Backtest summary::$(esc < backtest_results/summary.md)"
+          [ -f backtest_results/trades_baseline.csv ] && echo "::notice title=Backtest trades::$(esc < backtest_results/trades_baseline.csv)"
+          true
+
       - name: Keep the report
         if: always()
         uses: actions/upload-artifact@v4
