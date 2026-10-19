@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 304.347826,
       "entry_price": 0.23,
-      "stop_loss": 0.21953249999999996,
+      "stop_loss": 0.21913249999999998,
       "take_profit": 0.22453500000000007,
       "trigger": "bearish order block limit: zone 0.2300-0.2325 (formed 2026-10-14 13:30 UTC, BOS confirmed 2026-10-14 14:00 UTC) | HTF: 1w*=bearish(0 OB) 1d*=bearish(3 OB) 4h=bearish(2 OB) 1h=bearish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.224 (next swing low (2.20R)), runner trails after TP2 | filled limit @ 0.23",
       "tp2_price": 0.224,
@@ -57,7 +57,7 @@
       "position_side": "SHORT",
       "qty": 9.0081072,
       "entry_price": 9.991,
-      "stop_loss": 9.633080999999999,
+      "stop_loss": 9.621081,
       "take_profit": 9.790838,
       "trigger": "bearish order block limit: zone 9.9910-10.0810 (formed 2026-10-14 13:30 UTC, BOS confirmed 2026-10-14 14:00 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bullish(1 OB) 4h=bearish(1 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bearish vs daily=bullish disagreed, but 38.70% room left to the weekly low (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 9.883 (next swing low (1.08R)), runner trails after TP2 | filled limit @ 9.991",
       "tp2_price": 9.883,
@@ -204,7 +204,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 229.4536,
+  "last_seen_equity": 229.0861,
   "traded_zones": {
     "BTC/USDT:USDT|bullish|83095.3-83209.2": "2026-10-08T00:15:50.460306+00:00",
     "ETH/USDT:USDT|bullish|2565.78-2569.76": "2026-10-08T00:15:50.833775+00:00",
