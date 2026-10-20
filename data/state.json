@@ -1,31 +1,10 @@
 {
   "date": "2026-10-20",
   "day_start_equity": 229.2167,
-  "realized_pnl_today": -6.5600309365236145,
+  "realized_pnl_today": -7.620701636443009,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
-    {
-      "trade_id": "80e4d050bf48",
-      "entry_time_utc": "2026-10-20T11:30:35.857209+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "AVAX/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 15.175586,
-      "entry_price": 9.406,
-      "stop_loss": 9.466457,
-      "take_profit": 9.285086000000002,
-      "trigger": "bearish order block limit: zone 9.4060-9.4570 (formed 2026-10-20 09:15 UTC, BOS confirmed 2026-10-20 10:30 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(1 OB) 4h=bearish(2 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 9.26 (next swing low (2.41R)), runner trails after TP2 | filled limit @ 9.406",
-      "tp2_price": 9.26,
-      "tp2_source": "next swing low (2.41R)",
-      "entry_fee": null,
-      "initial_qty": 15.175586,
-      "risk_per_unit": 0.06045699999999954,
-      "partial_tp_price": 9.345543000000001,
-      "partial_taken": false,
-      "tp2_taken": false
-    },
     {
       "trade_id": "0024c7fe37dd",
       "entry_time_utc": "2026-10-20T12:30:37.882409+00:00",
@@ -202,7 +181,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 228.4479,
+  "last_seen_equity": 228.7801,
   "traded_zones": {
     "NEAR/USDT:USDT|bullish|4.891-4.991": "2026-10-13T12:30:57.013205+00:00",
     "DOGE/USDT:USDT|bearish|0.08467-0.08522": "2026-10-13T13:45:49.460671+00:00",
