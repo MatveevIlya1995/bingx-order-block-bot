@@ -160,7 +160,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 226.0182,
+  "last_seen_equity": 224.1689,
   "traded_zones": {
     "ADA/USDT:USDT|bearish|0.23-0.2325": "2026-10-14T17:01:22.695247+00:00",
     "SOL/USDT:USDT|bearish|105.311-106.298": "2026-10-14T17:01:23.158829+00:00",
@@ -180,78 +180,5 @@
     "NEAR/USDT:USDT|bullish|5.15-5.188": "2026-10-21T13:45:31.594209+00:00"
   },
   "realized_pnl_date": "2026-10-21",
-  "pending_orders": [
-    {
-      "order_id": "paper-2510b3e4c36a",
-      "trade_id": "2510b3e4c36a",
-      "mode": "DRY_RUN",
-      "symbol": "SOL/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 4.778653,
-      "leverage": 10,
-      "entry_price": 104.632,
-      "stop_loss": 103.732164,
-      "take_profit": 106.43167200000002,
-      "tp2_price": 105.583,
-      "tp2_source": "next swing high (1.06R)",
-      "equity": 226.39,
-      "zone_key": "SOL/USDT:USDT|bullish|103.836-104.632",
-      "ob": {
-        "type": "bullish",
-        "top": 104.632,
-        "bottom": 103.836
-      },
-      "placed_time_utc": "2026-10-21T13:31:20.061013+00:00",
-      "trigger": "bullish order block limit: zone 103.8360-104.6320 (formed 2026-10-20 13:30 UTC, BOS confirmed 2026-10-20 13:45 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(3 OB) 4h=bullish(3 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 105.583 (next swing high (1.06R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-75c17fb64c98",
-      "trade_id": "75c17fb64c98",
-      "mode": "DRY_RUN",
-      "symbol": "LINK/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 10.836179,
-      "leverage": 10,
-      "entry_price": 12.175,
-      "stop_loss": 12.091895999999998,
-      "take_profit": 12.341208000000005,
-      "tp2_price": 12.26,
-      "tp2_source": "next swing high (1.02R)",
-      "equity": 226.39,
-      "zone_key": "LINK/USDT:USDT|bullish|12.104-12.175",
-      "ob": {
-        "type": "bullish",
-        "top": 12.175,
-        "bottom": 12.104
-      },
-      "placed_time_utc": "2026-10-21T13:31:20.069957+00:00",
-      "trigger": "bullish order block limit: zone 12.1040-12.1750 (formed 2026-10-20 19:15 UTC, BOS confirmed 2026-10-20 20:30 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bearish(3 OB) 4h=bullish(4 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bullish vs daily=bearish disagreed, but 27.10% room left to the weekly high (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 12.26 (next swing high (1.02R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-7a2b2599ab9a",
-      "trade_id": "7a2b2599ab9a",
-      "mode": "DRY_RUN",
-      "symbol": "LINK/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 11.015319,
-      "leverage": 10,
-      "entry_price": 11.977,
-      "stop_loss": 11.922066,
-      "take_profit": 12.086868000000003,
-      "tp2_price": 12.034,
-      "tp2_source": "next swing high (1.04R)",
-      "equity": 226.39,
-      "zone_key": "LINK/USDT:USDT|bullish|11.934-11.977",
-      "ob": {
-        "type": "bullish",
-        "top": 11.977,
-        "bottom": 11.934
-      },
-      "placed_time_utc": "2026-10-21T13:31:20.072634+00:00",
-      "trigger": "bullish order block limit: zone 11.9340-11.9770 (formed 2026-10-20 13:15 UTC, BOS confirmed 2026-10-20 13:45 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bearish(3 OB) 4h=bullish(4 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bullish vs daily=bearish disagreed, but 27.10% room left to the weekly high (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 12.034 (next swing high (1.04R)), runner trails after TP2"
-    }
-  ]
+  "pending_orders": []
 }
