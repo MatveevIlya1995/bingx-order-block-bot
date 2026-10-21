@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 226.023,
+  "last_seen_equity": 226.2252,
   "traded_zones": {
     "ADA/USDT:USDT|bearish|0.23-0.2325": "2026-10-14T17:01:22.695247+00:00",
     "SOL/USDT:USDT|bearish|105.311-106.298": "2026-10-14T17:01:23.158829+00:00",
@@ -302,30 +302,6 @@
       },
       "placed_time_utc": "2026-10-21T15:45:45.068469+00:00",
       "trigger": "bullish order block limit: zone 5.1350-5.2200 (formed 2026-10-21 13:30 UTC, BOS confirmed 2026-10-21 14:45 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(1 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 5.4 (next swing high (2.00R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-d6764db5f45a",
-      "trade_id": "d6764db5f45a",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 19.795961,
-      "leverage": 8,
-      "entry_price": 5.014,
-      "stop_loss": 4.962033,
-      "take_profit": 5.117934000000001,
-      "tp2_price": 5.079,
-      "tp2_source": "next swing high (1.25R)",
-      "equity": 225.73,
-      "zone_key": "NEAR/USDT:USDT|bullish|4.967-5.014",
-      "ob": {
-        "type": "bullish",
-        "top": 5.014,
-        "bottom": 4.967
-      },
-      "placed_time_utc": "2026-10-21T15:45:45.070778+00:00",
-      "trigger": "bullish order block limit: zone 4.9670-5.0140 (formed 2026-10-21 05:45 UTC, CHoCH confirmed 2026-10-21 06:45 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(1 OB) 4h=bullish(1 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 5.079 (next swing high (1.25R)), runner trails after TP2"
     }
   ]
 }
