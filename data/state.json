@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 222.4204,
+  "last_seen_equity": 222.2248,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|727.53-728.53": "2026-10-20T00:30:34.439654+00:00",
     "ADA/USDT:USDT|bearish|0.2162-0.2174": "2026-10-20T01:30:36.992184+00:00",
@@ -207,30 +207,6 @@
       },
       "placed_time_utc": "2026-10-22T02:01:05.104571+00:00",
       "trigger": "bearish order block limit: zone 0.0828-0.0831 (formed 2026-10-21 21:15 UTC, BOS confirmed 2026-10-21 22:00 UTC) | HTF: 1w*=bearish(0 OB) 1d*=bearish(3 OB) 4h=bearish(3 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.08191 (next swing low (2.65R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-efbad5e791cd",
-      "trade_id": "efbad5e791cd",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 2084.835038,
-      "leverage": 10,
-      "entry_price": 0.08345,
-      "stop_loss": 0.08384375999999999,
-      "take_profit": 0.08266248000000001,
-      "tp2_price": 0.08301,
-      "tp2_source": "next swing low (1.12R)",
-      "equity": 223.5,
-      "zone_key": "DOGE/USDT:USDT|bearish|0.08345-0.08376",
-      "ob": {
-        "type": "bearish",
-        "top": 0.08376,
-        "bottom": 0.08345
-      },
-      "placed_time_utc": "2026-10-22T02:01:05.107503+00:00",
-      "trigger": "bearish order block limit: zone 0.0834-0.0838 (formed 2026-10-21 18:15 UTC, BOS confirmed 2026-10-21 18:45 UTC) | HTF: 1w*=bearish(0 OB) 1d*=bearish(3 OB) 4h=bearish(3 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.08301 (next swing low (1.12R)), runner trails after TP2"
     },
     {
       "order_id": "paper-414cd767294f",
