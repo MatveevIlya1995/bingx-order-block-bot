@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 33.4429128,
       "entry_price": 0.7173,
-      "stop_loss": 0.7173,
+      "stop_loss": 0.7114218999999998,
       "take_profit": 0.7066562000000003,
       "trigger": "bearish order block limit: zone 0.7173-0.7219 (formed 2026-10-24 08:15 UTC, BOS confirmed 2026-10-24 09:00 UTC) | HTF: 1w*=bearish(3 OB) 1d*=bearish(2 OB) 4h=bearish(0 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 fallback (no swing beyond TP1), runner trails after TP2 | filled limit @ 0.7173",
       "tp2_price": 0.7066562000000003,
@@ -161,7 +161,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 217.1871,
+  "last_seen_equity": 217.0387,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|727.53-728.53": "2026-10-20T00:30:34.439654+00:00",
     "ADA/USDT:USDT|bearish|0.2162-0.2174": "2026-10-20T01:30:36.992184+00:00",
@@ -311,28 +311,28 @@
       "trigger": "bearish order block limit: zone 101.4990-101.6500 (formed 2026-10-24 12:45 UTC, BOS confirmed 2026-10-24 14:00 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(2 OB) 4h=bearish(3 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 101.082 (next swing low (1.65R)), runner trails after TP2"
     },
     {
-      "order_id": "paper-a83fc22988a8",
-      "trade_id": "a83fc22988a8",
+      "order_id": "paper-9364108eeccd",
+      "trade_id": "9364108eeccd",
       "mode": "DRY_RUN",
       "symbol": "XRP/USDT:USDT",
       "side": "sell",
       "position_side": "SHORT",
-      "qty": 57.440695,
+      "qty": 55.939321,
       "leverage": 10,
-      "entry_price": 1.2841,
-      "stop_loss": 1.2883870999999998,
-      "take_profit": 1.2755258000000005,
-      "tp2_price": 1.2776,
-      "tp2_source": "next swing low (1.52R)",
-      "equity": 217.19,
-      "zone_key": "XRP/USDT:USDT|bearish|1.2841-1.2871",
+      "entry_price": 1.3053,
+      "stop_loss": 1.3100086999999998,
+      "take_profit": 1.2958826,
+      "tp2_price": 1.2992,
+      "tp2_source": "next swing low (1.30R)",
+      "equity": 217.04,
+      "zone_key": "XRP/USDT:USDT|bearish|1.3053-1.3087",
       "ob": {
         "type": "bearish",
-        "top": 1.2871,
-        "bottom": 1.2841
+        "top": 1.3087,
+        "bottom": 1.3053
       },
-      "placed_time_utc": "2026-10-24T14:30:53.208229+00:00",
-      "trigger": "bearish order block limit: zone 1.2841-1.2871 (formed 2026-10-24 13:00 UTC, CHoCH confirmed 2026-10-24 14:15 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(2 OB) 4h=bearish(1 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 1.2776 (next swing low (1.52R)), runner trails after TP2"
+      "placed_time_utc": "2026-10-24T14:45:47.840353+00:00",
+      "trigger": "bearish order block limit: zone 1.3053-1.3087 (formed 2026-10-23 22:00 UTC, BOS confirmed 2026-10-23 22:15 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(2 OB) 4h=bearish(1 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 1.2992 (next swing low (1.30R)), runner trails after TP2"
     }
   ]
 }
