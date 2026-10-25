@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 219.0428,
+  "last_seen_equity": 219.0798,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|727.53-728.53": "2026-10-20T00:30:34.439654+00:00",
     "ADA/USDT:USDT|bearish|0.2162-0.2174": "2026-10-20T01:30:36.992184+00:00",
@@ -269,30 +269,6 @@
       },
       "placed_time_utc": "2026-10-25T17:00:56.138554+00:00",
       "trigger": "bearish order block limit: zone 2376.8000-2382.2800 (formed 2026-10-24 07:00 UTC, BOS confirmed 2026-10-24 07:45 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bearish(4 OB) 4h=bearish(2 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 2368.53 (next swing low (1.05R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-6f8650e11ce3",
-      "trade_id": "6f8650e11ce3",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 0.120793,
-      "leverage": 10,
-      "entry_price": 742.3,
-      "stop_loss": 739.79946,
-      "take_profit": 747.30108,
-      "tp2_price": 745.83,
-      "tp2_source": "next swing high (1.41R)",
-      "equity": 219.08,
-      "zone_key": "BNB/USDT:USDT|bullish|740.54-742.3",
-      "ob": {
-        "type": "bullish",
-        "top": 742.3,
-        "bottom": 740.54
-      },
-      "placed_time_utc": "2026-10-25T17:00:56.141614+00:00",
-      "trigger": "bullish order block limit: zone 740.5400-742.3000 (formed 2026-10-25 16:30 UTC, CHoCH confirmed 2026-10-25 16:45 UTC) | HTF: 1w*=bullish(3 OB) 1d*=bullish(2 OB) 4h=bullish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 745.83 (next swing high (1.41R)), runner trails after TP2"
     },
     {
       "order_id": "paper-ce30ac0a2223",
