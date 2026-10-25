@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 0.007585,
       "entry_price": 2364.23,
-      "stop_loss": 2339.4583199999997,
+      "stop_loss": 2337.7083199999997,
       "take_profit": 2351.3133600000006,
       "trigger": "bearish order block limit: zone 2364.2300-2368.3200 (formed 2026-10-25 04:30 UTC, CHoCH confirmed 2026-10-25 05:30 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bearish(4 OB) 4h=bearish(2 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 2356.08 (next swing low (1.26R)), runner trails after TP2 | filled limit @ 2364.23",
       "tp2_price": 2356.08,
@@ -36,7 +36,7 @@
       "position_side": "SHORT",
       "qty": 70.6111514,
       "entry_price": 1.3006,
-      "stop_loss": 1.3006,
+      "stop_loss": 1.2958032,
       "take_profit": 1.2927936000000002,
       "trigger": "bearish order block limit: zone 1.3006-1.3032 (formed 2026-10-25 18:15 UTC, CHoCH confirmed 2026-10-25 18:45 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(2 OB) 4h=bearish(1 OB) 1h=bearish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 1.2947 (next swing low (1.51R)), runner trails after TP2 | filled limit @ 1.3006",
       "tp2_price": 1.2947,
@@ -183,7 +183,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 216.186,
+  "last_seen_equity": 215.6927,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|727.53-728.53": "2026-10-20T00:30:34.439654+00:00",
     "ADA/USDT:USDT|bearish|0.2162-0.2174": "2026-10-20T01:30:36.992184+00:00",
