@@ -1,7 +1,7 @@
 {
   "date": "2026-10-25",
   "day_start_equity": 218.2159,
-  "realized_pnl_today": -2.2590862754173595,
+  "realized_pnl_today": -2.1932123139298585,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -12,7 +12,7 @@
       "symbol": "ETH/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 0.0189625,
+      "qty": 0.007585,
       "entry_price": 2364.23,
       "stop_loss": 2364.23,
       "take_profit": 2351.3133600000006,
@@ -24,7 +24,8 @@
       "risk_per_unit": 6.4583199999997305,
       "partial_tp_price": 2357.7716800000003,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 6.4583199999997305
     }
   ],
   "dry_run_signaled": {
@@ -160,7 +161,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 218.8289,
+  "last_seen_equity": 218.32,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|727.53-728.53": "2026-10-20T00:30:34.439654+00:00",
     "ADA/USDT:USDT|bearish|0.2162-0.2174": "2026-10-20T01:30:36.992184+00:00",
