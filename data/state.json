@@ -56,7 +56,7 @@
       "position_side": "LONG",
       "qty": 0.0094048,
       "entry_price": 740.18,
-      "stop_loss": 740.2609200000002,
+      "stop_loss": 741.7909200000001,
       "take_profit": 743.8581599999997,
       "trigger": "bullish order block limit: zone 739.0800-740.1800 (formed 2026-10-27 11:15 UTC, BOS confirmed 2026-10-27 12:15 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bullish(2 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 742.61 (next swing high (1.32R)), runner trails after TP2 | filled limit @ 740.18",
       "tp2_price": 742.61,
@@ -203,7 +203,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 213.529,
+  "last_seen_equity": 214.5807,
   "traded_zones": {
     "AVAX/USDT:USDT|bearish|9.55-9.594": "2026-10-20T14:00:43.854345+00:00",
     "SOL/USDT:USDT|bearish|106.634-106.996": "2026-10-21T00:15:33.654495+00:00",
