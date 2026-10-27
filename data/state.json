@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-26",
-  "day_start_equity": 214.8632,
-  "realized_pnl_today": 5.3206888581451945,
+  "date": "2026-10-27",
+  "day_start_equity": 214.509,
+  "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [],
@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 214.8289,
+  "last_seen_equity": 214.509,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|727.53-728.53": "2026-10-20T00:30:34.439654+00:00",
     "ADA/USDT:USDT|bearish|0.2162-0.2174": "2026-10-20T01:30:36.992184+00:00",
@@ -188,7 +188,7 @@
     "SOL/USDT:USDT|bearish|102.438-102.629": "2026-10-26T15:45:33.244911+00:00",
     "ADA/USDT:USDT|bearish|0.2062-0.207": "2026-10-26T19:30:40.133709+00:00"
   },
-  "realized_pnl_date": "2026-10-26",
+  "realized_pnl_date": "2026-10-27",
   "pending_orders": [
     {
       "order_id": "paper-d4d0b0e2c649",
@@ -213,30 +213,6 @@
       },
       "placed_time_utc": "2026-10-26T16:58:46.381270+00:00",
       "trigger": "bearish order block limit: zone 2376.8000-2382.2800 (formed 2026-10-24 07:00 UTC, BOS confirmed 2026-10-24 07:45 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bearish(4 OB) 4h=bearish(2 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 2368.53 (next swing low (1.05R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-d87c17825a5a",
-      "trade_id": "d87c17825a5a",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 1308.283138,
-      "leverage": 10,
-      "entry_price": 0.07927,
-      "stop_loss": 0.07951943999999998,
-      "take_profit": 0.07877112000000001,
-      "tp2_price": 0.07897,
-      "tp2_source": "next swing low (1.20R)",
-      "equity": 215.66,
-      "zone_key": "DOGE/USDT:USDT|bearish|0.07927-0.07944",
-      "ob": {
-        "type": "bearish",
-        "top": 0.07944,
-        "bottom": 0.07927
-      },
-      "placed_time_utc": "2026-10-26T17:01:06.540583+00:00",
-      "trigger": "bearish order block limit: zone 0.0793-0.0794 (formed 2026-10-23 22:00 UTC, BOS confirmed 2026-10-23 22:15 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bearish(3 OB) 4h=bearish(3 OB) 1h=bullish(0 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.07897 (next swing low (1.20R)), runner trails after TP2"
     },
     {
       "order_id": "paper-9c2a89e0c94c",
@@ -309,6 +285,30 @@
       },
       "placed_time_utc": "2026-10-26T21:46:10.933879+00:00",
       "trigger": "bullish order block limit: zone 736.7000-739.4600 (formed 2026-10-26 13:45 UTC, CHoCH confirmed 2026-10-26 14:30 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bullish(2 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 743.23 (next swing high (1.08R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-64f9f8fd5bc9",
+      "trade_id": "64f9f8fd5bc9",
+      "mode": "DRY_RUN",
+      "symbol": "LTC/USDT:USDT",
+      "side": "sell",
+      "position_side": "SHORT",
+      "qty": 1.793525,
+      "leverage": 10,
+      "entry_price": 57.76,
+      "stop_loss": 58.04799,
+      "take_profit": 57.18402,
+      "tp2_price": 57.06,
+      "tp2_source": "next swing low (2.43R)",
+      "equity": 214.51,
+      "zone_key": "LTC/USDT:USDT|bearish|57.76-57.99",
+      "ob": {
+        "type": "bearish",
+        "top": 57.99,
+        "bottom": 57.76
+      },
+      "placed_time_utc": "2026-10-27T00:01:00.570118+00:00",
+      "trigger": "bearish order block limit: zone 57.7600-57.9900 (formed 2026-10-23 22:00 UTC, BOS confirmed 2026-10-23 22:30 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(3 OB) 4h=bearish(2 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 57.06 (next swing low (2.43R)), runner trails after TP2"
     }
   ]
 }
