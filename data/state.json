@@ -36,7 +36,7 @@
       "position_side": "LONG",
       "qty": 2.5165988,
       "entry_price": 11.698,
-      "stop_loss": 11.784329,
+      "stop_loss": 11.786328999999999,
       "take_profit": 11.775342000000002,
       "trigger": "bullish order block limit: zone 11.6710-11.6980 (formed 2026-10-28 02:45 UTC, BOS confirmed 2026-10-28 03:30 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bearish(3 OB) 4h=bullish(3 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bullish vs daily=bearish disagreed, but 33.39% room left to the weekly high (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 11.777 (next swing high (2.04R)), runner trails after TP2 | filled limit @ 11.698",
       "tp2_price": 11.777,
@@ -204,7 +204,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 223.3885,
+  "last_seen_equity": 223.1246,
   "traded_zones": {
     "NEAR/USDT:USDT|bullish|5.15-5.188": "2026-10-21T13:45:31.594209+00:00",
     "NEAR/USDT:USDT|bullish|5.261-5.292": "2026-10-21T22:30:37.893901+00:00",
