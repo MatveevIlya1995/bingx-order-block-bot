@@ -1,7 +1,7 @@
 {
   "date": "2026-10-28",
   "day_start_equity": 219.1967,
-  "realized_pnl_today": -3.0798689473087175,
+  "realized_pnl_today": -2.910290047967956,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -55,9 +55,9 @@
       "symbol": "LINK/USDT:USDT",
       "side": "BUY",
       "position_side": "LONG",
-      "qty": 12.582994,
+      "qty": 6.291497,
       "entry_price": 11.698,
-      "stop_loss": 11.659329,
+      "stop_loss": 11.698,
       "take_profit": 11.775342000000002,
       "trigger": "bullish order block limit: zone 11.6710-11.6980 (formed 2026-10-28 02:45 UTC, BOS confirmed 2026-10-28 03:30 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bearish(3 OB) 4h=bullish(3 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bullish vs daily=bearish disagreed, but 33.39% room left to the weekly high (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 11.777 (next swing high (2.04R)), runner trails after TP2 | filled limit @ 11.698",
       "tp2_price": 11.777,
@@ -66,7 +66,7 @@
       "initial_qty": 12.582994,
       "risk_per_unit": 0.03867100000000079,
       "partial_tp_price": 11.736671000000001,
-      "partial_taken": false,
+      "partial_taken": true,
       "tp2_taken": false
     }
   ],
@@ -203,7 +203,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 219.7921,
+  "last_seen_equity": 220.0391,
   "traded_zones": {
     "ADA/USDT:USDT|bearish|0.2247-0.226": "2026-10-21T07:45:29.782510+00:00",
     "DOGE/USDT:USDT|bearish|0.08195-0.08228": "2026-10-21T07:45:30.212741+00:00",
