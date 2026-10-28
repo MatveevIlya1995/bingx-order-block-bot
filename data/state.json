@@ -160,7 +160,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 222.1961,
+  "last_seen_equity": 221.875,
   "traded_zones": {
     "NEAR/USDT:USDT|bullish|5.261-5.292": "2026-10-21T22:30:37.893901+00:00",
     "ETH/USDT:USDT|bullish|2456.4-2478.69": "2026-10-21T23:15:29.164984+00:00",
@@ -293,6 +293,30 @@
       },
       "placed_time_utc": "2026-10-28T21:01:22.598143+00:00",
       "trigger": "bullish order block limit: zone 11.4580-11.4960 (formed 2026-10-28 17:15 UTC, CHoCH confirmed 2026-10-28 18:00 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bearish(3 OB) 4h=bullish(3 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bullish vs daily=bearish disagreed, but 33.11% room left to the weekly high (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 11.546 (next swing high (1.01R)), runner trails after TP2"
+    },
+    {
+      "order_id": "paper-a708d5d8cf81",
+      "trade_id": "a708d5d8cf81",
+      "mode": "DRY_RUN",
+      "symbol": "APT/USDT:USDT",
+      "side": "sell",
+      "position_side": "SHORT",
+      "qty": 356.134891,
+      "leverage": 10,
+      "entry_price": 0.7,
+      "stop_loss": 0.7044037,
+      "take_profit": 0.6911925999999999,
+      "tp2_price": 0.6954,
+      "tp2_source": "next swing low (1.04R)",
+      "equity": 221.88,
+      "zone_key": "APT/USDT:USDT|bearish|0.7-0.7037",
+      "ob": {
+        "type": "bearish",
+        "top": 0.7037,
+        "bottom": 0.7
+      },
+      "placed_time_utc": "2026-10-28T23:45:43.373964+00:00",
+      "trigger": "bearish order block limit: zone 0.7000-0.7037 (formed 2026-10-28 22:30 UTC, CHoCH confirmed 2026-10-28 23:30 UTC) | HTF: 1w*=bearish(3 OB) 1d*=bearish(2 OB) 4h=bearish(0 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.6954 (next swing low (1.04R)), runner trails after TP2"
     }
   ]
 }
