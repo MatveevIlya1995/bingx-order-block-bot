@@ -1,33 +1,10 @@
 {
   "date": "2026-10-29",
   "day_start_equity": 222.1988,
-  "realized_pnl_today": -3.543229480243331,
+  "realized_pnl_today": -1.8494975970169842,
   "trades": [],
   "open_trades": [],
-  "open_dry_run_trades": [
-    {
-      "trade_id": "e150a701358e",
-      "entry_time_utc": "2026-10-29T19:43:13.476639+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "AVAX/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 3.445955,
-      "entry_price": 8.855,
-      "stop_loss": 8.354882,
-      "take_profit": 8.783236000000002,
-      "trigger": "bearish order block limit: zone 8.8550-8.8820 (formed 2026-10-29 18:00 UTC, CHoCH confirmed 2026-10-29 18:30 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(2 OB) 4h=bearish(2 OB) 1h=bearish(0 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 8.818 (next swing low (1.03R)), runner trails after TP2 | filled limit @ 8.855",
-      "tp2_price": 8.818,
-      "tp2_source": "next swing low (1.03R)",
-      "entry_fee": null,
-      "initial_qty": 17.229775,
-      "risk_per_unit": 0.03588199999999908,
-      "partial_tp_price": 8.819118000000001,
-      "partial_taken": true,
-      "tp2_taken": true,
-      "trail_distance": 0.03588199999999908
-    }
-  ],
+  "open_dry_run_trades": [],
   "dry_run_signaled": {
     "BTC/USDT:USDT|bullish order block retest: zone 63204.2000-63362.4000 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 20:00 UTC)": "2026-08-13T19:41:47.282751+00:00",
     "ETH/USDT:USDT|bearish order block retest: zone 1886.0300-1890.7000 (formed 2026-08-12 18:30 UTC, break of structure confirmed 2026-08-12 19:00 UTC)": "2026-08-13T19:41:47.547834+00:00",
@@ -161,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 204.6407,
+  "last_seen_equity": 210.0057,
   "traded_zones": {
     "DOGE/USDT:USDT|bearish|0.08001-0.08019": "2026-10-23T06:00:40.247774+00:00",
     "ETH/USDT:USDT|bearish|2406.25-2412.29": "2026-10-23T13:30:40.395615+00:00",
