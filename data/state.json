@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 215.7401,
+  "last_seen_equity": 215.4177,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|736.28-737.9": "2026-10-22T06:00:41.213904+00:00",
     "DOGE/USDT:USDT|bearish|0.08001-0.08019": "2026-10-23T06:00:40.247774+00:00",
@@ -199,102 +199,5 @@
     "LINK/USDT:USDT|bullish|11.458-11.496": "2026-10-29T02:00:44.950978+00:00"
   },
   "realized_pnl_date": "2026-10-29",
-  "pending_orders": [
-    {
-      "order_id": "paper-49602574c478",
-      "trade_id": "49602574c478",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 0.667806,
-      "leverage": 10,
-      "entry_price": 748.72,
-      "stop_loss": 744.29496,
-      "take_profit": 757.5700800000002,
-      "tp2_price": 753.3,
-      "tp2_source": "next swing high (1.04R)",
-      "equity": 216.33,
-      "zone_key": "BNB/USDT:USDT|bullish|745.04-748.72",
-      "ob": {
-        "type": "bullish",
-        "top": 748.72,
-        "bottom": 745.04
-      },
-      "placed_time_utc": "2026-10-29T05:16:05.632061+00:00",
-      "trigger": "bullish order block limit: zone 745.0400-748.7200 (formed 2026-10-29 03:15 UTC, CHoCH confirmed 2026-10-29 04:30 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bullish(2 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 753.3 (next swing high (1.04R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-0b750bc56a7f",
-      "trade_id": "0b750bc56a7f",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 0.678205,
-      "leverage": 10,
-      "entry_price": 737.24,
-      "stop_loss": 733.29597,
-      "take_profit": 745.12806,
-      "tp2_price": 741.3,
-      "tp2_source": "next swing high (1.03R)",
-      "equity": 216.33,
-      "zone_key": "BNB/USDT:USDT|bullish|734.03-737.24",
-      "ob": {
-        "type": "bullish",
-        "top": 737.24,
-        "bottom": 734.03
-      },
-      "placed_time_utc": "2026-10-29T05:16:05.645196+00:00",
-      "trigger": "bullish order block limit: zone 734.0300-737.2400 (formed 2026-10-27 10:00 UTC, CHoCH confirmed 2026-10-27 10:30 UTC) | HTF: 1w*=bullish(2 OB) 1d*=bullish(2 OB) 4h=bullish(2 OB) 1h=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 741.3 (next swing high (1.03R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-2cb4e9819cfb",
-      "trade_id": "2cb4e9819cfb",
-      "mode": "DRY_RUN",
-      "symbol": "DOGE/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 6274.312963,
-      "leverage": 10,
-      "entry_price": 0.07969,
-      "stop_loss": 0.07993985999999999,
-      "take_profit": 0.07919028000000002,
-      "tp2_price": 0.0794,
-      "tp2_source": "next swing low (1.16R)",
-      "equity": 216.33,
-      "zone_key": "DOGE/USDT:USDT|bearish|0.07969-0.07986",
-      "ob": {
-        "type": "bearish",
-        "top": 0.07986,
-        "bottom": 0.07969
-      },
-      "placed_time_utc": "2026-10-29T05:16:05.647437+00:00",
-      "trigger": "bearish order block limit: zone 0.0797-0.0799 (formed 2026-10-29 00:15 UTC, CHoCH confirmed 2026-10-29 00:45 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bearish(3 OB) 4h=bullish(4 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.0794 (next swing low (1.16R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-c09237a83b9a",
-      "trade_id": "c09237a83b9a",
-      "mode": "DRY_RUN",
-      "symbol": "ADA/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 397.075125,
-      "leverage": 10,
-      "entry_price": 0.2056,
-      "stop_loss": 0.20660639999999997,
-      "take_profit": 0.20358720000000008,
-      "tp2_price": 0.2044,
-      "tp2_source": "next swing low (1.19R)",
-      "equity": 216.33,
-      "zone_key": "ADA/USDT:USDT|bearish|0.2056-0.2064",
-      "ob": {
-        "type": "bearish",
-        "top": 0.2064,
-        "bottom": 0.2056
-      },
-      "placed_time_utc": "2026-10-29T05:16:05.649572+00:00",
-      "trigger": "bearish order block limit: zone 0.2056-0.2064 (formed 2026-10-29 00:15 UTC, CHoCH confirmed 2026-10-29 00:45 UTC) | HTF: 1w*=bearish(0 OB) 1d*=bearish(4 OB) 4h=bearish(3 OB) 1h=bearish(0 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.2044 (next swing low (1.19R)), runner trails after TP2"
-    }
-  ]
+  "pending_orders": []
 }
