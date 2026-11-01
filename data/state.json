@@ -182,7 +182,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 190.9567,
+  "last_seen_equity": 191.1568,
   "traded_zones": {
     "SOL/USDT:USDT|bearish|101.875-102.147": "2026-10-24T23:45:31.325516+00:00",
     "ADA/USDT:USDT|bearish|0.2079-0.2091": "2026-10-25T00:00:50.251154+00:00",
@@ -319,30 +319,6 @@
       },
       "placed_time_utc": "2026-11-01T00:00:56.593612+00:00",
       "trigger": "bullish order block limit: zone 698.8800-699.9500 (formed 2026-10-31 08:30 UTC, CHoCH confirmed 2026-10-31 09:00 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bearish(1 OB) 4h=bearish(1 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bullish vs daily=bearish disagreed, but 15.21% room left to the weekly high (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 702.85 (next swing high (1.64R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-2ce2d3b2e6c7",
-      "trade_id": "2ce2d3b2e6c7",
-      "mode": "DRY_RUN",
-      "symbol": "BNB/USDT:USDT",
-      "side": "buy",
-      "position_side": "LONG",
-      "qty": 0.428855,
-      "leverage": 10,
-      "entry_price": 697.99,
-      "stop_loss": 695.27403,
-      "take_profit": 703.42194,
-      "tp2_price": 700.71,
-      "tp2_source": "next swing high (1.00R)",
-      "equity": 190.21,
-      "zone_key": "BNB/USDT:USDT|bullish|695.97-697.99",
-      "ob": {
-        "type": "bullish",
-        "top": 697.99,
-        "bottom": 695.97
-      },
-      "placed_time_utc": "2026-11-01T00:00:56.597783+00:00",
-      "trigger": "bullish order block limit: zone 695.9700-697.9900 (formed 2026-10-30 21:45 UTC, CHoCH confirmed 2026-10-30 23:00 UTC) | HTF: 1w*=bullish(1 OB) 1d*=bearish(1 OB) 4h=bearish(1 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | OVERRIDE: weekly=bullish vs daily=bearish disagreed, but 15.21% room left to the weekly high (>= 6.00% threshold) -- trading with the weekly trend. | exits: TP1 1R (mirror of SL), TP2 700.71 (next swing high (1.00R)), runner trails after TP2"
     }
   ]
 }
