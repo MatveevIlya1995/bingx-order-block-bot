@@ -1,7 +1,7 @@
 {
   "date": "2026-11-01",
   "day_start_equity": 190.2077,
-  "realized_pnl_today": -0.9855035734857184,
+  "realized_pnl_today": -0.8864206306756922,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -56,7 +56,7 @@
       "position_side": "SHORT",
       "qty": 146.1549354,
       "entry_price": 0.07582,
-      "stop_loss": 0.07558599999999999,
+      "stop_loss": 0.075526,
       "take_profit": 0.07530800000000001,
       "trigger": "bearish order block limit: zone 0.0758-0.0760 (formed 2026-11-01 08:45 UTC, CHoCH confirmed 2026-11-01 09:30 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bearish(2 OB) 4h=bearish(3 OB) 1h=bearish(0 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.07553 (next swing low (1.13R)), runner trails after TP2 | filled limit @ 0.07582",
       "tp2_price": 0.07553,
@@ -76,9 +76,9 @@
       "symbol": "SOL/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 0.543375,
+      "qty": 0.108675,
       "entry_price": 94.629,
-      "stop_loss": 94.93784299999999,
+      "stop_loss": 94.629,
       "take_profit": 94.01131400000004,
       "trigger": "bearish order block limit: zone 94.6290-94.8430 (formed 2026-11-01 17:15 UTC, BOS confirmed 2026-11-01 17:45 UTC) | HTF: 1w*=bearish(3 OB) 1d*=bearish(3 OB) 4h=bearish(4 OB) 1h=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 94.284 (next swing low (1.12R)), runner trails after TP2 | filled limit @ 94.629",
       "tp2_price": 94.284,
@@ -87,8 +87,9 @@
       "initial_qty": 0.543375,
       "risk_per_unit": 0.30884299999998177,
       "partial_tp_price": 94.32015700000002,
-      "partial_taken": false,
-      "tp2_taken": false
+      "partial_taken": true,
+      "tp2_taken": true,
+      "trail_distance": 0.30884299999998177
     }
   ],
   "dry_run_signaled": {
@@ -224,7 +225,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 194.7029,
+  "last_seen_equity": 193.8427,
   "traded_zones": {
     "XRP/USDT:USDT|bearish|1.3006-1.3032": "2026-10-25T19:15:28.550993+00:00",
     "LINK/USDT:USDT|bearish|11.472-11.502": "2026-10-25T22:05:19.925905+00:00",
