@@ -25,6 +25,48 @@
       "partial_tp_price": 11.183563000000003,
       "partial_taken": false,
       "tp2_taken": false
+    },
+    {
+      "trade_id": "8abd00b6abcb",
+      "entry_time_utc": "2026-11-02T04:00:41.659675+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "AVAX/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 6.220165,
+      "entry_price": 8.665,
+      "stop_loss": 8.745736999999998,
+      "take_profit": 8.503526,
+      "trigger": "bearish order block limit: zone 8.6650-8.7370 (formed 2026-11-02 01:00 UTC, CHoCH confirmed 2026-11-02 02:30 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(2 OB) 4h=bearish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 8.582 (next swing low (1.03R)), runner trails after TP2 | filled limit @ 8.665",
+      "tp2_price": 8.582,
+      "tp2_source": "next swing low (1.03R)",
+      "entry_fee": null,
+      "initial_qty": 6.220165,
+      "risk_per_unit": 0.08073699999999917,
+      "partial_tp_price": 8.584263,
+      "partial_taken": false,
+      "tp2_taken": false
+    },
+    {
+      "trade_id": "a31900ff714a",
+      "entry_time_utc": "2026-11-02T04:00:41.890059+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "LTC/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 7.202501,
+      "entry_price": 56.16,
+      "stop_loss": 56.36631,
+      "take_profit": 55.74737999999999,
+      "trigger": "bearish order block limit: zone 56.1600-56.3100 (formed 2026-11-01 08:15 UTC, CHoCH confirmed 2026-11-01 09:15 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bearish(3 OB) 4h=bearish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 55.95 (next swing low (1.02R)), runner trails after TP2 | filled limit @ 56.16",
+      "tp2_price": 55.95,
+      "tp2_source": "next swing low (1.02R)",
+      "entry_fee": null,
+      "initial_qty": 7.202501,
+      "risk_per_unit": 0.206310000000002,
+      "partial_tp_price": 55.953689999999995,
+      "partial_taken": false,
+      "tp2_taken": false
     }
   ],
   "dry_run_signaled": {
@@ -160,7 +202,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 202.062,
+  "last_seen_equity": 201.4243,
   "traded_zones": {
     "SOL/USDT:USDT|bearish|100.489-101.253": "2026-10-26T04:30:41.990365+00:00",
     "XRP/USDT:USDT|bearish|1.2808-1.2851": "2026-10-26T04:30:42.282370+00:00",
@@ -222,7 +264,9 @@
     "DOGE/USDT:USDT|bearish|0.07535-0.07554": "2026-11-01T21:15:32.394329+00:00",
     "AVAX/USDT:USDT|bearish|8.677-8.69": "2026-11-01T23:15:36.400723+00:00",
     "AVAX/USDT:USDT|bearish|8.735-8.758": "2026-11-02T01:15:33.041554+00:00",
-    "LINK/USDT:USDT|bearish|11.316-11.437": "2026-11-02T03:15:30.312987+00:00"
+    "LINK/USDT:USDT|bearish|11.316-11.437": "2026-11-02T03:15:30.312987+00:00",
+    "AVAX/USDT:USDT|bearish|8.665-8.737": "2026-11-02T04:00:41.670653+00:00",
+    "LTC/USDT:USDT|bearish|56.16-56.31": "2026-11-02T04:00:41.890250+00:00"
   },
   "realized_pnl_date": "2026-11-02",
   "pending_orders": [
@@ -249,78 +293,6 @@
       },
       "placed_time_utc": "2026-11-01T20:45:44.754592+00:00",
       "trigger": "bearish order block limit: zone 96.4900-96.8870 (formed 2026-10-31 02:30 UTC, CHoCH confirmed 2026-10-31 03:30 UTC) | HTF: 1w*=bearish(3 OB) 1d*=bearish(3 OB) 4h=bearish(4 OB) 1h=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 95.752 (next swing low (1.49R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-a31900ff714a",
-      "trade_id": "a31900ff714a",
-      "mode": "DRY_RUN",
-      "symbol": "LTC/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 7.202501,
-      "leverage": 10,
-      "entry_price": 56.16,
-      "stop_loss": 56.36631,
-      "take_profit": 55.74737999999999,
-      "tp2_price": 55.95,
-      "tp2_source": "next swing low (1.02R)",
-      "equity": 199.57,
-      "zone_key": "LTC/USDT:USDT|bearish|56.16-56.31",
-      "ob": {
-        "type": "bearish",
-        "top": 56.31,
-        "bottom": 56.16
-      },
-      "placed_time_utc": "2026-11-02T01:15:47.639556+00:00",
-      "trigger": "bearish order block limit: zone 56.1600-56.3100 (formed 2026-11-01 08:15 UTC, CHoCH confirmed 2026-11-01 09:15 UTC) | HTF: 1w*=bearish(1 OB) 1d*=bearish(3 OB) 4h=bearish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 55.95 (next swing low (1.02R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-8abd00b6abcb",
-      "trade_id": "8abd00b6abcb",
-      "mode": "DRY_RUN",
-      "symbol": "AVAX/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 6.220165,
-      "leverage": 8,
-      "entry_price": 8.665,
-      "stop_loss": 8.745736999999998,
-      "take_profit": 8.503526,
-      "tp2_price": 8.582,
-      "tp2_source": "next swing low (1.03R)",
-      "equity": 202.09,
-      "zone_key": "AVAX/USDT:USDT|bearish|8.665-8.737",
-      "ob": {
-        "type": "bearish",
-        "top": 8.737,
-        "bottom": 8.665
-      },
-      "placed_time_utc": "2026-11-02T03:30:51.268508+00:00",
-      "trigger": "bearish order block limit: zone 8.6650-8.7370 (formed 2026-11-02 01:00 UTC, CHoCH confirmed 2026-11-02 02:30 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(2 OB) 4h=bearish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 8.582 (next swing low (1.03R)), runner trails after TP2"
-    },
-    {
-      "order_id": "paper-3f361397755e",
-      "trade_id": "3f361397755e",
-      "mode": "DRY_RUN",
-      "symbol": "AVAX/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 6.102551,
-      "leverage": 10,
-      "entry_price": 8.832,
-      "stop_loss": 8.889880999999999,
-      "take_profit": 8.716238000000004,
-      "tp2_price": 8.773,
-      "tp2_source": "next swing low (1.02R)",
-      "equity": 202.09,
-      "zone_key": "AVAX/USDT:USDT|bearish|8.832-8.881",
-      "ob": {
-        "type": "bearish",
-        "top": 8.881,
-        "bottom": 8.832
-      },
-      "placed_time_utc": "2026-11-02T03:30:51.270912+00:00",
-      "trigger": "bearish order block limit: zone 8.8320-8.8810 (formed 2026-11-01 10:00 UTC, CHoCH confirmed 2026-11-01 12:00 UTC) | HTF: 1w*=bearish(2 OB) 1d*=bearish(2 OB) 4h=bearish(2 OB) 1h=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 8.773 (next swing low (1.02R)), runner trails after TP2"
     }
   ]
 }
