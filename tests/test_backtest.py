@@ -13,23 +13,44 @@ SYMS = ["AAA/USDT:USDT", "BBB/USDT:USDT"]
 DAY = 86_400_000
 
 
-@pytest.fixture(scope="module")
-def world():
+CLEAN_ENV = ("SYMBOLS", "MIN_STOP_DISTANCE_PCT", "ENTRY_SYMBOLS", "HTF_TIMING_AGREEMENT",
+             "MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT",
+             "STRUCTURE_CONFIRMED_SWINGS", "REQUIRE_STRONG_SWING", "OB_STRUCTURE", "REQUIRE_LIQUIDITY_SWEEP",
+             "MIN_DISPLACEMENT_ATR", "REQUIRE_FVG", "PREMIUM_DISCOUNT_FILTER", "DEALING_RANGE_CANDLES",
+             "ENTRY_HOURS_UTC", "TIMEFRAME", "HTF_TIMEFRAMES", "HTF_PRIMARY_TIMEFRAMES", "STOP_PLACEMENT", "ENTRY_MODEL")
+ACCOUNT_ENV = {"MAX_CONCURRENT_POSITIONS": "5", "RISK_PCT_PER_TRADE": "2", "LEVERAGE": "10",
+               "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT": "1"}
+# The cascade the bot ran before the timeframes moved down a level. The
+# simulation tests below were written against it (15m steps, weekly warm-up),
+# and it stays a supported configuration.
+WEEKLY_DAILY_15M = {"TIMEFRAME": "15m", "HTF_TIMEFRAMES": "1w,1d,4h,1h", "HTF_PRIMARY_TIMEFRAMES": "1w,1d"}
+
+
+def build_world(days, seed, **env):
     import os
-    for key in ("SYMBOLS", "MIN_STOP_DISTANCE_PCT", "ENTRY_SYMBOLS", "HTF_TIMING_AGREEMENT",
-                "MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT"):
+    for key in CLEAN_ENV:
         os.environ.pop(key, None)
-    os.environ.update({"MAX_CONCURRENT_POSITIONS": "5", "RISK_PCT_PER_TRADE": "2", "LEVERAGE": "10",
-                       "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT": "1"})
+    os.environ.update({**ACCOUNT_ENV, **env})
     cfg = config.load_config()
     end = 1_790_000_000_000 - 1_790_000_000_000 % bt.TF_MS["15m"]
-    start = end - 12 * DAY
-    data = bt.synthetic_history(SYMS, start, end, seed=11, exec_tf="5m",
+    start = end - days * DAY
+    data = bt.synthetic_history(SYMS, start, end, seed=seed, exec_tf="5m",
                                 htf_timeframes=cfg.htf_timeframes, htf_lookback=cfg.trend_candle_limit + 5)
     signals = {s: bt.compute_signals((cfg, s, data[s], start, end)) for s in SYMS}
-    yield cfg, data, signals, start, end
-    for key in ("MAX_CONCURRENT_POSITIONS", "RISK_PCT_PER_TRADE", "LEVERAGE", "WEEKLY_DAILY_OVERRIDE_MIN_ROOM_PCT"):
+    for key in list(ACCOUNT_ENV) + list(env):
         os.environ.pop(key, None)
+    return cfg, data, signals, start, end
+
+
+@pytest.fixture(scope="module")
+def world():
+    return build_world(12, 11, **WEEKLY_DAILY_15M)
+
+
+@pytest.fixture(scope="module")
+def world_5m():
+    """The default cascade: daily + 4h direction, 1h + 15m timing, 5m entries."""
+    return build_world(5, 13)
 
 
 class ClientAt:
@@ -56,9 +77,23 @@ class ClientAt:
 
 
 def test_signals_equal_what_the_live_bot_code_finds(world):
+    assert (world[0].timeframe, world[0].primary_htf_timeframes) == ("15m", ["1w", "1d"])
+    check_signals(world, min_checked=300, min_setups=60)
+
+
+def test_signals_equal_on_the_default_timeframes(world_5m):
+    cfg = world_5m[0]
+    assert (cfg.timeframe, cfg.htf_timeframes, cfg.primary_htf_timeframes) == ("5m", ["1d", "4h", "1h", "15m"], ["1d", "4h"])
+    assert config.override_levels(cfg) == ("1d", "4h")
+    overrides = check_signals(world_5m, min_checked=300, min_setups=60)
+    assert overrides > 0          # the room override works between daily and 4h too
+
+
+def check_signals(world, min_checked, min_setups):
     cfg, data, signals, start, end = world
     rng = np.random.default_rng(3)
-    checked = with_setups = overrides = conflicts = 0
+    checked = with_setups = overrides = conflicts = widened = 0
+    tags = set()
     for symbol in SYMS:
         sig = signals[symbol]
         picks = set(rng.choice(len(sig["steps"]), size=140, replace=False).tolist())
@@ -80,12 +115,32 @@ def test_signals_equal_what_the_live_bot_code_finds(world):
                     tp2, _ = bot._find_tp2_level(df, s, cfg)
                     raw = [r for r in got[2] if r[1] == pytest.approx(s["entry"])][0]
                     assert raw[6] == (pytest.approx(tp2) if tp2 is not None else None)
+                # the smart-money tags the filters read
+                for s in setups:
+                    raw = [r for r in got[2] if r[1] == pytest.approx(s["entry"])][0]
+                    assert set(raw[7]) == set(s["smc"]) == {"structure", "liquidity", "sweep", "displacement_atr",
+                                                            "fvg", "range_pos", "hour_utc"}
+                    for key, value in s["smc"].items():
+                        assert raw[7][key] == (pytest.approx(value) if isinstance(value, float) else value), key
+                    tags.add((raw[7]["structure"], raw[7]["liquidity"], raw[7]["fvg"]))
+                    # every stop placement, with the TP2 that goes with it
+                    assert raw[2] == pytest.approx(s["stops"][cfg.stop_placement])
+                    for placement, stop in s["stops"].items():
+                        alt_tp2, _ = bot._find_tp2_level(df, {**s, "stop_loss": stop}, cfg)
+                        assert raw[8][placement][0] == pytest.approx(stop)
+                        assert raw[8][placement][1] == (pytest.approx(alt_tp2) if alt_tp2 is not None else None)
+                    widened += raw[8]["swing"][0] != raw[8]["order_block"][0]
                 # and the 4h/1h trends the timing filter uses
                 _, _, trends = bot.analyze_higher_timeframes(client, cfg, symbol)
                 assert got[1] == tuple(trends[tf] for tf in cfg.htf_timeframes if tf not in cfg.primary_htf_timeframes)
             conflicts += "disagree" in detail or setups == [] and "NOT overridden" in detail
             checked += 1
-    assert checked >= 300 and with_setups >= 60
+    assert checked >= min_checked and with_setups >= min_setups
+    # the tags vary across the sample (both kinds of break, every liquidity outcome, gap and no gap)
+    assert {t[0] for t in tags} == {"BOS", "CHoCH"} and {t[1] for t in tags} == {"sweep", "run", "none"}
+    assert {t[2] for t in tags} == {True, False}
+    assert widened > 10            # the swing stop differs from the order-block stop often enough to matter
+    return overrides
 
 
 def test_htf_trend_equals_detect_trend(world):
@@ -190,6 +245,162 @@ def test_sim_filters(world):
         sim = make_sim(world, **kw)
         sim.run(0, {S: 100.6}, {S: long_signal(timing=("bullish", "neutral"))}, [S])
         assert len(sim.pending.get(S, [])) == expect, kw
+
+
+def smc_signal(**smc):
+    tags = {"structure": "BOS", "liquidity": "none", "sweep": False, "displacement_atr": 1.2,
+            "fvg": False, "range_pos": 0.3, "hour_utc": 9}
+    tags.update(smc)
+    sig = long_signal()
+    return (sig[0], sig[1], [sig[2][0] + (tags,)])
+
+
+def test_sim_smart_money_filters(world):
+    """The simulation applies the smart-money filters through the bot's own
+    filter function, on the tags the signal pass stored."""
+    cases = [
+        ({}, {}, 1),
+        ({"ob_structure": "choch"}, {}, 0), ({"ob_structure": "choch"}, {"structure": "CHoCH"}, 1),
+        ({"require_sweep": True}, {"liquidity": "run"}, 0), ({"require_sweep": True}, {"liquidity": "sweep", "sweep": True}, 1),
+        ({"min_displacement_atr": 1.5}, {}, 0), ({"min_displacement_atr": 1.0}, {}, 1),
+        ({"require_fvg": True}, {}, 0), ({"require_fvg": True}, {"fvg": True}, 1),
+        ({"premium_discount": True}, {"range_pos": 0.7}, 0), ({"premium_discount": True}, {}, 1),
+        ({"entry_hours": [(12, 16)]}, {}, 0), ({"entry_hours": [(7, 11)]}, {}, 1),
+    ]
+    for filters, tags, expect in cases:
+        sim = make_sim(world, **filters)
+        sim.run(0, {S: 100.6}, {S: smc_signal(**tags)}, [S])
+        assert len(sim.pending.get(S, [])) == expect, (filters, tags)
+    # the tags travel with the order into the trade, for the report's breakdowns
+    sim = make_sim(world)
+    sim.run(0, {S: 100.6}, {S: smc_signal(structure="CHoCH", liquidity="sweep", sweep=True)}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    trade = sim.positions[S]
+    assert bt.structure_tag(trade) == "CHoCH" and bt.liquidity_tag(trade) == bt.LIQUIDITY_NAMES["sweep"]
+    assert bt.range_half(trade) == bt.RANGE_RIGHT and bt.displacement_bucket(trade) == "1-1.5 ATR"
+    # a resting order whose setup stops passing a filter is cancelled, as in the bot
+    sim = make_sim(world, require_fvg=True)
+    sim.run(0, {S: 100.6}, {S: smc_signal(fvg=True)}, [S])
+    assert len(sim.pending[S]) == 1
+    sim.run(1, {S: 100.6}, {S: smc_signal(fvg=False)}, [S])
+    assert S not in sim.pending
+    # signals recorded before the tags existed (7 fields) still simulate
+    sim = make_sim(world)
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    assert bt.structure_tag(sim.positions[S]) == "n/a" and bt.liquidity_tag(sim.positions[S]) == "n/a"
+
+
+def test_every_entry_model_equals_what_the_bot_finds(world_5m):
+    """One signal pass holds every entry model's setups; each equals what
+    the bot's own code finds with ENTRY_MODEL set to that model."""
+    from dataclasses import replace
+    from strategy import ENTRY_MODELS
+    cfg, data, signals, start, end = world_5m
+    symbol = SYMS[0]
+    sig = signals[symbol]
+    steps = sorted(sig["signals"])[::max(1, len(sig["signals"]) // 60)]
+    found = {m: 0 for m in ENTRY_MODELS}
+    for i in steps:
+        got = sig["signals"][i]
+        assert got[2] == got[3].get(cfg.entry_model, [])
+        client = ClientAt(cfg, data, sig["steps"][i], sig["px"][i])
+        for model in ENTRY_MODELS:
+            setups = bot._find_setups(client, replace(cfg, entry_model=model), symbol, {})[0]
+            live = sorted((s["position_side"], s["entry"], s["stop_loss"]) for s in setups)
+            mine = sorted((s[0], s[1], s[2]) for s in got[3].get(model, []))
+            assert mine == pytest.approx(live), (i, model)
+            found[model] += len(live)
+    assert all(count > 10 for count in found.values()), found
+
+
+def test_sim_entry_model(world):
+    """The simulation trades the model its variant names."""
+    ob = long_signal()[2][0]                                                  # entry 100
+    gap = ("LONG", 100.4, 99.9, "bullish", 100.4, 100.2, 101.4)
+    signal = (False, ("bullish", "bullish"), [ob], {"order_block": [ob], "fvg": [gap]})
+    for model, entry in ((None, 100.0), ("order_block", 100.0), ("fvg", 100.4)):
+        sim = make_sim(world, entry_model=model)
+        sim.run(0, {S: 100.6}, {S: signal}, [S])
+        assert [o["entry"] for o in sim.pending[S]] == [entry], model
+    sim = make_sim(world, entry_model="sweep")                               # a model with no setup at this run
+    sim.run(0, {S: 100.6}, {S: signal}, [S])
+    assert S not in sim.pending
+    # signals recorded before there were several models (three fields) still simulate
+    sim = make_sim(world, entry_model="fvg")
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    assert [o["entry"] for o in sim.pending[S]] == [100.0]
+
+
+def test_sim_stop_placement(world):
+    """One signal carries the stop under every placement; the simulation
+    uses the one its variant asks for, with the matching TP2 and size."""
+    sig = long_signal()                                   # entry 100, stop 99.5, TP2 101
+    stops = {"order_block": (99.8, 100.9), "swing": (99.5, 101.0), "previous_swing": (99.0, 102.5)}
+    signal = (sig[0], sig[1], [sig[2][0] + (None, stops)])
+    for placement, (stop, tp2) in list(stops.items()) + [(None, (99.5, 101.0))]:
+        sim = make_sim(world, stop_placement=placement)
+        sim.run(0, {S: 100.6}, {S: signal}, [S])
+        order = sim.pending[S][0]
+        assert (order["stop"], order["tp2"]) == (stop, tp2), placement
+        sim.walk(S, [[1, 100.6, 100.7, 99.95, 100.2, 0]], 2)
+        trade = sim.positions[S]
+        assert trade["stop"] == stop and trade["tp2"] == tp2
+        assert trade["tp1"] == pytest.approx(100.0 + (100.0 - stop))      # TP1 mirrors the stop
+        assert trade["setup_stop_pct"] == pytest.approx(100.0 - stop)
+    # the minimum-stop filter sees the placement's stop
+    tight = make_sim(world, stop_placement="order_block", min_stop_pct=0.3)
+    tight.run(0, {S: 100.6}, {S: signal}, [S])
+    assert S not in tight.pending
+    wide = make_sim(world, stop_placement="previous_swing", min_stop_pct=0.3)
+    wide.run(0, {S: 100.6}, {S: signal}, [S])
+    assert len(wide.pending[S]) == 1
+
+
+def test_sim_targets_in_multiples_of_the_risk(world):
+    """tp1_r / tp2_r move the take-profits: TP1 at 2R (half off, stop to
+    breakeven at the next run), TP2 at 3R, whatever TP2 the signal carried."""
+    sim = make_sim(world, tp1_r=2.0, tp2_r=3.0)
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])           # entry 100, stop 99.5: risk 0.5
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    t = sim.positions[S]
+    qty = t["qty"]
+    assert (t["tp1"], t["tp2"]) == (pytest.approx(101.0), pytest.approx(101.5))
+    sim.run(2, {S: 100.2}, {}, [S])
+    sim.walk(S, [[3, 100.2, 100.9, 100.1, 100.8, 0]], 4)     # 1R (100.5) is no longer a target
+    assert not t["tp1_done"] and t["qty"] == qty
+    sim.walk(S, [[5, 100.8, 101.1, 100.7, 101.0, 0]], 6)     # TP1 at 101.0
+    assert t["tp1_done"] and t["qty"] == pytest.approx(qty * 0.5)
+    sim.run(6, {S: 101.0}, {}, [S])
+    assert t["stop"] == 100.0
+    sim.walk(S, [[7, 101.0, 101.6, 100.9, 101.5, 0]], 8)     # TP2 at 101.5
+    assert t["tp2_done"] and t["qty"] == pytest.approx(qty * 0.2)
+    # only TP1 moved: TP2 stays the signal's (101.0) unless it is no longer beyond TP1
+    sim = make_sim(world, tp1_r=1.5)
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    t = sim.positions[S]
+    assert t["tp1"] == pytest.approx(100.75) and t["tp2"] == 101.0
+    sim = make_sim(world, tp1_r=2.0)                          # TP1 101.0 reaches the signal's TP2: fallback beyond it
+    sim.run(0, {S: 100.6}, {S: long_signal()}, [S])
+    sim.walk(S, [[1, 100.6, 100.7, 99.9, 100.2, 0]], 2)
+    t = sim.positions[S]
+    assert t["tp1"] == pytest.approx(101.0) and t["tp2"] == pytest.approx(101.25)     # 2R + 0.5R
+    assert bt.exit_kind({"exits": [(0, "stop", 1, 1)]}) == "stopped out before TP1"
+    assert bt.exit_kind({"exits": [(0, "tp1", 1, 1), (1, "tp2", 1, 1), (2, "stop", 1, 1)]}) == "TP1 + TP2, runner trailed"
+
+
+def test_swing_confirmation_changes_the_signals(world):
+    """STRUCTURE_CONFIRMED_SWINGS reaches the signal pass: the two settings
+    do not find the same setups."""
+    from dataclasses import replace
+    cfg, data, signals, start, end = world
+    short_end = start + 3 * DAY
+    on = bt.compute_signals((cfg, SYMS[0], data[SYMS[0]], start, short_end))
+    off = bt.compute_signals((replace(cfg, structure_confirmed_swings=False), SYMS[0], data[SYMS[0]], start, short_end))
+    assert on["steps"] == off["steps"]
+    assert {i: [s[:3] for s in v[2]] for i, v in on["signals"].items()} != \
+           {i: [s[:3] for s in v[2]] for i, v in off["signals"].items()}
 
 
 def test_sim_slots_zones_and_one_position_per_symbol(world):
