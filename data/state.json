@@ -160,7 +160,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 187.8383,
+  "last_seen_equity": 188.3466,
   "traded_zones": {
     "BNB/USDT:USDT|bullish|739.08-740.18": "2026-10-27T13:45:30.373645+00:00",
     "AVAX/USDT:USDT|bearish|8.905-8.935": "2026-10-27T19:15:30.424477+00:00",
@@ -242,30 +242,6 @@
       "trigger": "bearish order block limit: zone 3.9680-3.9960 (formed 2026-11-02 16:30 UTC, BOS confirmed 2026-11-02 17:20 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(3 OB) 1h=bearish(3 OB) 15m=bearish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 3.90201 (2R minimum (next swing low was only 1.88R away)), runner trails after TP2 | stop beyond the last swing | SMC: BOS, liquidity not taken, fair value gap yes, displacement 1.3 ATR, entry at 33% of the range (discount)"
     },
     {
-      "order_id": "paper-ea1dcbd34a12",
-      "trade_id": "ea1dcbd34a12",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 3.788113,
-      "leverage": 9,
-      "entry_price": 4.04,
-      "stop_loss": 4.072067999999999,
-      "take_profit": 3.9758640000000023,
-      "tp2_price": 3.9758640000000023,
-      "tp2_source": "2R minimum (next swing low was only 1.25R away)",
-      "equity": 183.06,
-      "zone_key": "NEAR/USDT:USDT|bearish|4.04-4.065",
-      "ob": {
-        "type": "bearish",
-        "top": 4.065,
-        "bottom": 4.04
-      },
-      "placed_time_utc": "2026-11-03T09:30:55.331898+00:00",
-      "trigger": "bearish order block limit: zone 4.0400-4.0650 (formed 2026-11-02 15:40 UTC, BOS confirmed 2026-11-02 15:50 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(3 OB) 1h=bearish(3 OB) 15m=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 3.97586 (2R minimum (next swing low was only 1.25R away)), runner trails after TP2 | stop beyond the last swing | SMC: BOS, liquidity not taken, fair value gap yes, displacement 1.1 ATR, entry at 72% of the range (premium)"
-    },
-    {
       "order_id": "paper-780cc74f8a7e",
       "trade_id": "780cc74f8a7e",
       "mode": "DRY_RUN",
@@ -288,6 +264,30 @@
       },
       "placed_time_utc": "2026-11-03T14:15:45.029903+00:00",
       "trigger": "bearish order block limit: zone 1.4400-1.4490 (formed 2026-11-03 13:30 UTC, CHoCH confirmed 2026-11-03 13:45 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(2 OB) 1h=bearish(2 OB) 15m=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 1.4191 (2R minimum (next swing low was only 1.05R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity swept (wick only), fair value gap yes, displacement 2.6 ATR, entry at 74% of the range (premium)"
+    },
+    {
+      "order_id": "paper-c4a9681ff336",
+      "trade_id": "c4a9681ff336",
+      "mode": "DRY_RUN",
+      "symbol": "NEAR/USDT:USDT",
+      "side": "sell",
+      "position_side": "SHORT",
+      "qty": 2.810626,
+      "leverage": 10,
+      "entry_price": 3.868,
+      "stop_loss": 3.89389,
+      "take_profit": 3.81622,
+      "tp2_price": 3.81622,
+      "tp2_source": "2R minimum (next swing low was only 1.04R away)",
+      "equity": 188.35,
+      "zone_key": "NEAR/USDT:USDT|bearish|3.868-3.889",
+      "ob": {
+        "type": "bearish",
+        "top": 3.889,
+        "bottom": 3.868
+      },
+      "placed_time_utc": "2026-11-03T15:15:46.692714+00:00",
+      "trigger": "bearish order block limit: zone 3.8680-3.8890 (formed 2026-11-03 14:40 UTC, CHoCH confirmed 2026-11-03 15:10 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(3 OB) 1h=bearish(4 OB) 15m=bearish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 3.81622 (2R minimum (next swing low was only 1.04R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity not taken, fair value gap no, displacement 0.6 ATR, entry at 35% of the range (discount)"
     }
   ]
 }
