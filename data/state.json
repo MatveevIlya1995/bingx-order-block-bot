@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 8.8225764,
       "entry_price": 0.6166,
-      "stop_loss": 0.6166,
+      "stop_loss": 0.6119198999999999,
       "take_profit": 0.6087602000000003,
       "trigger": "bearish order block limit: zone 0.6166-0.6199 (formed 2026-11-03 02:30 UTC, CHoCH confirmed 2026-11-03 02:55 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(2 OB) 1h=bearish(1 OB) 15m=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.60876 (2R minimum (next swing low was only 1.02R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity run (closed beyond), fair value gap yes, displacement 0.8 ATR, entry at 15% of the range (discount) | filled limit @ 0.6166",
       "tp2_price": 0.6087602000000003,
@@ -161,7 +161,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 180.0089,
+  "last_seen_equity": 180.0517,
   "traded_zones": {
     "AVAX/USDT:USDT|bearish|8.788-8.822": "2026-10-27T08:00:43.897169+00:00",
     "APT/USDT:USDT|bearish|0.684-0.6857": "2026-10-27T10:45:31.903961+00:00",
