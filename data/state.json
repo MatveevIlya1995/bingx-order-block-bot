@@ -1,7 +1,7 @@
 {
-  "date": "2026-11-03",
-  "day_start_equity": 182.3511,
-  "realized_pnl_today": -3.220313966423841,
+  "date": "2026-11-04",
+  "day_start_equity": 189.5277,
+  "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -160,7 +160,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 192.1486,
+  "last_seen_equity": 189.5277,
   "traded_zones": {
     "AVAX/USDT:USDT|bearish|8.905-8.935": "2026-10-27T19:15:30.424477+00:00",
     "SOL/USDT:USDT|bearish|101.27-101.713": "2026-10-27T19:15:31.163112+00:00",
@@ -215,7 +215,7 @@
     "SOL/USDT:USDT|bearish|93.314-93.758": "2026-11-03T12:30:40.202039+00:00",
     "NEAR/USDT:USDT|bearish|3.868-3.889": "2026-11-03T15:45:35.198779+00:00"
   },
-  "realized_pnl_date": "2026-11-03",
+  "realized_pnl_date": "2026-11-04",
   "pending_orders": [
     {
       "order_id": "paper-780cc74f8a7e",
