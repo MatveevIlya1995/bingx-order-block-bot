@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 221.0752,
+  "last_seen_equity": 218.9609,
   "traded_zones": {
     "ETH/USDT:USDT|bearish|2362.83-2366.44": "2026-10-28T18:45:36.646632+00:00",
     "DOGE/USDT:USDT|bearish|0.08015-0.08036": "2026-10-28T20:00:44.415782+00:00",
@@ -186,5 +186,30 @@
     "NEAR/USDT:USDT|bearish|4.109-4.134": "2026-11-04T15:00:50.872492+00:00"
   },
   "realized_pnl_date": "2026-11-04",
-  "pending_orders": []
+  "pending_orders": [
+    {
+      "order_id": "paper-4f0b3f56f1dc",
+      "trade_id": "4f0b3f56f1dc",
+      "mode": "DRY_RUN",
+      "symbol": "ATOM/USDT:USDT",
+      "side": "sell",
+      "position_side": "SHORT",
+      "qty": 340.367597,
+      "leverage": 10,
+      "entry_price": 1.469,
+      "stop_loss": 1.4794779999999998,
+      "take_profit": 1.4480440000000006,
+      "tp2_price": 1.434,
+      "tp2_source": "next swing low (3.34R)",
+      "equity": 218.96,
+      "zone_key": "ATOM/USDT:USDT|bearish|1.469-1.477",
+      "ob": {
+        "type": "bearish",
+        "top": 1.477,
+        "bottom": 1.469
+      },
+      "placed_time_utc": "2026-11-04T17:16:00.101502+00:00",
+      "trigger": "bearish order block limit: zone 1.4690-1.4770 (formed 2026-11-04 16:55 UTC, CHoCH confirmed 2026-11-04 17:10 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(3 OB) 1h=bullish(2 OB) 15m=bullish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 1.434 (next swing low (3.34R)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity run (closed beyond), fair value gap no, displacement 1.5 ATR, entry at 82% of the range (premium)"
+    }
+  ]
 }
