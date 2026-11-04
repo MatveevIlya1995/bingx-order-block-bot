@@ -1,7 +1,7 @@
 {
   "date": "2026-11-04",
   "day_start_equity": 189.5277,
-  "realized_pnl_today": 7.352442915302184,
+  "realized_pnl_today": 3.305525540656949,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [],
@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 209.5067,
+  "last_seen_equity": 209.8715,
   "traded_zones": {
     "ETH/USDT:USDT|bearish|2362.83-2366.44": "2026-10-28T18:45:36.646632+00:00",
     "DOGE/USDT:USDT|bearish|0.08015-0.08036": "2026-10-28T20:00:44.415782+00:00",
@@ -182,33 +182,9 @@
     "APT/USDT:USDT|bearish|0.6168-0.6199": "2026-11-03T11:15:33.055865+00:00",
     "SOL/USDT:USDT|bearish|93.314-93.758": "2026-11-03T12:30:40.202039+00:00",
     "NEAR/USDT:USDT|bearish|3.868-3.889": "2026-11-03T15:45:35.198779+00:00",
-    "NEAR/USDT:USDT|bearish|4.01-4.032": "2026-11-04T14:30:36.537669+00:00"
+    "NEAR/USDT:USDT|bearish|4.01-4.032": "2026-11-04T14:30:36.537669+00:00",
+    "NEAR/USDT:USDT|bearish|4.109-4.134": "2026-11-04T15:00:50.872492+00:00"
   },
   "realized_pnl_date": "2026-11-04",
-  "pending_orders": [
-    {
-      "order_id": "paper-f763eb018421",
-      "trade_id": "f763eb018421",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 121.684108,
-      "leverage": 10,
-      "entry_price": 4.109,
-      "stop_loss": 4.138134,
-      "take_profit": 4.050732,
-      "tp2_price": 4.04,
-      "tp2_source": "next swing low (2.37R)",
-      "equity": 209.51,
-      "zone_key": "NEAR/USDT:USDT|bearish|4.109-4.134",
-      "ob": {
-        "type": "bearish",
-        "top": 4.134,
-        "bottom": 4.109
-      },
-      "placed_time_utc": "2026-11-04T14:45:46.368300+00:00",
-      "trigger": "bearish order block limit: zone 4.1090-4.1340 (formed 2026-11-04 11:40 UTC, CHoCH confirmed 2026-11-04 11:55 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(4 OB) 1h=bullish(3 OB) 15m=bullish(2 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 4.04 (next swing low (2.37R)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity run (closed beyond), fair value gap yes, displacement 1.3 ATR, entry at 94% of the range (premium)"
-    }
-  ]
+  "pending_orders": []
 }
