@@ -1,32 +1,10 @@
 {
   "date": "2026-11-05",
   "day_start_equity": 221.5328,
-  "realized_pnl_today": 3.869558146474645,
+  "realized_pnl_today": 9.061310286213583,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
-    {
-      "trade_id": "4e72aab06a3a",
-      "entry_time_utc": "2026-11-05T11:30:36.761462+00:00",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "SELL",
-      "position_side": "SHORT",
-      "qty": 49.6401092,
-      "entry_price": 4.029,
-      "stop_loss": 3.9550509999999997,
-      "take_profit": 3.9768980000000003,
-      "trigger": "bearish order block limit: zone 4.0290-4.0510 (formed 2026-11-05 10:20 UTC, CHoCH confirmed 2026-11-05 10:45 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(2 OB) 1h=bullish(2 OB) 15m=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 3.9769 (2R minimum (next swing low was only 1.04R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity swept (wick only), fair value gap yes, displacement 0.8 ATR, entry at 21% of the range (discount) | filled limit @ 4.029",
-      "tp2_price": 3.9768980000000003,
-      "tp2_source": "2R minimum (next swing low was only 1.04R away)",
-      "entry_fee": null,
-      "initial_qty": 124.100273,
-      "risk_per_unit": 0.026050999999999824,
-      "partial_tp_price": 4.002949,
-      "partial_taken": true,
-      "tp2_taken": true,
-      "trail_distance": 0.026050999999999824
-    },
     {
       "trade_id": "7b7ffce2badc",
       "entry_time_utc": "2026-11-05T12:30:38.159726+00:00",
@@ -34,7 +12,7 @@
       "symbol": "ATOM/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 228.4595299,
+      "qty": 130.5483028,
       "entry_price": 1.532,
       "stop_loss": 1.532,
       "take_profit": 1.5129200000000003,
@@ -46,7 +24,8 @@
       "risk_per_unit": 0.009539999999999882,
       "partial_tp_price": 1.5224600000000001,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 0.009539999999999882
     }
   ],
   "dry_run_signaled": {
@@ -182,7 +161,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 212.1378,
+  "last_seen_equity": 210.4151,
   "traded_zones": {
     "ADA/USDT:USDT|bearish|0.2056-0.2064": "2026-10-29T14:45:31.998508+00:00",
     "AVAX/USDT:USDT|bearish|8.989-9.015": "2026-10-29T16:00:48.000397+00:00",
