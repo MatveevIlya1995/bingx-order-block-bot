@@ -4,7 +4,29 @@
   "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
-  "open_dry_run_trades": [],
+  "open_dry_run_trades": [
+    {
+      "trade_id": "97a19d44dd00",
+      "entry_time_utc": "2026-11-06T00:45:29.123536+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "APT/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 620.709347,
+      "entry_price": 0.5984,
+      "stop_loss": 0.6021015,
+      "take_profit": 0.5909970000000002,
+      "trigger": "bearish order block limit: zone 0.5984-0.6015 (formed 2026-11-05 20:25 UTC, CHoCH confirmed 2026-11-05 20:55 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(2 OB) 1h=bearish(0 OB) 15m=bearish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.590997 (2R minimum (next swing low was only 1.46R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity run (closed beyond), fair value gap yes, displacement 1.4 ATR, entry at 36% of the range (discount) | filled limit @ 0.5984",
+      "tp2_price": 0.5909970000000002,
+      "tp2_source": "2R minimum (next swing low was only 1.46R away)",
+      "entry_fee": null,
+      "initial_qty": 620.709347,
+      "risk_per_unit": 0.003701499999999913,
+      "partial_tp_price": 0.5946985000000001,
+      "partial_taken": false,
+      "tp2_taken": false
+    }
+  ],
   "dry_run_signaled": {
     "BTC/USDT:USDT|bullish order block retest: zone 63204.2000-63362.4000 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 20:00 UTC)": "2026-08-13T19:41:47.282751+00:00",
     "ETH/USDT:USDT|bearish order block retest: zone 1886.0300-1890.7000 (formed 2026-08-12 18:30 UTC, break of structure confirmed 2026-08-12 19:00 UTC)": "2026-08-13T19:41:47.547834+00:00",
@@ -138,13 +160,8 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 174.9798,
+  "last_seen_equity": 176.5988,
   "traded_zones": {
-    "ADA/USDT:USDT|bearish|0.2056-0.2064": "2026-10-29T14:45:31.998508+00:00",
-    "AVAX/USDT:USDT|bearish|8.989-9.015": "2026-10-29T16:00:48.000397+00:00",
-    "NEAR/USDT:USDT|bullish|4.413-4.485": "2026-10-29T17:45:34.039767+00:00",
-    "BNB/USDT:USDT|bullish|742.81-744.92": "2026-10-29T18:00:45.320310+00:00",
-    "AVAX/USDT:USDT|bearish|8.855-8.882": "2026-10-29T19:43:13.491128+00:00",
     "XRP/USDT:USDT|bearish|1.2426-1.2481": "2026-10-30T03:45:34.590829+00:00",
     "SOL/USDT:USDT|bearish|97.103-97.803": "2026-10-30T04:00:43.229502+00:00",
     "DOGE/USDT:USDT|bearish|0.07596-0.07659": "2026-10-30T04:30:39.653656+00:00",
@@ -179,7 +196,8 @@
     "APT/USDT:USDT|bearish|0.6407-0.6441": "2026-11-04T22:30:35.510425+00:00",
     "DOT/USDT:USDT|bearish|0.9482-0.951": "2026-11-05T05:30:34.921905+00:00",
     "NEAR/USDT:USDT|bearish|4.029-4.051": "2026-11-05T11:30:36.777401+00:00",
-    "ATOM/USDT:USDT|bearish|1.532-1.54": "2026-11-05T12:30:38.175933+00:00"
+    "ATOM/USDT:USDT|bearish|1.532-1.54": "2026-11-05T12:30:38.175933+00:00",
+    "APT/USDT:USDT|bearish|0.5984-0.6015": "2026-11-06T00:45:29.142550+00:00"
   },
   "realized_pnl_date": "2026-11-06",
   "pending_orders": [
@@ -208,28 +226,28 @@
       "trigger": "bearish order block limit: zone 91.0360-91.5040 (formed 2026-11-05 16:20 UTC, CHoCH confirmed 2026-11-05 17:55 UTC) | HTF: 1d*=bearish(3 OB) 4h*=bearish(3 OB) 1h=bearish(1 OB) 15m=bearish(4 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 89.917 (2R minimum (next swing low was only 1.61R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity run (closed beyond), fair value gap yes, displacement 0.6 ATR, entry at 32% of the range (discount)"
     },
     {
-      "order_id": "paper-97a19d44dd00",
-      "trade_id": "97a19d44dd00",
+      "order_id": "paper-99cd22268698",
+      "trade_id": "99cd22268698",
       "mode": "DRY_RUN",
-      "symbol": "APT/USDT:USDT",
+      "symbol": "DOT/USDT:USDT",
       "side": "sell",
       "position_side": "SHORT",
-      "qty": 620.709347,
-      "leverage": 10,
-      "entry_price": 0.5984,
-      "stop_loss": 0.6021015,
-      "take_profit": 0.5909970000000002,
-      "tp2_price": 0.5909970000000002,
-      "tp2_source": "2R minimum (next swing low was only 1.46R away)",
-      "equity": 174.29,
-      "zone_key": "APT/USDT:USDT|bearish|0.5984-0.6015",
+      "qty": 12.407705,
+      "leverage": 8,
+      "entry_price": 0.9318,
+      "stop_loss": 0.9396386999999998,
+      "take_profit": 0.9161226000000002,
+      "tp2_price": 0.9161226000000002,
+      "tp2_source": "2R minimum (next swing low was only 1.48R away)",
+      "equity": 176.6,
+      "zone_key": "DOT/USDT:USDT|bearish|0.9318-0.9387",
       "ob": {
         "type": "bearish",
-        "top": 0.6015,
-        "bottom": 0.5984
+        "top": 0.9387,
+        "bottom": 0.9318
       },
-      "placed_time_utc": "2026-11-06T00:15:58.310741+00:00",
-      "trigger": "bearish order block limit: zone 0.5984-0.6015 (formed 2026-11-05 20:25 UTC, CHoCH confirmed 2026-11-05 20:55 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(2 OB) 1h=bearish(0 OB) 15m=bearish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.590997 (2R minimum (next swing low was only 1.46R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity run (closed beyond), fair value gap yes, displacement 1.4 ATR, entry at 36% of the range (discount)"
+      "placed_time_utc": "2026-11-06T00:45:41.583080+00:00",
+      "trigger": "bearish order block limit: zone 0.9318-0.9387 (formed 2026-11-05 20:20 UTC, CHoCH confirmed 2026-11-05 21:00 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(2 OB) 1h=bearish(0 OB) 15m=bullish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.916123 (2R minimum (next swing low was only 1.48R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity run (closed beyond), fair value gap yes, displacement 1.4 ATR, entry at 61% of the range (premium)"
     }
   ]
 }
