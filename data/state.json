@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 4.963082,
       "entry_price": 0.9318,
-      "stop_loss": 0.9289386999999999,
+      "stop_loss": 0.9265386999999998,
       "take_profit": 0.9161226000000002,
       "trigger": "bearish order block limit: zone 0.9318-0.9387 (formed 2026-11-05 20:20 UTC, CHoCH confirmed 2026-11-05 21:00 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(2 OB) 1h=bearish(0 OB) 15m=bullish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 0.916123 (2R minimum (next swing low was only 1.48R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity run (closed beyond), fair value gap yes, displacement 1.4 ATR, entry at 61% of the range (premium) | filled limit @ 0.9318",
       "tp2_price": 0.9161226000000002,
@@ -161,7 +161,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 169.3232,
+  "last_seen_equity": 169.671,
   "traded_zones": {
     "XRP/USDT:USDT|bearish|1.247-1.2501": "2026-10-31T14:45:33.105608+00:00",
     "ETH/USDT:USDT|bearish|2249.78-2253.0": "2026-10-31T15:45:33.222789+00:00",
