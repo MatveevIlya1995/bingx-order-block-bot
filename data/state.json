@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 168.3955,
+  "last_seen_equity": 169.1306,
   "traded_zones": {
     "XRP/USDT:USDT|bearish|1.247-1.2501": "2026-10-31T14:45:33.105608+00:00",
     "ETH/USDT:USDT|bearish|2249.78-2253.0": "2026-10-31T15:45:33.222789+00:00",
@@ -179,5 +179,30 @@
     "NEAR/USDT:USDT|bearish|3.735-3.76": "2026-11-07T01:00:38.958008+00:00"
   },
   "realized_pnl_date": "2026-11-07",
-  "pending_orders": []
+  "pending_orders": [
+    {
+      "order_id": "paper-b267bf68ec8d",
+      "trade_id": "b267bf68ec8d",
+      "mode": "DRY_RUN",
+      "symbol": "ATOM/USDT:USDT",
+      "side": "sell",
+      "position_side": "SHORT",
+      "qty": 367.376929,
+      "leverage": 10,
+      "entry_price": 1.361,
+      "stop_loss": 1.369368,
+      "take_profit": 1.3442640000000001,
+      "tp2_price": null,
+      "tp2_source": null,
+      "equity": 169.13,
+      "zone_key": "ATOM/USDT:USDT|bearish|1.361-1.364",
+      "ob": {
+        "type": "bearish",
+        "top": 1.364,
+        "bottom": 1.361
+      },
+      "placed_time_utc": "2026-11-07T21:45:43.417512+00:00",
+      "trigger": "bearish order block limit: zone 1.3610-1.3640 (formed 2026-11-07 21:15 UTC, BOS confirmed 2026-11-07 21:30 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(3 OB) 1h=bearish(2 OB) 15m=bearish(3 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 fallback (no swing beyond TP1), runner trails after TP2 | stop beyond the last swing | SMC: BOS, liquidity not taken, fair value gap yes, displacement 0.6 ATR, entry at 6% of the range (discount)"
+    }
+  ]
 }
