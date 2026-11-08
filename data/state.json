@@ -1,7 +1,7 @@
 {
-  "date": "2026-11-07",
-  "day_start_equity": 170.865,
-  "realized_pnl_today": -7.057340826352736,
+  "date": "2026-11-08",
+  "day_start_equity": 170.679,
+  "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [],
@@ -138,7 +138,7 @@
     "APT/USDT:USDT|bearish order block retest: zone 0.5388-0.5401 (formed 2026-08-14 21:00 UTC, break of structure confirmed 2026-08-14 21:45 UTC)": "2026-08-15T11:54:13.927514+00:00",
     "LINK/USDT:USDT|bearish order block retest: zone 9.4510-9.5070 (formed 2026-08-15 05:30 UTC, break of structure confirmed 2026-08-15 06:00 UTC)": "2026-08-15T12:59:05.962701+00:00"
   },
-  "last_seen_equity": 171.0566,
+  "last_seen_equity": 170.679,
   "traded_zones": {
     "SOL/USDT:USDT|bearish|96.069-96.186": "2026-10-31T22:15:35.669395+00:00",
     "ETH/USDT:USDT|bearish|2269.04-2284.01": "2026-11-01T01:45:32.233975+00:00",
@@ -175,6 +175,6 @@
     "NEAR/USDT:USDT|bearish|3.735-3.76": "2026-11-07T01:00:38.958008+00:00",
     "ATOM/USDT:USDT|bearish|1.361-1.364": "2026-11-07T22:00:39.757549+00:00"
   },
-  "realized_pnl_date": "2026-11-07",
+  "realized_pnl_date": "2026-11-08",
   "pending_orders": []
 }
