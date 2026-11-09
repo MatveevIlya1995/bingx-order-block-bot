@@ -1,7 +1,7 @@
 {
   "date": "2026-11-09",
   "day_start_equity": 157.0001,
-  "realized_pnl_today": 0.7192300936029374,
+  "realized_pnl_today": 2.2926902809060126,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [
@@ -12,7 +12,7 @@
       "symbol": "ATOM/USDT:USDT",
       "side": "SELL",
       "position_side": "SHORT",
-      "qty": 239.3617023,
+      "qty": 136.7781156,
       "entry_price": 1.316,
       "stop_loss": 1.316,
       "take_profit": 1.2993540000000003,
@@ -24,7 +24,8 @@
       "risk_per_unit": 0.008322999999999858,
       "partial_tp_price": 1.3076770000000002,
       "partial_taken": true,
-      "tp2_taken": false
+      "tp2_taken": true,
+      "trail_distance": 0.008322999999999858
     }
   ],
   "dry_run_signaled": {
