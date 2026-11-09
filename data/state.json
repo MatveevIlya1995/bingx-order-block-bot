@@ -14,7 +14,7 @@
       "position_side": "SHORT",
       "qty": 136.7781156,
       "entry_price": 1.316,
-      "stop_loss": 1.316,
+      "stop_loss": 1.308323,
       "take_profit": 1.2993540000000003,
       "trigger": "bearish order block limit: zone 1.3160-1.3190 (formed 2026-11-09 05:10 UTC, BOS confirmed 2026-11-09 05:20 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(3 OB) 1h=bearish(1 OB) 15m=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 1.29935 (2R minimum (next swing low was only 1.08R away)), runner trails after TP2 | stop beyond the last swing | SMC: BOS, liquidity not taken, fair value gap yes, displacement 1.4 ATR, entry at 45% of the range (discount) | filled limit @ 1.316",
       "tp2_price": 1.2993540000000003,
