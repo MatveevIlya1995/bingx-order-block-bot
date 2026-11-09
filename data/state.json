@@ -1,7 +1,7 @@
 {
   "date": "2026-11-09",
   "day_start_equity": 157.0001,
-  "realized_pnl_today": 3.1632608970343643,
+  "realized_pnl_today": -3.419772255774446,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [],
@@ -140,7 +140,6 @@
   },
   "last_seen_equity": 157.0001,
   "traded_zones": {
-    "SOL/USDT:USDT|bearish|94.709-95.1": "2026-11-02T08:45:35.409126+00:00",
     "ADA/USDT:USDT|bearish|0.1903-0.1918": "2026-11-02T14:00:57.767741+00:00",
     "APT/USDT:USDT|bearish|0.6166-0.6199": "2026-11-03T03:30:37.274966+00:00",
     "NEAR/USDT:USDT|bearish|3.833-3.858": "2026-11-03T04:00:40.833585+00:00",
@@ -161,57 +160,10 @@
     "NEAR/USDT:USDT|bearish|3.767-3.792": "2026-11-06T18:45:29.317849+00:00",
     "NEAR/USDT:USDT|bearish|3.735-3.76": "2026-11-07T01:00:38.958008+00:00",
     "ATOM/USDT:USDT|bearish|1.361-1.364": "2026-11-07T22:00:39.757549+00:00",
-    "ATOM/USDT:USDT|bearish|1.316-1.319": "2026-11-09T07:00:40.064540+00:00"
+    "ATOM/USDT:USDT|bearish|1.316-1.319": "2026-11-09T07:00:40.064540+00:00",
+    "NEAR/USDT:USDT|bearish|3.543-3.565": "2026-11-09T11:19:52.995931+00:00",
+    "NEAR/USDT:USDT|bearish|3.512-3.535": "2026-11-09T11:19:52.998702+00:00"
   },
   "realized_pnl_date": "2026-11-09",
-  "pending_orders": [
-    {
-      "order_id": "paper-28fe0fe25829",
-      "trade_id": "28fe0fe25829",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 112.898673,
-      "leverage": 8,
-      "entry_price": 3.543,
-      "stop_loss": 3.5685649999999995,
-      "take_profit": 3.4918700000000014,
-      "tp2_price": 3.4918700000000014,
-      "tp2_source": "2R minimum (next swing low was only 1.17R away)",
-      "equity": 157.0,
-      "zone_key": "NEAR/USDT:USDT|bearish|3.543-3.565",
-      "ob": {
-        "type": "bearish",
-        "top": 3.565,
-        "bottom": 3.543
-      },
-      "placed_time_utc": "2026-11-09T10:15:47.581532+00:00",
-      "trigger": "bearish order block limit: zone 3.5430-3.5650 (formed 2026-11-09 09:35 UTC, CHoCH confirmed 2026-11-09 10:00 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(3 OB) 1h=bearish(2 OB) 15m=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 3.49187 (2R minimum (next swing low was only 1.17R away)), runner trails after TP2 | stop beyond the last swing | SMC: CHoCH, liquidity not taken, fair value gap yes, displacement 0.8 ATR, entry at 32% of the range (discount)"
-    },
-    {
-      "order_id": "paper-c1c7c2387d6d",
-      "trade_id": "c1c7c2387d6d",
-      "mode": "DRY_RUN",
-      "symbol": "NEAR/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 109.624289,
-      "leverage": 8,
-      "entry_price": 3.512,
-      "stop_loss": 3.5385349999999995,
-      "take_profit": 3.458930000000001,
-      "tp2_price": 3.458930000000001,
-      "tp2_source": "2R minimum (next swing low was only 1.43R away)",
-      "equity": 157.0,
-      "zone_key": "NEAR/USDT:USDT|bearish|3.512-3.535",
-      "ob": {
-        "type": "bearish",
-        "top": 3.535,
-        "bottom": 3.512
-      },
-      "placed_time_utc": "2026-11-09T10:45:46.271841+00:00",
-      "trigger": "bearish order block limit: zone 3.5120-3.5350 (formed 2026-11-09 10:25 UTC, BOS confirmed 2026-11-09 10:40 UTC) | HTF: 1d*=bearish(2 OB) 4h*=bearish(3 OB) 1h=bearish(2 OB) 15m=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 3.45893 (2R minimum (next swing low was only 1.43R away)), runner trails after TP2 | stop beyond the last swing | SMC: BOS, liquidity not taken, fair value gap yes, displacement 1.4 ATR, entry at 22% of the range (discount)"
-    }
-  ]
+  "pending_orders": []
 }
