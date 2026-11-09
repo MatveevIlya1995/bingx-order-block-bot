@@ -4,7 +4,29 @@
   "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
-  "open_dry_run_trades": [],
+  "open_dry_run_trades": [
+    {
+      "trade_id": "fc15e359fe6a",
+      "entry_time_utc": "2026-11-09T07:00:40.047103+00:00",
+      "mode": "DRY_RUN",
+      "symbol": "ATOM/USDT:USDT",
+      "side": "SELL",
+      "position_side": "SHORT",
+      "qty": 341.945289,
+      "entry_price": 1.316,
+      "stop_loss": 1.324323,
+      "take_profit": 1.2993540000000003,
+      "trigger": "bearish order block limit: zone 1.3160-1.3190 (formed 2026-11-09 05:10 UTC, BOS confirmed 2026-11-09 05:20 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(3 OB) 1h=bearish(1 OB) 15m=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 1.29935 (2R minimum (next swing low was only 1.08R away)), runner trails after TP2 | stop beyond the last swing | SMC: BOS, liquidity not taken, fair value gap yes, displacement 1.4 ATR, entry at 45% of the range (discount) | filled limit @ 1.316",
+      "tp2_price": 1.2993540000000003,
+      "tp2_source": "2R minimum (next swing low was only 1.08R away)",
+      "entry_fee": null,
+      "initial_qty": 341.945289,
+      "risk_per_unit": 0.008322999999999858,
+      "partial_tp_price": 1.3076770000000002,
+      "partial_taken": false,
+      "tp2_taken": false
+    }
+  ],
   "dry_run_signaled": {
     "BTC/USDT:USDT|bullish order block retest: zone 63204.2000-63362.4000 (formed 2026-08-11 19:00 UTC, break of structure confirmed 2026-08-11 20:00 UTC)": "2026-08-13T19:41:47.282751+00:00",
     "ETH/USDT:USDT|bearish order block retest: zone 1886.0300-1890.7000 (formed 2026-08-12 18:30 UTC, break of structure confirmed 2026-08-12 19:00 UTC)": "2026-08-13T19:41:47.547834+00:00",
@@ -140,19 +162,6 @@
   },
   "last_seen_equity": 157.0001,
   "traded_zones": {
-    "SOL/USDT:USDT|bearish|96.069-96.186": "2026-10-31T22:15:35.669395+00:00",
-    "ETH/USDT:USDT|bearish|2269.04-2284.01": "2026-11-01T01:45:32.233975+00:00",
-    "BNB/USDT:USDT|bullish|702.29-702.99": "2026-11-01T02:00:42.870736+00:00",
-    "XRP/USDT:USDT|bearish|1.2521-1.2566": "2026-11-01T06:15:31.179037+00:00",
-    "SOL/USDT:USDT|bearish|95.451-95.647": "2026-11-01T07:45:32.695987+00:00",
-    "DOGE/USDT:USDT|bearish|0.07582-0.076": "2026-11-01T10:15:30.837275+00:00",
-    "SOL/USDT:USDT|bearish|94.629-94.843": "2026-11-01T18:15:30.575516+00:00",
-    "DOGE/USDT:USDT|bearish|0.07535-0.07554": "2026-11-01T21:15:32.394329+00:00",
-    "AVAX/USDT:USDT|bearish|8.677-8.69": "2026-11-01T23:15:36.400723+00:00",
-    "AVAX/USDT:USDT|bearish|8.735-8.758": "2026-11-02T01:15:33.041554+00:00",
-    "LINK/USDT:USDT|bearish|11.316-11.437": "2026-11-02T03:15:30.312987+00:00",
-    "AVAX/USDT:USDT|bearish|8.665-8.737": "2026-11-02T04:00:41.670653+00:00",
-    "LTC/USDT:USDT|bearish|56.16-56.31": "2026-11-02T04:00:41.890250+00:00",
     "SOL/USDT:USDT|bearish|94.709-95.1": "2026-11-02T08:45:35.409126+00:00",
     "ADA/USDT:USDT|bearish|0.1903-0.1918": "2026-11-02T14:00:57.767741+00:00",
     "APT/USDT:USDT|bearish|0.6166-0.6199": "2026-11-03T03:30:37.274966+00:00",
@@ -173,33 +182,9 @@
     "SOL/USDT:USDT|bearish|91.036-91.504": "2026-11-06T14:45:28.935866+00:00",
     "NEAR/USDT:USDT|bearish|3.767-3.792": "2026-11-06T18:45:29.317849+00:00",
     "NEAR/USDT:USDT|bearish|3.735-3.76": "2026-11-07T01:00:38.958008+00:00",
-    "ATOM/USDT:USDT|bearish|1.361-1.364": "2026-11-07T22:00:39.757549+00:00"
+    "ATOM/USDT:USDT|bearish|1.361-1.364": "2026-11-07T22:00:39.757549+00:00",
+    "ATOM/USDT:USDT|bearish|1.316-1.319": "2026-11-09T07:00:40.064540+00:00"
   },
   "realized_pnl_date": "2026-11-09",
-  "pending_orders": [
-    {
-      "order_id": "paper-fc15e359fe6a",
-      "trade_id": "fc15e359fe6a",
-      "mode": "DRY_RUN",
-      "symbol": "ATOM/USDT:USDT",
-      "side": "sell",
-      "position_side": "SHORT",
-      "qty": 341.945289,
-      "leverage": 9,
-      "entry_price": 1.316,
-      "stop_loss": 1.324323,
-      "take_profit": 1.2993540000000003,
-      "tp2_price": 1.2993540000000003,
-      "tp2_source": "2R minimum (next swing low was only 1.08R away)",
-      "equity": 157.0,
-      "zone_key": "ATOM/USDT:USDT|bearish|1.316-1.319",
-      "ob": {
-        "type": "bearish",
-        "top": 1.319,
-        "bottom": 1.316
-      },
-      "placed_time_utc": "2026-11-09T05:30:51.079006+00:00",
-      "trigger": "bearish order block limit: zone 1.3160-1.3190 (formed 2026-11-09 05:10 UTC, BOS confirmed 2026-11-09 05:20 UTC) | HTF: 1d*=bearish(1 OB) 4h*=bearish(3 OB) 1h=bearish(1 OB) 15m=bearish(1 OB) (*=primary/directional, rest=timing only) | exits: TP1 1R (mirror of SL), TP2 1.29935 (2R minimum (next swing low was only 1.08R away)), runner trails after TP2 | stop beyond the last swing | SMC: BOS, liquidity not taken, fair value gap yes, displacement 1.4 ATR, entry at 45% of the range (discount)"
-    }
-  ]
+  "pending_orders": []
 }
