@@ -126,3 +126,11 @@ def make_harness(tmp_path, monkeypatch):
     def _make(**kw):
         return Harness(tmp_path, monkeypatch, **kw)
     return _make
+
+
+@pytest.fixture(autouse=True)
+def _no_request_pacing(monkeypatch):
+    """The live client paces candle requests; tests talk to a fake exchange."""
+    import exchange_client
+    monkeypatch.setattr(exchange_client, "CANDLE_MIN_INTERVAL_S", 0.0)
+    monkeypatch.setattr(exchange_client, "RATE_LIMIT_BACKOFF_S", 0.0)

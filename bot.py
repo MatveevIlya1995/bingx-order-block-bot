@@ -224,8 +224,14 @@ def _manage_open_trades(client, risk, cfg, symbol, df_cache, position_qty=None):
         low = float(df.iloc[-1]["low"])
         last = float(df.iloc[-1]["close"])
 
-    if high is not None:
-        closed_dry_run = risk.reconcile_dry_run_exits(symbol, high=high, low=low)
+    if df is not None and len(df) >= 2:
+        # DRY_RUN: replay every CLOSED candle since each paper trade was last
+        # checked, oldest first (not just the newest, still-forming one).
+        closed_dry_run = []
+        for row in df.iloc[:-1].itertuples(index=False):
+            closed_dry_run += risk.reconcile_dry_run_exits(
+                symbol, high=float(row.high), low=float(row.low), candle_ms=_ts_ms(row.ts),
+            )
         if closed_dry_run:
             print(f"[bot] {symbol}: closed {len(closed_dry_run)} DRY_RUN paper trade(s), logged EXIT row(s).")
 
@@ -273,7 +279,8 @@ def _order_fee(o):
         return None
 
 
-def _promote_fill(client, risk, cfg, order, qty, fill_price, fill_time_iso, entry_fee=None):
+def _promote_fill(client, risk, cfg, order, qty, fill_price, fill_time_iso, entry_fee=None,
+                  exits_checked_through_ms=None):
     """A resting limit order filled: start tracking it as a normal open
     trade (same TP1/TP2/trailing plan as before), journal the ENTRY and
     remember the zone as traded.
@@ -299,6 +306,8 @@ def _promote_fill(client, risk, cfg, order, qty, fill_price, fill_time_iso, entr
         "tp2_source": order.get("tp2_source"),
         "entry_fee": entry_fee,
     }
+    if exits_checked_through_ms is not None:
+        trade["exits_checked_through_ms"] = exits_checked_through_ms
     risk.log_trade({
         "trade_id": order["trade_id"],
         "timestamp_utc": trade["entry_time_utc"],
@@ -323,23 +332,31 @@ def _promote_fill(client, risk, cfg, order, qty, fill_price, fill_time_iso, entr
     print(f"[bot] {symbol}: {order['position_side']} limit FILLED @ {fill_price:.6g} (qty {qty:.6f}) -- now managing as an open trade.")
 
 
+def _ts_ms(ts) -> int:
+    """Candle open time (naive-UTC pandas Timestamp) as epoch milliseconds."""
+    return int(pd.Timestamp(ts).value // 1_000_000)
+
+
 def _dry_run_fill(order, df):
-    """DRY_RUN: has any candle since the order was placed traded through
-    its limit price? Returns the simulated fill price (the limit, or the
-    candle's open if it gapped past the limit), or None."""
+    """DRY_RUN: has any candle that opened after the order was placed traded
+    through its limit price? Returns (fill price, fill candle's open time in
+    epoch ms) -- the price is the limit, or the candle's open if it gapped
+    past the limit -- or None.
+
+    The candle that was already forming when the order was placed is NOT
+    counted: its high/low may have been made before the order existed (that
+    used to produce paper fills on moves that happened before the order)."""
     if df is None or len(df) < 2:
         return None
     placed = pd.Timestamp(order["placed_time_utc"]).tz_convert("UTC").tz_localize(None)
-    candle_len = df["ts"].iloc[-1] - df["ts"].iloc[-2]
     limit = order["entry_price"]
     is_long = order["position_side"] == "LONG"
-    for _, row in df[df["ts"] + candle_len > placed].iterrows():
-        hit = row["low"] <= limit if is_long else row["high"] >= limit
+    for row in df[df["ts"] >= placed].itertuples(index=False):
+        hit = row.low <= limit if is_long else row.high >= limit
         if not hit:
             continue
-        if row["ts"] >= placed:
-            return min(limit, float(row["open"])) if is_long else max(limit, float(row["open"]))
-        return limit
+        price = min(limit, float(row.open)) if is_long else max(limit, float(row.open))
+        return price, _ts_ms(row.ts)
     return None
 
 
@@ -386,12 +403,33 @@ def _process_pending_fills(client, risk, cfg, df_cache):
                     risk.remove_pending_order(order["order_id"])
                     risk.log_order_event("LIMIT_CANCELLED", order, f"order {status} on the exchange")
                     print(f"[bot] {symbol}: limit order {order['order_id']} was {status} on the exchange -- dropped.")
-            else:
-                df = _fetch_df(client, symbol, df_cache)
-                fill_price = _dry_run_fill(order, df)
-                if fill_price is not None:
-                    _promote_fill(client, risk, cfg, order, order["qty"], fill_price, None)
-                    filled_any = True
+        # DRY_RUN: only ONE order per symbol may fill (one position per
+        # symbol) -- the one price reached first. Filling every touched order
+        # in the same cycle used to open two paper positions on one symbol.
+        if not filled_any:
+            df = None
+            first = None
+            for order in risk.pending_orders(symbol):
+                if order["mode"] == "LIVE":
+                    continue
+                if df is None:
+                    df = _fetch_df(client, symbol, df_cache)
+                hit = _dry_run_fill(order, df)
+                if hit is None:
+                    continue
+                price, candle_ms = hit
+                # Same candle: the limit nearer the candle's open is reached first.
+                key = (candle_ms, abs(order["entry_price"] - float(df.loc[df["ts"] == pd.Timestamp(candle_ms, unit="ms"), "open"].iloc[0])))
+                if first is None or key < first[0]:
+                    first = (key, order, price, candle_ms)
+            if first is not None:
+                _, order, price, candle_ms = first
+                # Exits are replayed from the fill candle on (stop checked
+                # first on that candle -- the conservative assumption).
+                _promote_fill(client, risk, cfg, order, order["qty"], price,
+                              pd.Timestamp(candle_ms, unit="ms", tz="UTC").isoformat(),
+                              exits_checked_through_ms=candle_ms - 1)
+                filled_any = True
         if filled_any:
             for other in risk.pending_orders(symbol):
                 _cancel_pending(client, risk, other, "another order on this symbol filled (one position per symbol)")
@@ -528,9 +566,14 @@ def _sync_symbol_orders(client, risk, cfg, symbol, setups, htf_detail, df, equit
             continue
         notional = qty * setup["entry"]
         if notional < cfg.min_notional_usdt:
+            cap = equity * cfg.max_leverage_hard_cap * cfg.max_margin_utilization_pct
+            why = (
+                f"the margin cap is used up (${existing_notional:.0f} of ${cap:.0f} already committed)"
+                if existing_notional >= cap - cfg.min_notional_usdt
+                else f"below MIN_NOTIONAL_USDT=${cfg.min_notional_usdt:.2f}"
+            )
             print(
-                f"[bot] {symbol}: limit @ {setup['entry']:.6g} would be ~${notional:.2f} notional, below "
-                f"MIN_NOTIONAL_USDT=${cfg.min_notional_usdt:.2f} -- skipped."
+                f"[bot] {symbol}: limit @ {setup['entry']:.6g} would be ~${notional:.2f} notional -- skipped, {why}."
             )
             continue
         sized.append((setup, qty, leverage))

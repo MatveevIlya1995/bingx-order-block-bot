@@ -1263,7 +1263,8 @@ class RiskManager:
             trade["trail_distance"] = trade["risk_per_unit"] * self.cfg.trail_r_multiple
         return False
 
-    def reconcile_dry_run_exits(self, symbol: str, high: float, low: float) -> list:
+    def reconcile_dry_run_exits(self, symbol: str, high: float, low: float,
+                                candle_ms: int | None = None) -> list:
         """DRY_RUN: walk each paper trade on symbol through its exit plan
         using the latest candle's high/low:
 
@@ -1276,6 +1277,14 @@ class RiskManager:
         stop and the trailing stop aren't checked on the same candle that
         moved/armed them (same as before), since the candle's high/low
         can't tell which came first.
+
+        candle_ms: open time (epoch ms) of the candle being replayed. The bot
+        now replays EVERY closed candle since the last check in order (it
+        used to look only at the newest, still-forming candle, so two of
+        every three 5m candles between 15-minute runs were never checked for
+        stops or targets). Each trade remembers the last candle it was walked
+        through (exits_checked_through_ms) and a candle is never replayed
+        twice; candles that closed before the trade was filled are skipped.
         """
         open_trades = self.state.get("open_dry_run_trades", [])
         if not open_trades:
@@ -1288,6 +1297,18 @@ class RiskManager:
             if trade["symbol"] != symbol:
                 remaining.append(trade)
                 continue
+            if candle_ms is not None:
+                if "exits_checked_through_ms" not in trade:
+                    # Opened before this field existed: start at its entry time.
+                    entry = datetime.datetime.fromisoformat(trade["entry_time_utc"])
+                    if entry.tzinfo is None:
+                        entry = entry.replace(tzinfo=datetime.timezone.utc)
+                    trade["exits_checked_through_ms"] = int(entry.timestamp() * 1000) - 1
+                if candle_ms <= trade["exits_checked_through_ms"]:
+                    remaining.append(trade)
+                    continue
+                trade["exits_checked_through_ms"] = candle_ms
+                changed = True
             is_long = trade["position_side"].upper() == "LONG"
             stage_changed_this_candle = False
 
@@ -1434,7 +1455,12 @@ class RiskManager:
             equity * self.cfg.max_leverage_hard_cap * self.cfg.max_margin_utilization_pct
         )
         available_notional = max(max_total_notional - existing_notional, 0.0)
-        qty = min(qty, available_notional / entry)
+        # Each of the MAX_CONCURRENT_POSITIONS slots gets an equal share of
+        # the cap. Without this, a few tight-stop trades sized at the full
+        # leverage ceiling used the whole cap between them and the remaining
+        # slots could never be filled (they were sized to ~$0 and skipped).
+        slot_notional = max_total_notional / max(self.cfg.max_concurrent_positions, 1)
+        qty = min(qty, available_notional / entry, slot_notional / entry)
         return max(qty, 0.0), leverage
 
     def safe_leverage(self) -> int:

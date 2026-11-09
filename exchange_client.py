@@ -18,8 +18,24 @@ REPL) and confirm `create_order` behaves as expected for your account's
 position mode -- see the README for a step-by-step check.
 """
 import datetime
+import time
 
 import ccxt
+
+# BingX answers {"code":100410,"msg":"请稍后重试"} ("retry later") when it is
+# asked for too much too fast -- one run fetches ~75 candle sets (15 symbols x
+# 5 timeframes), and the sibling trend bot shares the same API key. Candle
+# requests are paced and retried with a back-off instead of the symbol being
+# skipped for the whole cycle.
+CANDLE_MIN_INTERVAL_S = 0.25
+RATE_LIMIT_RETRIES = 3
+RATE_LIMIT_BACKOFF_S = 2.0
+
+
+def _is_rate_limited(exc) -> bool:
+    if isinstance(exc, (ccxt.RateLimitExceeded, ccxt.DDoSProtection)):
+        return True
+    return "100410" in str(exc)
 
 
 class ExchangeClient:
@@ -38,11 +54,23 @@ class ExchangeClient:
         """Fetches OHLCV candles. Defaults to the strategy timeframe/limit
         from config, but callers (e.g. the higher-timeframe trend filter)
         can override both to pull a different timeframe."""
-        return self.exchange.fetch_ohlcv(
-            symbol,
-            timeframe=timeframe or self.cfg.timeframe,
-            limit=limit or self.cfg.candle_limit,
-        )
+        attempt = 0
+        while True:
+            wait = CANDLE_MIN_INTERVAL_S - (time.monotonic() - getattr(self, "_last_candle_call", 0.0))
+            if wait > 0:
+                time.sleep(wait)
+            self._last_candle_call = time.monotonic()
+            try:
+                return self.exchange.fetch_ohlcv(
+                    symbol,
+                    timeframe=timeframe or self.cfg.timeframe,
+                    limit=limit or self.cfg.candle_limit,
+                )
+            except Exception as e:
+                if not _is_rate_limited(e) or attempt >= RATE_LIMIT_RETRIES:
+                    raise
+                attempt += 1
+                time.sleep(RATE_LIMIT_BACKOFF_S * attempt)
 
     @staticmethod
     def _usdt_equity_from_info(info):
