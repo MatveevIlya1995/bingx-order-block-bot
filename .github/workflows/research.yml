@@ -1,0 +1,52 @@
+name: Strategy research
+
+# Tests simple trend-following rules on years of BingX daily/4h history
+# (public candles, no API key) with an in-sample / out-of-sample split.
+# Started by hand; never touches the account, state or journal.
+
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "First day of history, YYYY-MM-DD"
+        default: "2021-01-01"
+
+permissions:
+  contents: read
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Run the research
+        run: python3 research.py --since "${{ inputs.since }}"
+      - name: Post the report as run annotations
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os
+          p = "research_results/summary.md"
+          if not os.path.exists(p):
+              raise SystemExit
+          lines, chunks, cur = open(p).read().splitlines(), [], ""
+          for ln in lines:
+              if len(cur) + len(ln) + 1 > 3800:
+                  chunks.append(cur); cur = ""
+              cur += ln + "\n"
+          if cur: chunks.append(cur)
+          for i, c in enumerate(chunks[:10], 1):
+              c = c.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+              print(f"::notice title=Research {i}/{len(chunks)}::{c}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: research-results
+          path: research_results/
+          if-no-files-found: ignore
