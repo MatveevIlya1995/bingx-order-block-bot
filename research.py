@@ -40,6 +40,7 @@ SLIP = 0.0003     # per side
 RISK = 0.01       # equity risked per trade
 MAX_POS = 5
 MAX_LEV = 3.0     # total notional / equity cap
+FUNDING_LONG_PER_DAY = 0.0003  # 0.01%/8h paid by longs; shorts get nothing (conservative)
 TF_MS = {"4h": 14_400_000, "1d": 86_400_000}
 
 
@@ -50,26 +51,7 @@ def fetch(ex, sym, tf, since_ms, cache_dir):
     path = os.path.join(cache_dir, f"{sym}_{tf}.pkl")
     if os.path.exists(path):
         return pd.read_pickle(path)
-    rows, cur = [], since_ms
-    while True:
-        for attempt in range(5):
-            try:
-                batch = ex.fetch_ohlcv(f"{sym}/USDT:USDT", tf, since=cur, limit=1000)
-                break
-            except Exception as e:  # rate limit etc.
-                if attempt == 4:
-                    raise
-                time.sleep(2 * (attempt + 1))
-        if not batch:
-            break
-        rows += batch
-        nxt = batch[-1][0] + TF_MS[tf]
-        if nxt <= cur or len(batch) < 2:
-            break
-        cur = nxt
-        if cur > time.time() * 1000:
-            break
-        time.sleep(0.25)
+    rows = _fetch_forward(ex, sym, tf, since_ms) or _fetch_backward(ex, sym, tf, since_ms)
     df = pd.DataFrame(rows, columns=["ts", "open", "high", "low", "close", "volume"])
     df = df.drop_duplicates("ts").sort_values("ts")
     df["ts"] = pd.to_datetime(df["ts"], unit="ms")
@@ -77,6 +59,53 @@ def fetch(ex, sym, tf, since_ms, cache_dir):
     df = df.iloc[:-1]  # drop the still-forming candle
     df.to_pickle(path)
     return df
+
+
+def _call(ex, *a, **k):
+    for attempt in range(5):
+        try:
+            return ex.fetch_ohlcv(*a, **k)
+        except Exception:
+            if attempt == 4:
+                raise
+            time.sleep(2 * (attempt + 1))
+
+
+def _fetch_forward(ex, sym, tf, since_ms):
+    rows, cur = [], since_ms
+    while cur < time.time() * 1000:
+        batch = _call(ex, f"{sym}/USDT:USDT", tf, since=cur, limit=1000)
+        if not batch:
+            break
+        rows += batch
+        nxt = batch[-1][0] + TF_MS[tf]
+        if nxt <= cur or len(batch) < 2:
+            break
+        cur = nxt
+        time.sleep(0.25)
+    return rows
+
+
+def _fetch_backward(ex, sym, tf, since_ms):
+    """Pages back from now with endTime -- BingX returns nothing for a
+    'since' further back than it keeps for small timeframes."""
+    rows, end = [], int(time.time() * 1000)
+    while end > since_ms:
+        for attempt in range(5):
+            try:
+                batch = ex.fetch_ohlcv(f"{sym}/USDT:USDT", tf, limit=1000, params={"endTime": end})
+                break
+            except Exception:
+                if attempt == 4:
+                    raise
+                time.sleep(2 * (attempt + 1))
+        batch = [b for b in batch if b[0] < end]
+        if not batch:
+            break
+        rows = batch + rows
+        end = batch[0][0]
+        time.sleep(0.25)
+    return [r for r in rows if r[0] >= since_ms]
 
 
 def atr(df, n):
@@ -138,6 +167,7 @@ def simulate(data, sigs, start, end, equity0=1000.0):
     that opens beyond the stop fills at the open)."""
     idx = sorted(set().union(*[d.index for d in data.values()]))
     idx = [t for t in idx if start <= t < end]
+    bar_days = (idx[1] - idx[0]) / pd.Timedelta(days=1) if len(idx) > 1 else 1.0
     equity = equity0
     peak, max_dd = equity0, 0.0
     pos = {}       # sym -> dict(side, qty, entry, stop)
@@ -164,6 +194,13 @@ def simulate(data, sigs, start, end, equity0=1000.0):
             pos[sym] = {"side": side, "qty": qty, "entry": px, "stop": stop, "t": t, "fees": qty * px * FEE,
                         "risk": qty * dist}
         pending.clear()
+
+        # funding on open longs (shorts conservatively receive nothing)
+        for sym, p in pos.items():
+            if p["side"] > 0 and t in data[sym].index:
+                f = p["qty"] * data[sym].at[t, "open"] * FUNDING_LONG_PER_DAY * bar_days
+                equity -= f
+                p["fees"] += f
 
         # 2) stops / exits on this bar
         for sym, p in list(pos.items()):
@@ -244,7 +281,7 @@ def stats(equity0, equity, dd, trades, days):
 
 STRATS = {}
 for tf in ("1d", "4h"):
-    for n_e, n_x in ((20, 10), (55, 20), (100, 50)):
+    for n_e, n_x in ((20, 10), (30, 15), (40, 20), (55, 20), (55, 30), (100, 50)):
         for ema in (None, 200):
             for shorts in (True, False):
                 STRATS[f"donchian {n_e}/{n_x} {tf}{' ema200' if ema else ''}{'' if shorts else ' long-only'}"] = (
