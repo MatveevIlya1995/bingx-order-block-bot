@@ -1,5 +1,7 @@
 # BingX Order-Block Futures Bot
 
+> **Retired for new entries (2026-11-09).** The bot's own backtests (`backtest.py`) showed the order-block / smart-money strategy losing money on every timeframe tried -- 5m, 15m, 1h and 4h entries, all five entry models, with or without the filters -- mostly to fees and noise. `bot.yml` now sets `ENTRY_SYMBOLS=NONE`, so it places no new orders and only manages open paper trades to their exit. The strategy that held up in testing (daily 55-day Donchian trend following, see `research.py` and the **Strategy research** workflow) runs in [bingx-trend-pullback-bot](https://github.com/MatveevIlya1995/bingx-trend-pullback-bot).
+
 A rule-based bot for BingX USDT-M perpetual futures that trades an "order
 block" (smart-money-concept) strategy with a top-down multi-timeframe
 filter: the daily and 4h trend (the "primary" levels) set the allowed

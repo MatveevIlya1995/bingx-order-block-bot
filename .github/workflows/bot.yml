@@ -71,7 +71,13 @@ jobs:
           DRY_RUN_FEE_PCT_PER_SIDE: ${{ vars.DRY_RUN_FEE_PCT_PER_SIDE }}
           RESTING_TP_ORDERS: ${{ vars.RESTING_TP_ORDERS }}
           MIN_STOP_DISTANCE_PCT: ${{ vars.MIN_STOP_DISTANCE_PCT }}
-          ENTRY_SYMBOLS: ${{ vars.ENTRY_SYMBOLS }}
+          # New entries are OFF (2026-11-09): backtests showed the order-block /
+          # smart-money strategy losing on every timeframe (5m-4h). "NONE"
+          # matches no symbol, so no new orders are placed and resting ones
+          # are cancelled; open paper trades are still managed to their exit.
+          # Trend following moved to bingx-trend-pullback-bot. To re-enable,
+          # set this back to ${{ vars.ENTRY_SYMBOLS }}.
+          ENTRY_SYMBOLS: "NONE"
           HTF_TIMING_AGREEMENT: ${{ vars.HTF_TIMING_AGREEMENT }}
           STRUCTURE_CONFIRMED_SWINGS: ${{ vars.STRUCTURE_CONFIRMED_SWINGS }}
           REQUIRE_STRONG_SWING: ${{ vars.REQUIRE_STRONG_SWING }}
