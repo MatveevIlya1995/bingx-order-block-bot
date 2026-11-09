@@ -323,7 +323,7 @@ def main():
              f"In-sample {first.date()} to {split.date()}, out-of-sample {split.date()} to {last.date()}. "
              f"{len(data['1d'])} symbols. Risk {RISK*100:g}% per trade, max {MAX_POS} positions, "
              f"notional cap {MAX_LEV:g}x equity, taker fee {FEE*100:g}% + slippage {SLIP*100:g}% per side, "
-             "funding ignored. Entries at the next candle's open after a close-based signal.",
+             "funding 0.03%/day charged on longs (shorts get none). Entries at the next candle's open after a close-based signal.",
              "",
              "| strategy | IS trades | IS PF | IS avgR | IS CAGR% | IS maxDD% | OOS trades | OOS PF | OOS avgR | OOS return% | OOS maxDD% | full CAGR% | full maxDD% |",
              "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
