@@ -1,7 +1,7 @@
 {
-  "date": "2026-11-09",
+  "date": "2026-11-10",
   "day_start_equity": 157.0001,
-  "realized_pnl_today": -3.419772255774446,
+  "realized_pnl_today": 0.0,
   "trades": [],
   "open_trades": [],
   "open_dry_run_trades": [],
@@ -164,6 +164,6 @@
     "NEAR/USDT:USDT|bearish|3.543-3.565": "2026-11-09T11:19:52.995931+00:00",
     "NEAR/USDT:USDT|bearish|3.512-3.535": "2026-11-09T11:19:52.998702+00:00"
   },
-  "realized_pnl_date": "2026-11-09",
+  "realized_pnl_date": "2026-11-10",
   "pending_orders": []
 }
